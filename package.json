@@ -1,0 +1,15 @@
+{
+  "name": "floya-store",
+  "version": "1.0.0",
+  "description": "Floya Store - E-commerce with Vercel + Supabase",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "vercel": "^33.0.0"
+  }
+}
