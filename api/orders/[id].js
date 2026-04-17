@@ -56,7 +56,9 @@ export default async function handler(req, res) {
 }
 
 function verifyAdminToken(authHeader) {
+  console.log('Auth header:', authHeader);
   const token = authHeader.replace('Bearer ', '');
   const expectedToken = process.env.ADMIN_TOKEN || 'admin-secret-token';
+  console.log('Token match:', token === expectedToken, 'Token length:', token.length, 'Expected length:', expectedToken.length);
   return token === expectedToken;
 }
