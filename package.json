@@ -2,6 +2,7 @@
   "name": "floya-store",
   "version": "1.0.0",
   "description": "Floya Store - E-commerce with Vercel + Supabase",
+  "type": "module",
   "scripts": {
     "dev": "vercel dev",
     "deploy": "vercel --prod"
