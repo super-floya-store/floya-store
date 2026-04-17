@@ -18,9 +18,10 @@ export default async function handler(req, res) {
     switch (req.method) {
       case 'GET':
         // Get orders (admin only)
-        const authHeader = req.headers.authorization;
+        const authHeader = req.headers.authorization || req.headers['Authorization'];
+        console.log('Headers:', JSON.stringify(req.headers));
         if (!authHeader || !verifyAdminToken(authHeader)) {
-          return res.status(401).json({ error: 'Unauthorized' });
+          return res.status(401).json({ error: 'Unauthorized', debug: { hasAuthHeader: !!authHeader } });
         }
 
         const { data: orders, error } = await supabase
