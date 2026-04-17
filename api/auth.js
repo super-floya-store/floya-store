@@ -17,8 +17,14 @@ export default async function handler(req, res) {
     const { username, password } = req.body;
 
     // Validate credentials against environment variables
-    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const adminUsername = process.env.ADMIN_USERNAME;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    // Check if env vars are set
+    if (!adminUsername || !adminPassword) {
+      console.error('Admin credentials not configured. ADMIN_USERNAME:', !!adminUsername, 'ADMIN_PASSWORD:', !!adminPassword);
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
 
     if (username !== adminUsername || password !== adminPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
