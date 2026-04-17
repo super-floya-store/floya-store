@@ -14,11 +14,21 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { username, password } = req.body;
+    // Parse body if it's a string (Vercel doesn't always parse JSON)
+    let body = req.body;
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid JSON body' });
+      }
+    }
+
+    const { username, password } = body || {};
 
     // Validate credentials against environment variables
-    const adminUsername = process.env.ADMIN_USERNAME;
-    const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminUsername = process.env.ADMIN_USERNAME?.trim();
+    const adminPassword = process.env.ADMIN_PASSWORD?.trim();
 
     // Check if env vars are set
     if (!adminUsername || !adminPassword) {
@@ -27,6 +37,7 @@ export default async function handler(req, res) {
     }
 
     if (username !== adminUsername || password !== adminPassword) {
+      console.error('Login failed:', { username, expectedUsername: adminUsername, passwordMatch: password === adminPassword });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
