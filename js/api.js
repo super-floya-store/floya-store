@@ -1,131 +1,328 @@
-// Floya Store API Client
-const API_BASE = window.location.origin;
+// Floya Store - Backend API Client
+// Connects to the Express backend API
 
-const api = {
-  // Products
-  async getProducts() {
-    const res = await fetch(`${API_BASE}/api/products`);
-    if (!res.ok) throw new Error('Failed to fetch products');
-    return res.json();
-  },
+(function() {
+    'use strict';
 
-  async getProduct(id) {
-    const res = await fetch(`${API_BASE}/api/products/${id}`);
-    if (!res.ok) throw new Error('Product not found');
-    return res.json();
-  },
+    const API_BASE_URL = window.location.origin;
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 1000;
 
-  async createProduct(product, token) {
-    const res = await fetch(`${API_BASE}/api/products`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(product)
-    });
-    if (!res.ok) throw new Error('Failed to create product');
-    return res.json();
-  },
+    // CSRF Token for additional security
+    let csrfToken = null;
 
-  async updateProduct(id, product, token) {
-    const res = await fetch(`${API_BASE}/api/products/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(product)
-    });
-    if (!res.ok) throw new Error('Failed to update product');
-    return res.json();
-  },
-
-  async deleteProduct(id, token) {
-    const res = await fetch(`${API_BASE}/api/products/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error('Failed to delete product');
-    return true;
-  },
-
-  // Orders
-  async getOrders(token) {
-    const res = await fetch(`${API_BASE}/api/orders`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error('Failed to fetch orders');
-    return res.json();
-  },
-
-  async createOrder(order) {
-    const res = await fetch(`${API_BASE}/api/orders`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(order)
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to create order');
+    function getCSRFToken() {
+        return csrfToken || document.querySelector('meta[name="csrf-token"]')?.content || '';
     }
-    return res.json();
-  },
 
-  async updateOrderStatus(id, status, token) {
-    const res = await fetch(`${API_BASE}/api/orders/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ status })
+    async function fetchCSRFToken() {
+        try {
+            const data = await fetchAPI('/api/csrf-token');
+            csrfToken = data.csrfToken;
+            return csrfToken;
+        } catch (err) {
+            console.error('Failed to fetch CSRF token:', err);
+            return null;
+        }
+    }
+
+    // Helper function for making API requests with retry logic
+    async function fetchAPI(endpoint, options = {}, retryCount = 0) {
+        const url = `${API_BASE_URL}${endpoint}`;
+
+        const config = {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                ...options.headers
+            },
+            credentials: 'same-origin',
+            ...options
+        };
+
+        // Add auth token if available
+        const token = localStorage.getItem('floya_token');
+        if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        // Add CSRF token for non-GET requests
+        if (options.method && options.method !== 'GET') {
+            const csrfToken = getCSRFToken();
+            if (csrfToken) {
+                config.headers['X-CSRF-Token'] = csrfToken;
+            }
+        }
+
+        if (config.body && typeof config.body === 'object') {
+            config.body = JSON.stringify(config.body);
+        }
+
+        try {
+            const response = await fetch(url, config);
+
+            // Handle specific status codes
+            if (response.status === 401) {
+                // Token expired or invalid, clear storage and redirect to login
+                localStorage.removeItem('floya_token');
+                localStorage.removeItem('floya_user');
+                window.location.href = '/admin';
+                return Promise.reject(new Error('Session expired'));
+            }
+
+            if (response.status === 429) {
+                // Rate limited
+                return Promise.reject(new Error('Too many requests. Please try again later.'));
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || `Request failed with status ${response.status}`);
+            }
+
+            return data;
+        } catch (error) {
+            // Retry logic for network errors
+            if (retryCount < MAX_RETRIES && (error.name === 'TypeError' || error.message.includes('fetch'))) {
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
+                return fetchAPI(endpoint, options, retryCount + 1);
+            }
+
+            console.error('API Error:', error);
+            throw error;
+        }
+    }
+
+    // Validate email-like usernames
+    function isValidUsername(username) {
+        return typeof username === 'string' &&
+               username.length >= 1 &&
+               username.length <= 100 &&
+               /^[a-zA-Z0-9_-]+$/.test(username);
+    }
+
+    // Validate password strength
+    function validatePassword(password) {
+        if (typeof password !== 'string' || password.length < 8 || password.length > 100) {
+            return { valid: false, message: 'Password must be 8-100 characters' };
+        }
+        const hasUpper = /[A-Z]/.test(password);
+        const hasLower = /[a-z]/.test(password);
+        const hasNumber = /\d/.test(password);
+
+        if (!hasUpper || !hasLower || !hasNumber) {
+            return { valid: false, message: 'Password must contain uppercase, lowercase, and numbers' };
+        }
+
+        return { valid: true };
+    }
+
+    window.api = {
+        // Products API
+        getProducts: async function() {
+            return await fetchAPI('/api/products');
+        },
+
+        getProduct: async function(productId) {
+            if (!productId || typeof productId !== 'string') {
+                throw new Error('Invalid product ID');
+            }
+            return await fetchAPI(`/api/products/${encodeURIComponent(productId)}`);
+        },
+
+        createProduct: async function(productData) {
+            if (!productData || typeof productData !== 'object') {
+                throw new Error('Invalid product data');
+            }
+            if (!productData.name || !productData.price || !productData.category) {
+                throw new Error('Name, price, and category are required');
+            }
+            return await fetchAPI('/api/products', {
+                method: 'POST',
+                body: productData
+            });
+        },
+
+        updateProduct: async function(productId, productData) {
+            if (!productId || typeof productId !== 'string') {
+                throw new Error('Invalid product ID');
+            }
+            if (!productData || typeof productData !== 'object') {
+                throw new Error('Invalid product data');
+            }
+            return await fetchAPI(`/api/products/${encodeURIComponent(productId)}`, {
+                method: 'PUT',
+                body: productData
+            });
+        },
+
+        deleteProduct: async function(productId) {
+            if (!productId || typeof productId !== 'string') {
+                throw new Error('Invalid product ID');
+            }
+            return await fetchAPI(`/api/products/${encodeURIComponent(productId)}`, {
+                method: 'DELETE'
+            });
+        },
+
+        // Orders API
+        getOrders: async function(filters = {}) {
+            const params = new URLSearchParams();
+            if (filters.status) params.append('status', filters.status);
+            if (filters.limit) params.append('limit', String(filters.limit));
+            if (filters.offset) params.append('offset', String(filters.offset));
+
+            const queryString = params.toString();
+            return await fetchAPI(`/api/orders${queryString ? '?' + queryString : ''}`);
+        },
+
+        getOrder: async function(orderId) {
+            if (!orderId || typeof orderId !== 'string') {
+                throw new Error('Invalid order ID');
+            }
+            return await fetchAPI(`/api/orders/${encodeURIComponent(orderId)}`);
+        },
+
+        createOrder: async function(orderData) {
+            if (!orderData || typeof orderData !== 'object') {
+                throw new Error('Invalid order data');
+            }
+            if (!orderData.productId || !orderData.customerName || !orderData.customerState || !orderData.customerPhone) {
+                throw new Error('Product, customer name, state, and phone are required');
+            }
+
+            // Client-side phone validation
+            const phone = orderData.customerPhone.replace(/\s/g, '');
+            if (!/^(0[5-7])[0-9]{8}$/.test(phone)) {
+                throw new Error('Invalid phone number format. Use 05, 06, or 07 followed by 8 digits');
+            }
+
+            return await fetchAPI('/api/orders', {
+                method: 'POST',
+                body: orderData
+            });
+        },
+
+        updateOrderStatus: async function(orderId, newStatus) {
+            if (!orderId || typeof orderId !== 'string') {
+                throw new Error('Invalid order ID');
+            }
+            const validStatuses = ['جديد', 'قيد المعالجة', 'تم الشحن', 'تم التسليم', 'ملغي'];
+            if (!validStatuses.includes(newStatus)) {
+                throw new Error('Invalid status');
+            }
+            return await fetchAPI(`/api/orders/${encodeURIComponent(orderId)}/status`, {
+                method: 'PATCH',
+                body: { status: newStatus }
+            });
+        },
+
+        deleteOrder: async function(orderId) {
+            if (!orderId || typeof orderId !== 'string') {
+                throw new Error('Invalid order ID');
+            }
+            return await fetchAPI(`/api/orders/${encodeURIComponent(orderId)}`, {
+                method: 'DELETE'
+            });
+        },
+
+        // Stats API (Admin)
+        getOrderStats: async function() {
+            return await fetchAPI('/api/orders/stats');
+        },
+
+        // Auth API
+        login: async function(username, password) {
+            if (!isValidUsername(username)) {
+                throw new Error('Invalid username format');
+            }
+            if (!password || typeof password !== 'string' || password.length < 1) {
+                throw new Error('Password is required');
+            }
+
+            const data = await fetchAPI('/api/auth/login', {
+                method: 'POST',
+                body: { username, password }
+            });
+
+            if (data.token) {
+                localStorage.setItem('floya_token', data.token);
+                localStorage.setItem('floya_user', JSON.stringify(data.user));
+                // Fetch CSRF token after successful login
+                await fetchCSRFToken();
+            }
+
+            return data;
+        },
+
+        logout: function() {
+            localStorage.removeItem('floya_token');
+            localStorage.removeItem('floya_user');
+            csrfToken = null; // Clear CSRF token
+            window.location.href = '/admin';
+        },
+
+        // Fetch CSRF token from server
+        refreshCSRFToken: fetchCSRFToken,
+
+        getProfile: async function() {
+            return await fetchAPI('/api/auth/profile');
+        },
+
+        changePassword: async function(currentPassword, newPassword) {
+            if (!currentPassword || !newPassword) {
+                throw new Error('Current and new password are required');
+            }
+
+            const validation = validatePassword(newPassword);
+            if (!validation.valid) {
+                throw new Error(validation.message);
+            }
+
+            // Fetch fresh CSRF token before password change
+            await fetchCSRFToken();
+
+            const data = await fetchAPI('/api/auth/change-password', {
+                method: 'POST',
+                body: { currentPassword, newPassword }
+            });
+
+            // Clear token after password change
+            localStorage.removeItem('floya_token');
+            localStorage.removeItem('floya_user');
+
+            return data;
+        },
+
+        // Token helpers
+        getToken: function() {
+            return localStorage.getItem('floya_token');
+        },
+
+        isLoggedIn: function() {
+            return !!localStorage.getItem('floya_token');
+        },
+
+        getUser: function() {
+            const user = localStorage.getItem('floya_user');
+            try {
+                return user ? JSON.parse(user) : null;
+            } catch (e) {
+                return null;
+            }
+        },
+
+        // Security helpers
+        validatePassword: validatePassword,
+        isValidUsername: isValidUsername
+    };
+
+    // Security: Clear sensitive data on page unload
+    window.addEventListener('beforeunload', () => {
+        // Clear any in-memory sensitive data if needed
     });
-    if (!res.ok) throw new Error('Failed to update order');
-    return res.json();
-  },
 
-  async deleteOrder(id, token) {
-    const res = await fetch(`${API_BASE}/api/orders/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error('Failed to delete order');
-    return true;
-  },
-
-  // Auth
-  async login(username, password) {
-    const res = await fetch(`${API_BASE}/api/auth`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Login failed');
-    return data;
-  }
-};
-
-// Helper functions
-function showToast(msg, type = 'info') {
-  const c = document.getElementById('toast-container');
-  if (!c) return;
-  const t = document.createElement('div');
-  t.className = `toast ${type}`;
-  const icons = { success: 'fa-check-circle', error: 'fa-times-circle', info: 'fa-info-circle' };
-  t.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i> ${msg}`;
-  c.appendChild(t);
-  setTimeout(() => t.remove(), 3000);
-}
-
-function formatPrice(p) {
-  return Number(p).toLocaleString('ar-DZ');
-}
-
-function generateId() {
-  return Date.now() + Math.floor(Math.random() * 1000);
-}
-
-const WILAYAS = ["أدرار","الشلف","الأغواط","أم البواقي","باتنة","بجاية","بسكرة","بشار","البليدة","البويرة","تمنراست","تبسة","تلمسان","تيارت","تيزي وزو","الجزائر","الجلفة","جيجل","سطيف","سعيدة","سكيكدة","سيدي بلعباس","عنابة","قالمة","قسنطينة","المدية","مستغانم","المسيلة","معسكر","ورقلة","وهران","البيض","إليزي","برج بوعريريج","بومرداس","الطارف","تندوف","تيسمسيلت","الوادي","خنشلة","سوق أهراس","تيبازة","ميلة","عين الدفلى","النعامة","عين تموشنت","غرداية","غليزان","تيميمون","برج باجي مختار","أولاد جلال","بني عباس","عين صالح","عين قزام","تقرت","جانت","المغير","المنيعة"];
-
-const FILTERS = ["الكل","الجديد","اطفال","توزيعات","تخفيضات","الهدايا","ديكور"];
-
-// Make available globally
-window.api = api;
-window.showToast = showToast;
-window.formatPrice = formatPrice;
-window.generateId = generateId;
-window.WILAYAS = WILAYAS;
-window.FILTERS = FILTERS;
+    console.log('Floya Store API client loaded');
+    console.log('API Base URL:', API_BASE_URL);
+})();

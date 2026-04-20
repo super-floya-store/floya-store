@@ -187,6 +187,7 @@ const FILTERS=["الكل","الجديد","اطفال","توزيعات","تخفي
 let currentFilter="الكل",currentSearch="",currentProductId=null,allProducts=[];
 
 function showToast(msg,type='info'){const c=document.getElementById('toast-container');const t=document.createElement('div');t.className=`toast ${type}`;const icons={success:'fa-check-circle',error:'fa-times-circle',info:'fa-info-circle'};t.innerHTML=`<i class="fas ${icons[type]||icons.info}"></i> ${msg}`;c.appendChild(t);setTimeout(()=>t.remove(),3000)}
+function escapeHtml(text){if(typeof text!=='string')return text;return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
 function formatPrice(p){return Number(p).toLocaleString('ar-DZ')}
 
 function goHome(){document.getElementById('homeView').style.display='block';document.getElementById('detailView').classList.remove('active');document.getElementById('orderView').classList.remove('active');document.getElementById('orderFormCard').style.display='block';document.getElementById('orderSuccess').classList.remove('active');currentProductId=null;renderProducts()}

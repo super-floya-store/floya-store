@@ -53,7 +53,7 @@
         .btn-logout{background:#FEECEC;color:var(--danger)}.btn-logout:hover{background:var(--danger);color:#fff}
         .admin-tabs{display:flex;gap:0;background:var(--card);border-bottom:2px solid var(--border);overflow-x:auto;scrollbar-width:none;width:100%}
         .admin-tabs::-webkit-scrollbar{display:none}
-        .admin-tab{padding:14px 20px;font-size:13px;font-weight:700;color:var(--text-muted);white-space:nowrap;transition:var(--transition);border-bottom:3px solid transparent;background:none;flex-shrink:0}
+        .admin-tab{padding:14px 16px;font-size:12px;font-weight:700;color:var(--text-muted);white-space:nowrap;transition:var(--transition);border-bottom:3px solid transparent;background:none;flex-shrink:0}
         .admin-tab:hover{color:var(--text)}
         .admin-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
         .admin-content{padding:20px 0;width:100%}
@@ -125,13 +125,25 @@
         .order-detail-item strong{font-weight:700}
         .order-detail-item.product-name{grid-column:1/-1}
         .order-status-select{padding:6px 12px;border-radius:var(--radius-xs);border:1px solid var(--border);font-size:12px;font-weight:600;font-family:'Cairo',sans-serif;background:var(--bg-alt);cursor:pointer}
+
+        /* Settings Section */
+        .settings-card{background:var(--card);border-radius:var(--radius);padding:28px 20px;box-shadow:var(--shadow-sm);border:1px solid var(--border);max-width:500px}
+        .settings-section{margin-bottom:24px}
+        .settings-section:last-child{margin-bottom:0}
+        .settings-section h4{font-size:16px;font-weight:700;margin-bottom:16px;color:var(--text);display:flex;align-items:center;gap:8px}
+        .settings-section h4 i{color:var(--primary)}
+        .password-strength{margin-top:8px;font-size:11px}
+        .password-strength.weak{color:var(--danger)}
+        .password-strength.medium{color:var(--warning)}
+        .password-strength.strong{color:var(--success)}
+
         .empty-state{text-align:center;padding:60px 20px;color:var(--text-muted)}
         .empty-state i{font-size:48px;margin-bottom:16px;display:block;color:var(--border)}
         .empty-state p{font-size:15px;font-weight:500}
         .fade-in{animation:fadeIn .4s ease}
         @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-        @media(max-width:480px){.admin-product-item{flex-wrap:wrap}.admin-header-inner{flex-wrap:wrap}}
+        @media(max-width:480px){.admin-product-item{flex-wrap:wrap}.admin-header-inner{flex-wrap:wrap}.admin-tab{padding:12px 10px;font-size:11px}}
         @media(min-width:768px){.container{padding:0 24px}}
         @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
     </style>
@@ -198,6 +210,7 @@
             <button class="admin-tab" onclick="switchAdminTab('products',this)"><i class="fas fa-boxes-stacked" style="margin-left:6px;"></i>المنتجات</button>
             <button class="admin-tab" onclick="switchAdminTab('addProduct',this)"><i class="fas fa-plus-circle" style="margin-left:6px;"></i>إضافة منتج</button>
             <button class="admin-tab" onclick="switchAdminTab('orders',this)"><i class="fas fa-shopping-bag" style="margin-left:6px;"></i>الطلبات</button>
+            <button class="admin-tab" onclick="switchAdminTab('settings',this)"><i class="fas fa-cog" style="margin-left:6px;"></i>الإعدادات</button>
         </nav>
 
         <div class="admin-content">
@@ -272,13 +285,50 @@
                 <div class="orders-list" id="ordersList"></div>
                 <div class="empty-state" id="emptyOrders" style="display:none;"><i class="fas fa-inbox"></i><p>لا توجد طلبات جديدة بعد</p></div>
             </section>
+
+            <!-- ===== Settings Section ===== -->
+            <section class="admin-section" id="section-settings">
+                <div class="settings-card fade-in">
+                    <!-- Change Password -->
+                    <div class="settings-section">
+                        <h4><i class="fas fa-lock"></i> تغيير كلمة المرور</h4>
+                        <form onsubmit="handleChangePassword(event)">
+                            <div class="form-group">
+                                <label>كلمة المرور الحالية</label>
+                                <input type="password" id="currentPassword" placeholder="أدخل كلمة المرور الحالية" required>
+                            </div>
+                            <div class="form-group">
+                                <label>كلمة المرور الجديدة</label>
+                                <input type="password" id="newPassword" placeholder="أدخل كلمة المرور الجديدة (6 أحرف على الأقل)" minlength="6" required oninput="checkPasswordStrength(this.value)">
+                                <div class="password-strength" id="passwordStrength"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>تأكيد كلمة المرور الجديدة</label>
+                                <input type="password" id="confirmPassword" placeholder="أعد إدخال كلمة المرور الجديدة" required>
+                                <div class="form-error" id="passwordMatchError" style="display:none;color:var(--danger);font-size:11px;margin-top:4px;">كلمتا المرور غير متطابقتين</div>
+                            </div>
+                            <button type="submit" class="btn-submit-product"><i class="fas fa-key" style="margin-left:8px;"></i> تحديث كلمة المرور</button>
+                        </form>
+                    </div>
+
+                    <!-- Admin Info -->
+                    <div class="settings-section" style="border-top:1px solid var(--border);padding-top:24px;">
+                        <h4><i class="fas fa-user-shield"></i> معلومات الحساب</h4>
+                        <div id="adminProfileInfo" style="font-size:13px;color:var(--text-light);">
+                            <p><strong>اسم المستخدم:</strong> <span id="profileUsername">-</span></p>
+                            <p style="margin-top:8px;"><strong>الدور:</strong> <span id="profileRole">-</span></p>
+                            <p style="margin-top:8px;"><strong>آخر تسجيل دخول:</strong> <span id="profileLastLogin">-</span></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
 </div>
 
-<script src="/js/api.js"></script>
+<script src="js/api.js"></script>
 <script>
-let deleteTargetId=null,adminToken=null,allProducts=[],allOrders=[];
+let deleteTargetId=null,allProducts=[],allOrders=[],currentUser=null;
 
 function showToast(msg,type='info'){const c=document.getElementById('toast-container');if(!c)return;const t=document.createElement('div');t.className=`toast ${type}`;const icons={success:'fa-check-circle',error:'fa-times-circle',info:'fa-info-circle'};t.innerHTML=`<i class="fas ${icons[type]||icons.info}"></i> ${msg}`;c.appendChild(t);setTimeout(()=>t.remove(),3000)}
 function openDeleteModal(id){deleteTargetId=id;document.getElementById('deleteModal').classList.add('active')}
@@ -287,13 +337,36 @@ document.getElementById('confirmDeleteBtn').addEventListener('click',()=>{if(del
 function generateId(){return Date.now()+Math.floor(Math.random()*1000)}
 function formatPrice(p){return Number(p).toLocaleString('ar-DZ')}
 
+// ===== Password Strength Checker =====
+function checkPasswordStrength(password){
+    const strengthEl=document.getElementById('passwordStrength');
+    if(!password){strengthEl.textContent='';return}
+
+    let strength=0;
+    if(password.length>=6)strength++;
+    if(password.length>=10)strength++;
+    if(/[a-z]/.test(password)&&/[A-Z]/.test(password))strength++;
+    if(/[0-9]/.test(password))strength++;
+    if(/[^a-zA-Z0-9]/.test(password))strength++;
+
+    if(strength<=2){
+        strengthEl.textContent='ضعيفة';
+        strengthEl.className='password-strength weak';
+    }else if(strength<=3){
+        strengthEl.textContent='متوسطة';
+        strengthEl.className='password-strength medium';
+    }else{
+        strengthEl.textContent='قوية';
+        strengthEl.className='password-strength strong';
+    }
+}
+
 // ===== رفع الصورة وتحويلها لـ base64 =====
 function handleImageUpload(e){
     e.stopPropagation();
     const file = e.target.files[0];
     if(!file) return;
 
-    // التحقق من الحجم (2MB)
     if(file.size > 2 * 1024 * 1024){
         showToast('حجم الصورة كبير جداً، الحد الأقصى 2MB','error');
         e.target.value = '';
@@ -305,15 +378,11 @@ function handleImageUpload(e){
         const base64 = ev.target.result;
         document.getElementById('prodImageData').value = base64;
 
-        // إظهار المعاينة
         const preview = document.getElementById('uploadPreview');
         preview.src = base64;
         preview.style.display = 'block';
 
-        // إخفاء النص التوضيحي
         document.getElementById('uploadPlaceholder').style.display = 'none';
-
-        // إظهار زر الحذف وتغيير شكل المنطقة
         document.getElementById('removeImageBtn').style.display = 'flex';
         document.getElementById('imageUploadArea').classList.add('has-image');
     };
@@ -333,7 +402,6 @@ function removeUploadedImage(e){
     document.getElementById('imageUploadArea').classList.remove('has-image');
 }
 
-// عرض صورة موجودة عند التعديل
 function showExistingImage(imageSrc){
     if(!imageSrc) return;
     document.getElementById('prodImageData').value = imageSrc;
@@ -351,11 +419,11 @@ async function handleLogin(e){
     const user=document.getElementById('loginUser').value.trim(),pass=document.getElementById('loginPass').value;
     try{
         const res=await api.login(user,pass);
-        adminToken=res.token;
-        sessionStorage.setItem('floya_admin_token',adminToken);
+        currentUser=res.user;
         document.getElementById('adminLogin').style.display='none';
         document.getElementById('adminDashboard').classList.add('active');
         document.getElementById('loginError').classList.remove('show');
+        await loadAdminProfile();
         await refreshAdminData();
         showToast('تم تسجيل الدخول بنجاح','success');
     }catch(err){
@@ -363,13 +431,56 @@ async function handleLogin(e){
     }
 }
 function handleLogout(){
-    adminToken=null;
-    sessionStorage.removeItem('floya_admin_token');
+    currentUser=null;
+    api.logout();
     document.getElementById('adminLogin').style.display='flex';
     document.getElementById('adminDashboard').classList.remove('active');
     document.getElementById('loginUser').value='';
     document.getElementById('loginPass').value='';
     showToast('تم تسجيل الخروج','info');
+}
+
+// ===== Load Admin Profile =====
+async function loadAdminProfile(){
+    try{
+        const profile=await api.getProfile();
+        document.getElementById('profileUsername').textContent=profile.username;
+        document.getElementById('profileRole').textContent=profile.role==='superadmin'?'مدير عام':'مدير';
+        document.getElementById('profileLastLogin').textContent=profile.last_login?new Date(profile.last_login).toLocaleString('ar-DZ'):'-';
+    }catch(err){
+        console.error('Error loading profile:',err);
+    }
+}
+
+// ===== Change Password =====
+async function handleChangePassword(e){
+    e.preventDefault();
+    const currentPass=document.getElementById('currentPassword').value;
+    const newPass=document.getElementById('newPassword').value;
+    const confirmPass=document.getElementById('confirmPassword').value;
+    const matchError=document.getElementById('passwordMatchError');
+
+    if(newPass!==confirmPass){
+        matchError.style.display='block';
+        return;
+    }
+    matchError.style.display='none';
+
+    if(newPass.length<6){
+        showToast('كلمة المرور يجب أن تكون 6 أحرف على الأقل','error');
+        return;
+    }
+
+    try{
+        await api.changePassword(currentPass,newPass);
+        showToast('تم تغيير كلمة المرور بنجاح','success');
+        document.getElementById('currentPassword').value='';
+        document.getElementById('newPassword').value='';
+        document.getElementById('confirmPassword').value='';
+        document.getElementById('passwordStrength').textContent='';
+    }catch(err){
+        showToast(err.message||'حدث خطأ أثناء تغيير كلمة المرور','error');
+    }
 }
 
 // ===== التبويبات =====
@@ -378,11 +489,15 @@ function switchAdminTab(tabName,btn){
     btn.classList.add('active');
     document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
     document.getElementById('section-'+tabName).classList.add('active');
-    refreshAdminData();
+    if(tabName==='settings'){
+        loadAdminProfile();
+    }else{
+        refreshAdminData();
+    }
 }
 async function refreshAdminData(){
     try{
-        const [products,orders]=await Promise.all([api.getProducts(),api.getOrders(adminToken)]);
+        const [products,orders]=await Promise.all([api.getProducts(),api.getOrders()]);
         allProducts=products;
         allOrders=orders;
         renderStats();
@@ -435,11 +550,11 @@ async function handleProductSubmit(e){
 
     try{
         if(editId){
-            await api.updateProduct(editId,productData,adminToken);
+            await api.updateProduct(editId,productData);
             showToast('تم تعديل المنتج بنجاح','success');
             cancelEdit();
         }else{
-            await api.createProduct(productData,adminToken);
+            await api.createProduct(productData);
             showToast('تم إضافة المنتج بنجاح','success');
             document.getElementById('productForm').reset();
             removeUploadedImage(new Event('click'));
@@ -483,7 +598,7 @@ function cancelEdit(){
 
 async function deleteProduct(id){
     try{
-        await api.deleteProduct(id,adminToken);
+        await api.deleteProduct(id);
         showToast('تم حذف المنتج','info');
         await refreshAdminData();
     }catch(err){
@@ -506,7 +621,7 @@ function renderAdminOrders(){
 
 async function updateOrderStatus(orderId,newStatus){
     try{
-        await api.updateOrderStatus(orderId,newStatus,adminToken);
+        await api.updateOrderStatus(orderId,newStatus);
         showToast(`تم تحديث حالة الطلب إلى "${newStatus}"`,'info');
         await refreshAdminData();
     }catch(err){
@@ -516,11 +631,10 @@ async function updateOrderStatus(orderId,newStatus){
 
 // ===== فحص الجلسة =====
 async function initAdmin(){
-    const savedToken=sessionStorage.getItem('floya_admin_token');
-    if(savedToken){
-        adminToken=savedToken;
+    if(api.isLoggedIn()){
         document.getElementById('adminLogin').style.display='none';
         document.getElementById('adminDashboard').classList.add('active');
+        await loadAdminProfile();
         await refreshAdminData();
     }
 }

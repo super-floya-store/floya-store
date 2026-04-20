@@ -1,176 +1,147 @@
 # Floya Store
 
-متجر Floya - متجر إلكتروني للديكورات والمنتجات الخرسانية
-
-## Project Structure
-
-```
-floya-store/
-├── index.html          # Customer storefront
-├── admin.html          # Admin dashboard
-├── package.json        # Dependencies
-├── vercel.json         # Vercel config
-├── supabase_schema.sql # Database schema
-├── README.md           # This file
-├── js/
-│   └── api.js          # API client
-└── api/                # Serverless functions
-    ├── auth.js         # Admin login
-    ├── products.js     # List/Create products
-    ├── products/
-    │   └── [id].js     # Get/Update/Delete product
-    ├── orders.js       # List/Create orders
-    └── orders/
-        └── [id].js     # Update/Delete order
-```
-
-## Setup Instructions
-
-### 1. Create Supabase Project
-
-1. Go to [supabase.com](https://supabase.com) and create a free account
-2. Create a new project
-3. Once created, go to the SQL Editor
-4. Copy the contents of `supabase_schema.sql` and run it
-5. Go to Project Settings > API to get your credentials:
-   - Project URL (`SUPABASE_URL`)
-   - Anon public key (`SUPABASE_ANON_KEY`)
-   - Service role key (`SUPABASE_SERVICE_ROLE_KEY`) - keep this secret!
-
-### 2. Configure Environment Variables
-
-Create a `.env.local` file (copy from `.env.local.example`):
-
-```env
-# Supabase Configuration
-SUPABASE_URL=your_supabase_project_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-
-# Admin Configuration
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=your_secure_password_here
-
-# JWT Secret (can be any random string)
-ADMIN_TOKEN=your_random_token_here
-```
-
-### 3. Deploy to Vercel
-
-#### Option A: Using Vercel CLI
-
-1. Install Vercel CLI:
-   ```bash
-   npm i -g vercel
-   ```
-
-2. Login to Vercel:
-   ```bash
-   vercel login
-   ```
-
-3. Deploy:
-   ```bash
-   cd "floya store"
-   vercel --prod
-   ```
-
-4. Add environment variables in Vercel Dashboard:
-   - Go to your project settings
-   - Navigate to Environment Variables
-   - Add all variables from `.env.local`
-
-#### Option B: Using Vercel Web Interface
-
-1. Push your code to GitHub
-2. Go to [vercel.com](https://vercel.com)
-3. Import your GitHub repository
-4. Configure build settings (should auto-detect)
-5. Add environment variables in the settings
-6. Deploy
-
-### 4. Access Your Store
-
-- Customer store: `https://your-project.vercel.app`
-- Admin panel: `https://your-project.vercel.app/admin`
-
-Default admin credentials:
-- Username: `admin` (or what you set in ADMIN_USERNAME)
-- Password: your chosen ADMIN_PASSWORD
+E-commerce store with Node.js/Express backend and Supabase PostgreSQL database.
 
 ## Features
 
-### Customer Features
-- Browse products with filters and search
-- View product details
-- Place orders with phone validation
-- Algerian wilayas support
+- **Products API**: Full CRUD operations
+- **Orders API**: Order management with status tracking
+- **Authentication**: JWT-based with rate limiting
+- **Security**: XSS protection, CSRF tokens, rate limiting
+- **Database**: Supabase PostgreSQL (production) / SQLite (local)
 
-### Admin Features
-- Secure login
-- Dashboard with statistics
-- Add/Edit/Delete products
-- Manage orders and update statuses
-- Image upload (base64)
+## Quick Start
+
+### 1. Clone and Install
+
+```bash
+cd "floya store"
+npm install
+```
+
+### 2. Set Up Supabase
+
+1. Go to [supabase.com](https://supabase.com) and create a project
+2. In the SQL Editor, run the contents of `supabase-schema.sql`
+3. Go to Project Settings > API and copy:
+   - `URL` → set as `SUPABASE_URL`
+   - `service_role key` → set as `SUPABASE_SERVICE_KEY`
+
+### 3. Configure Environment
+
+```bash
+# Copy example file
+cp .env.example .env
+
+# Edit .env and add your Supabase credentials
+```
+
+### 4. Run Locally
+
+```bash
+# Development server
+npm run dev
+
+# Production mode
+npm start
+```
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `JWT_SECRET` | Yes | 64+ character string for JWT signing |
+| `SUPABASE_URL` | Production | Supabase project URL |
+| `SUPABASE_SERVICE_KEY` | Production | Supabase service role key |
+| `PORT` | No | Server port (default: 3000) |
+| `NODE_ENV` | No | Environment (development/production) |
+| `ALLOWED_ORIGINS` | No | Comma-separated CORS origins |
+
+## Deploy to Vercel
+
+### 1. Push to GitHub
+
+```bash
+# Initialize git (if not already)
+git init
+git add .
+git commit -m "Initial commit"
+
+# Create GitHub repo and push
+git remote add origin https://github.com/YOUR_USERNAME/floya-store.git
+git branch -M main
+git push -u origin main
+```
+
+### 2. Deploy on Vercel
+
+1. Go to [vercel.com](https://vercel.com) and import your GitHub repo
+2. Add environment variables in Vercel Dashboard:
+   - `JWT_SECRET` - Generate with: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`
+   - `SUPABASE_URL` - Your Supabase URL
+   - `SUPABASE_SERVICE_KEY` - Your Supabase service role key
+   - `ALLOWED_ORIGINS` - Your Vercel domain (e.g., `https://your-project.vercel.app`)
+
+3. Deploy!
+
+### Default Admin Credentials
+
+- **Username**: `admin`
+- **Password**: Check Vercel logs on first deploy or set `INITIAL_ADMIN_PASSWORD`
 
 ## API Endpoints
 
+### Authentication
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/products` | List all products |
-| POST | `/api/products` | Create product (admin) |
-| GET | `/api/products/:id` | Get single product |
-| PUT | `/api/products/:id` | Update product (admin) |
-| DELETE | `/api/products/:id` | Delete product (admin) |
-| GET | `/api/orders` | List all orders (admin) |
-| POST | `/api/orders` | Create order (public) |
-| PUT | `/api/orders/:id` | Update order status (admin) |
-| DELETE | `/api/orders/:id` | Delete order (admin) |
-| POST | `/api/auth` | Admin login |
+| POST | `/api/auth/login` | Login |
+| GET | `/api/auth/profile` | Get profile |
+| POST | `/api/auth/change-password` | Change password |
 
-## Free Tier Limits
+### Products (Public)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/products` | List products |
+| GET | `/api/products/:id` | Get product |
 
-### Vercel (Hobby Plan)
-- Serverless Functions: 100 GB-hours
-- Bandwidth: 100 GB
-- Build time: 6,000 minutes/month
+### Products (Admin)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/products` | Create product |
+| PUT | `/api/products/:id` | Update product |
+| DELETE | `/api/products/:id` | Delete product |
 
-### Supabase (Free Tier)
-- Database: 500 MB
-- Auth: Unlimited users
-- API requests: Unlimited (fair use)
-- Storage: 1 GB
+### Orders (Public)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/orders` | Create order |
 
-## Customization
+### Orders (Admin)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/orders` | List orders |
+| GET | `/api/orders/stats` | Statistics |
+| PATCH | `/api/orders/:id/status` | Update status |
+| DELETE | `/api/orders/:id` | Delete order |
 
-### Change Default Products
-Edit `supabase_schema.sql` and modify the INSERT statements, then run the SQL in Supabase.
+## File Structure
 
-### Change Colors/Theme
-Edit CSS variables in `index.html` and `admin.html`:
-
-```css
-:root {
-    --primary: #C17B7B;
-    --primary-light: #D9A5A5;
-    --primary-dark: #A06060;
-    /* ... */
-}
 ```
-
-### Change Logo
-Replace the image URLs in both HTML files with your own logo URL.
-
-## Troubleshooting
-
-### API 500 errors
-Check Vercel logs for detailed error messages.
-
-### Database connection issues
-Verify your Supabase credentials are correct in the environment variables.
-
-### CORS errors
-The API already includes CORS headers. If issues persist, check your Supabase CORS settings.
+floya store/
+├── api/
+│   └── index.js          # Vercel serverless handler
+├── routes/
+│   ├── auth.js           # Authentication routes
+│   ├── products.js       # Product routes
+│   └── orders.js         # Order routes
+├── middleware/
+│   └── auth.js           # JWT middleware
+├── database.js           # Database adapter (SQLite/Supabase)
+├── supabase-schema.sql   # Database schema
+├── vercel.json           # Vercel config
+├── package.json
+└── .env.example
+```
 
 ## License
 
