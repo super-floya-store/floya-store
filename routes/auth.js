@@ -40,8 +40,8 @@ router.post('/login', loginLimiter, async (req, res) => {
         }
 
         const user = await db.get(
-            'SELECT * FROM admin_users WHERE username = ? AND is_active = 1',
-            [username.trim()]
+            'SELECT * FROM admin_users WHERE username = ? AND is_active = ?',
+            [username.trim(), true]
         );
 
         if (!user) {

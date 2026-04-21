@@ -98,9 +98,9 @@ class SupabaseDatabase {
                 const whereMatch = pgSql.match(/WHERE\s+(.+?)(?:ORDER|LIMIT|$)/i);
                 if (whereMatch) {
                     const whereClause = whereMatch[1].trim();
-                    // Simple equality filter
-                    const eqMatch = whereClause.match(/(\w+)\s*=\s*\$(\d+)/i);
-                    if (eqMatch) {
+                    // Match all equality conditions: col = $1 AND col2 = $2
+                    const eqMatches = whereClause.matchAll(/(\w+)\s*=\s*\$(\d+)/gi);
+                    for (const eqMatch of eqMatches) {
                         const col = eqMatch[1];
                         const paramIndex = parseInt(eqMatch[2]) - 1;
                         query = query.eq(col, params[paramIndex]);
