@@ -138,8 +138,9 @@ router.post('/', authMiddleware, async (req, res) => {
             }
         });
     } catch (err) {
-        console.error('Create product error:', err);
-        res.status(500).json({ error: 'Server error' });
+        console.error('Create product error:', err.message);
+        console.error('Stack:', err.stack);
+        res.status(500).json({ error: 'Server error: ' + err.message });
     }
 });
 
