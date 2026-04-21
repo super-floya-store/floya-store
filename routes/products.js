@@ -226,7 +226,6 @@ router.put('/:id', authMiddleware, async (req, res) => {
         }
 
         updates.push('updated_at = CURRENT_TIMESTAMP');
-        values.push(req.params.id);
 
         // Build parameterized query for Supabase - replace ? with $1, $2, etc.
         let paramIndex = 1;
@@ -234,9 +233,12 @@ router.put('/:id', authMiddleware, async (req, res) => {
             return u.replace('= ?', `= $${paramIndex++}`);
         });
 
+        // Add the WHERE clause parameter
+        values.push(req.params.id);
+
         await db.run(
             `UPDATE products SET ${parameterizedUpdates.join(', ')} WHERE id = $${paramIndex}`,
-            [...values, req.params.id]
+            values
         );
 
         const product = await db.get(`SELECT * FROM products WHERE id = $${paramIndex}`, [req.params.id]);
