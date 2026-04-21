@@ -75,6 +75,20 @@
                 return Promise.reject(new Error('Too many requests. Please try again later.'));
             }
 
+            // Handle CSRF token required - fetch token and retry once
+            if (response.status === 403) {
+                const data = await response.json();
+                if (data.error && data.error.includes('CSRF')) {
+                    console.log('CSRF token required, fetching new token...');
+                    const newToken = await fetchCSRFToken();
+                    if (newToken && retryCount < 1) {
+                        config.headers['X-CSRF-Token'] = newToken;
+                        return fetchAPI(endpoint, options, retryCount + 1);
+                    }
+                }
+                throw new Error(data.error || 'Request failed');
+            }
+
             const data = await response.json();
 
             if (!response.ok) {
