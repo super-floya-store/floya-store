@@ -40,7 +40,7 @@ router.post('/login', loginLimiter, async (req, res) => {
         }
 
         const user = await db.get(
-            'SELECT * FROM admin_users WHERE username = ? AND is_active = ?',
+            'SELECT * FROM admin_users WHERE username = $1 AND is_active = $2',
             [username.trim(), true]
         );
 
@@ -56,7 +56,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 
         // Update last login
         await db.run(
-            'UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?',
+            'UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = $1',
             [user.id]
         );
 
@@ -134,7 +134,7 @@ router.post('/change-password', authMiddleware, passwordChangeLimiter, async (re
         }
 
         const user = await db.get(
-            'SELECT password_hash FROM admin_users WHERE id = ?',
+            'SELECT password_hash FROM admin_users WHERE id = $1',
             [req.user.id]
         );
 
@@ -152,7 +152,7 @@ router.post('/change-password', authMiddleware, passwordChangeLimiter, async (re
 
         // Increment token_version to invalidate all existing tokens
         await db.run(
-            'UPDATE admin_users SET password_hash = ?, token_version = token_version + 1 WHERE id = ?',
+            'UPDATE admin_users SET password_hash = $1, token_version = token_version + 1 WHERE id = $2',
             [hashedPassword, req.user.id]
         );
 

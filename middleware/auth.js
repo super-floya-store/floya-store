@@ -29,7 +29,7 @@ async function authMiddleware(req, res, next) {
         const decoded = jwt.verify(token, JWT_SECRET);
 
         // Check token version to ensure token hasn't been revoked
-        const user = await db.get('SELECT token_version FROM admin_users WHERE id = ?', [decoded.id]);
+        const user = await db.get('SELECT token_version FROM admin_users WHERE id = $1', [decoded.id]);
         if (!user) {
             return res.status(401).json({ error: 'User not found' });
         }
