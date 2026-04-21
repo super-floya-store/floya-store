@@ -84,20 +84,25 @@ app.use(helmet({
 // CORS configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://floya-store-nine.vercel.app', 'https://floya-store-9jzsa9ls5-super-floya-stores-projects.vercel.app'];
 
 app.use(cors({
     origin: function(origin, callback) {
         // Allow requests with no origin (mobile apps, curl, etc.)
         if (!origin) return callback(null, true);
+        // Allow all vercel.app subdomains in production
+        if (process.env.NODE_ENV === 'production' && origin.includes('vercel.app')) {
+            return callback(null, true);
+        }
         if (allowedOrigins.indexOf(origin) === -1) {
+            console.error('CORS rejected origin:', origin);
             return callback(new Error('CORS policy violation'), false);
         }
         return callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Requested-With']
 }));
 
 // Body parsing middleware
