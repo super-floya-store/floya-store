@@ -59,16 +59,88 @@ class SupabaseDatabase {
         // Parse SQL and use Supabase client methods
         const normalizedSql = sql.trim().toUpperCase();
 
+        // Parse table name
+        const tableMatch = sql.match(/FROM\s+(\w+)|INSERT\s+INTO\s+(\w+)|UPDATE\s+(\w+)/i);
+        const table = tableMatch ? (tableMatch[1] || tableMatch[2] || tableMatch[3]).toLowerCase() : null;
+
+        if (!table) {
+            throw new Error('Could not parse table name from SQL: ' + sql.substring(0, 50));
+        }
+
         if (normalizedSql.startsWith('SELECT')) {
-            // Parse table name from SELECT
-            const match = sql.match(/FROM\s+(\w+)/i);
-            if (match) {
-                const table = match[1].toLowerCase();
+            const { data, error } = await this.supabase.from(table).select('*');
+            if (error) throw error;
+            return data;
+        }
+
+        if (normalizedSql.startsWith('INSERT')) {
+            // Parse column names from INSERT INTO table (col1, col2) VALUES ($1, $2)
+            const colMatch = sql.match(/INSERT\s+INTO\s+\w+\s*\(([\w\s,]+)\)\s*VALUES\s*\(([\$\d\s,]+)\)/i);
+            if (colMatch) {
+                const columns = colMatch[1].split(',').map(c => c.trim());
+                const values = colMatch[2].match(/\$(\d+)/g).map((_, idx) => params[idx]);
+
+                const insertData = {};
+                columns.forEach((col, idx) => {
+                    insertData[col] = values[idx];
+                });
+
                 const { data, error } = await this.supabase
                     .from(table)
-                    .select('*');
+                    .insert(insertData)
+                    .select();
                 if (error) throw error;
-                return data;
+                return { id: data?.[0]?.id || data?.[0]?.Id, changes: 1 };
+            }
+        }
+
+        if (normalizedSql.startsWith('UPDATE')) {
+            // Parse SET clause and WHERE clause
+            const setMatch = sql.match(/SET\s+([\w\s=\$\?,]+)\s+WHERE/i);
+            const whereMatch = sql.match(/WHERE\s+(\w+)\s*=\s*\$(\d+)/i);
+
+            if (setMatch && whereMatch) {
+                const setClause = setMatch[1];
+                const whereCol = whereMatch[1];
+                const whereParamIndex = parseInt(whereMatch[2]) - 1;
+                const whereValue = params[whereParamIndex];
+
+                // Parse SET columns
+                const updateData = {};
+                const setParts = setClause.split(',');
+                let paramIdx = 0;
+
+                for (const part of setParts) {
+                    const colMatch = part.match(/(\w+)\s*=\s*\$(\d+)/);
+                    if (colMatch) {
+                        const col = colMatch[1];
+                        const idx = parseInt(colMatch[2]) - 1;
+                        updateData[col] = params[idx];
+                    }
+                }
+
+                const { data, error } = await this.supabase
+                    .from(table)
+                    .update(updateData)
+                    .eq(whereCol, whereValue);
+                if (error) throw error;
+                return { changes: data?.length || 1 };
+            }
+        }
+
+        if (normalizedSql.startsWith('DELETE')) {
+            const whereMatch = sql.match(/WHERE\s+(\w+)\s*=\s*\$(\d+)/i);
+            if (whereMatch) {
+                const whereCol = whereMatch[1];
+                const whereParamIndex = parseInt(whereMatch[2]) - 1;
+                const whereValue = params[whereParamIndex];
+
+                const { error } = await this.supabase
+                    .from(table)
+                    .delete()
+                    .eq(whereCol, whereValue);
+                if (error) throw error;
+                return { changes: 1 };
             }
         }
 
