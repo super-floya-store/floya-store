@@ -81,30 +81,9 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false, // Allow images from external sources
 }));
 
-// CORS configuration - Allow all origins in production (Vercel)
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'];
-
-// Always add production domains
-allowedOrigins.push('https://floya-store-nine.vercel.app');
-allowedOrigins.push('https://floya-store-9jzsa9ls5-super-floya-stores-projects.vercel.app');
-allowedOrigins.push('https://floya-store-5bf4zs1qn-super-floya-stores-projects.vercel.app');
-
+// CORS configuration - Updated 2026-04-21 to fix CORS issues
 app.use(cors({
-    origin: function(origin, callback) {
-        // Allow requests with no origin (mobile apps, curl, etc.)
-        if (!origin) return callback(null, true);
-        // Allow any vercel.app subdomain
-        if (origin.includes('vercel.app')) {
-            return callback(null, true);
-        }
-        if (allowedOrigins.indexOf(origin) === -1) {
-            console.error('CORS rejected origin:', origin);
-            return callback(new Error('CORS policy violation: ' + origin), false);
-        }
-        return callback(null, true);
-    },
+    origin: true, // Allow all origins
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Requested-With']
