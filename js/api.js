@@ -234,13 +234,17 @@
 
         // Auth API
         login: async function(username, password) {
+            console.log('Login attempt:', { username, passwordLength: password?.length });
             if (!isValidUsername(username)) {
+                console.error('Username validation failed:', username);
                 throw new Error('Invalid username format');
             }
             if (!password || typeof password !== 'string' || password.length < 1) {
+                console.error('Password validation failed');
                 throw new Error('Password is required');
             }
 
+            try {
             const data = await fetchAPI('/api/auth/login', {
                 method: 'POST',
                 body: { username, password }
@@ -254,6 +258,10 @@
             }
 
             return data;
+            } catch (err) {
+                console.error('Login API error:', err.message);
+                throw err;
+            }
         },
 
         logout: function() {
