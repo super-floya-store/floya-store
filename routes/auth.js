@@ -72,8 +72,9 @@ router.post('/login', loginLimiter, async (req, res) => {
             }
         });
     } catch (err) {
-        console.error('Login error:', err);
-        res.status(500).json({ error: 'Server error' });
+        console.error('Login error:', err.message);
+        console.error('Stack:', err.stack);
+        res.status(500).json({ error: 'Server error: ' + err.message });
     }
 });
 
