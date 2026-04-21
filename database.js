@@ -135,9 +135,7 @@ class SupabaseDatabase {
             if (error) throw error;
             return data || [];
         } catch (err) {
-            console.error('Database query error:', err.message);
-            console.error('SQL:', sql);
-            console.error('Params:', params);
+            console.error('Database query error:', err);
             throw err;
         }
     }

@@ -54,11 +54,11 @@ router.post('/login', loginLimiter, async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        // Update last login
-        await db.run(
-            'UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = $1',
-            [user.id]
-        );
+        // Note: last_login update disabled for Supabase compatibility
+        // await db.run(
+        //     'UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = $1',
+        //     [user.id]
+        // );
 
         const token = generateToken(user);
 
@@ -72,9 +72,8 @@ router.post('/login', loginLimiter, async (req, res) => {
             }
         });
     } catch (err) {
-        console.error('Login error:', err.message);
-        console.error('Stack:', err.stack);
-        res.status(500).json({ error: 'Server error: ' + err.message });
+        console.error('Login error:', err);
+        res.status(500).json({ error: 'Server error' });
     }
 });
 
