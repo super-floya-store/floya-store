@@ -232,6 +232,53 @@
             return await fetchAPI('/api/orders/stats');
         },
 
+        // Products API (Admin)
+        getProducts: async function() {
+            return await fetchAPI('/api/products');
+        },
+
+        getProduct: async function(productId) {
+            if (!productId || typeof productId !== 'string') {
+                throw new Error('Invalid product ID');
+            }
+            return await fetchAPI(`/api/products/${encodeURIComponent(productId)}`);
+        },
+
+        createProduct: async function(productData) {
+            if (!productData || typeof productData !== 'object') {
+                throw new Error('Product data is required');
+            }
+            if (!productData.name || !productData.price || !productData.category) {
+                throw new Error('Name, price, and category are required');
+            }
+            return await fetchAPI('/api/products', {
+                method: 'POST',
+                body: productData
+            });
+        },
+
+        updateProduct: async function(productId, productData) {
+            if (!productId || typeof productId !== 'string') {
+                throw new Error('Invalid product ID');
+            }
+            if (!productData || typeof productData !== 'object') {
+                throw new Error('Product data is required');
+            }
+            return await fetchAPI(`/api/products/${encodeURIComponent(productId)}`, {
+                method: 'PUT',
+                body: productData
+            });
+        },
+
+        deleteProduct: async function(productId) {
+            if (!productId || typeof productId !== 'string') {
+                throw new Error('Invalid product ID');
+            }
+            return await fetchAPI(`/api/products/${encodeURIComponent(productId)}`, {
+                method: 'DELETE'
+            });
+        },
+
         // Auth API
         login: async function(username, password) {
             console.log('Login attempt:', { username, passwordLength: password?.length });

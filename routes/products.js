@@ -11,8 +11,8 @@ router.get('/', async (req, res) => {
         const products = await db.all(
             `SELECT id, name, description, price, promo_price, category, image, stock, created_at
              FROM products
-             WHERE is_active = 1
-             ORDER BY created_at DESC`
+             WHERE is_active = $1
+             ORDER BY created_at DESC`, [1]
         );
 
         // Format for frontend compatibility
@@ -39,8 +39,8 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const product = await db.get(
-            'SELECT * FROM products WHERE id = ? AND is_active = 1',
-            [req.params.id]
+            'SELECT * FROM products WHERE id = $1 AND is_active = $2',
+            [req.params.id, 1]
         );
 
         if (!product) {
@@ -93,7 +93,7 @@ router.post('/', authMiddleware, async (req, res) => {
         do {
             id = 'prod_' + Date.now() + '_' + crypto.randomBytes(8).toString('hex');
             attempts++;
-        } while (await db.get('SELECT id FROM products WHERE id = ?', [id]) && attempts < 5);
+        } while (await db.get('SELECT id FROM products WHERE id = $1', [id]) && attempts < 5);
 
         if (attempts >= 5) {
             return res.status(500).json({ error: 'Failed to generate unique ID' });
@@ -108,7 +108,7 @@ router.post('/', authMiddleware, async (req, res) => {
 
         await db.run(
             `INSERT INTO products (id, name, description, price, promo_price, category, image, stock)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
             [
                 id,
                 sanitizedName,
@@ -121,7 +121,7 @@ router.post('/', authMiddleware, async (req, res) => {
             ]
         );
 
-        const product = await db.get('SELECT * FROM products WHERE id = ?', [id]);
+        const product = await db.get('SELECT * FROM products WHERE id = $1', [id]);
 
         res.status(201).json({
             success: true,
@@ -148,7 +148,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     try {
         const { name, description, price, promoPrice, category, image, stock, is_active } = req.body;
 
-        const existing = await db.get('SELECT id FROM products WHERE id = ?', [req.params.id]);
+        const existing = await db.get('SELECT id FROM products WHERE id = $1', [req.params.id]);
         if (!existing) {
             return res.status(404).json({ error: 'Product not found' });
         }
@@ -228,12 +228,18 @@ router.put('/:id', authMiddleware, async (req, res) => {
         updates.push('updated_at = CURRENT_TIMESTAMP');
         values.push(req.params.id);
 
+        // Build parameterized query for Supabase - replace ? with $1, $2, etc.
+        let paramIndex = 1;
+        const parameterizedUpdates = updates.map(u => {
+            return u.replace('= ?', `= $${paramIndex++}`);
+        });
+
         await db.run(
-            `UPDATE products SET ${updates.join(', ')} WHERE id = ?`,
-            values
+            `UPDATE products SET ${parameterizedUpdates.join(', ')} WHERE id = $${paramIndex}`,
+            [...values, req.params.id]
         );
 
-        const product = await db.get('SELECT * FROM products WHERE id = ?', [req.params.id]);
+        const product = await db.get(`SELECT * FROM products WHERE id = $${paramIndex}`, [req.params.id]);
 
         res.json({
             success: true,
@@ -276,9 +282,13 @@ function escapeHtml(text) {
     return text.replace(/[&<>"']/g, m => map[m]);
 }
 
-// URL validation helper
+// URL validation helper - accepts both HTTP URLs and base64 images
 function isValidUrl(string) {
     if (!string || typeof string !== 'string') return false;
+    // Accept base64 images
+    if (string.startsWith('data:image/')) {
+        return true;
+    }
     try {
         const url = new URL(string);
         return ['http:', 'https:'].includes(url.protocol);
@@ -290,14 +300,14 @@ function isValidUrl(string) {
 // Delete product (protected) - soft delete
 router.delete('/:id', authMiddleware, async (req, res) => {
     try {
-        const existing = await db.get('SELECT id FROM products WHERE id = ?', [req.params.id]);
+        const existing = await db.get('SELECT id FROM products WHERE id = $1', [req.params.id]);
         if (!existing) {
             return res.status(404).json({ error: 'Product not found' });
         }
 
         await db.run(
-            'UPDATE products SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-            [req.params.id]
+            'UPDATE products SET is_active = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+            [0, req.params.id]
         );
 
         res.json({ success: true, message: 'Product deleted' });
@@ -310,12 +320,12 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 // Hard delete product (protected)
 router.delete('/:id/permanent', authMiddleware, async (req, res) => {
     try {
-        const existing = await db.get('SELECT id FROM products WHERE id = ?', [req.params.id]);
+        const existing = await db.get('SELECT id FROM products WHERE id = $1', [req.params.id]);
         if (!existing) {
             return res.status(404).json({ error: 'Product not found' });
         }
 
-        await db.run('DELETE FROM products WHERE id = ?', [req.params.id]);
+        await db.run('DELETE FROM products WHERE id = $1', [req.params.id]);
 
         res.json({ success: true, message: 'Product permanently deleted' });
     } catch (err) {
