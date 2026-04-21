@@ -443,16 +443,20 @@ function togglePasswordVisibility(inputId, btn){
 async function handleLogin(e){
     e.preventDefault();
     const user=document.getElementById('loginUser').value.trim(),pass=document.getElementById('loginPass').value;
+    console.log('handleLogin called with user:', user);
     try{
         const res=await api.login(user,pass);
+        console.log('Login response:', res);
         currentUser=res.user;
         document.getElementById('adminLogin').style.display='none';
         document.getElementById('adminDashboard').classList.add('active');
         document.getElementById('loginError').classList.remove('show');
         await loadAdminProfile();
         await refreshAdminData();
-        showToast('تم تسجيل الدخول بنجاح','success');
+        showToast('Login successful','success');
     }catch(err){
+        console.error('Login failed:', err.message);
+        document.getElementById('loginError').textContent = 'Error: ' + err.message;
         document.getElementById('loginError').classList.add('show');
     }
 }
