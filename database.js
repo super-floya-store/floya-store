@@ -1,5 +1,5 @@
-const { createClient } = require('@supabase/supabase-js');
-const bcrypt = require('bcryptjs');
+import { createClient } from '@supabase/supabase-js';
+import bcrypt from 'bcryptjs';
 
 // Use Supabase in production, SQLite in development
 const USE_SUPABASE = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY;
@@ -338,7 +338,8 @@ class SupabaseDatabase {
 
 // Export Supabase database if configured, otherwise throw error for production
 if (USE_SUPABASE) {
-    module.exports = new SupabaseDatabase();
+    const db = new SupabaseDatabase();
+    export default db;
 } else if (process.env.NODE_ENV === 'production') {
     throw new Error('SUPABASE_URL and SUPABASE_SERVICE_KEY are required in production');
 } else {
@@ -523,5 +524,6 @@ if (USE_SUPABASE) {
         }
     }
 
-    module.exports = new SQLiteDatabase();
+    const db = new SQLiteDatabase();
+    export default db;
 }

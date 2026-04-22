@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const db = require('../database');
+import jwt from 'jsonwebtoken';
+import db from '../database.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -56,4 +56,4 @@ function generateToken(user) {
     );
 }
 
-module.exports = { authMiddleware, generateToken, JWT_SECRET };
+export { authMiddleware, generateToken, JWT_SECRET };

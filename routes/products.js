@@ -1,7 +1,7 @@
-const express = require('express');
-const crypto = require('crypto');
-const db = require('../database');
-const { authMiddleware } = require('../middleware/auth');
+import express from "express";
+import crypto from "crypto";
+import db from '../database.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -333,4 +333,4 @@ router.delete('/:id/permanent', authMiddleware, async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

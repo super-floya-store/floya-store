@@ -1,8 +1,8 @@
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const rateLimit = require('express-rate-limit');
-const db = require('../database');
-const { authMiddleware, generateToken } = require('../middleware/auth');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import rateLimit from 'express-rate-limit';
+import db from '../database.js';
+import { authMiddleware, generateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -163,4 +163,4 @@ router.post('/change-password', authMiddleware, passwordChangeLimiter, async (re
     }
 });
 
-module.exports = router;
+export default router;

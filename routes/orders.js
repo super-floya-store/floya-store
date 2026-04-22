@@ -1,6 +1,6 @@
-const express = require('express');
-const db = require('../database');
-const { authMiddleware } = require('../middleware/auth');
+import express from 'express';
+import db from '../database.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -359,4 +359,4 @@ function escapeHtml(text) {
     return text.replace(/[&<>"']/g, m => map[m]);
 }
 
-module.exports = router;
+export default router;

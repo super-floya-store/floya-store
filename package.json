@@ -1,12 +1,22 @@
 {
   "name": "floya-store-backend",
-  "version": "1.0.0",
-  "description": "Floya Store - E-commerce backend API",
+  "version": "2.0.0",
+  "description": "Floya Store - E-commerce backend API with modular frontend architecture",
   "main": "api/index.js",
+  "type": "module",
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "init-db": "node scripts/init-db.js"
+    "init-db": "node scripts/init-db.js",
+    "check-admin": "node scripts/check-admin.js",
+    "reset-admin": "node scripts/reset-admin.js",
+    "test": "node --experimental-vm-modules tests/test-runner.mjs",
+    "lint": "eslint . --ext .js,.mjs",
+    "build": "echo 'No build step required for vanilla JS'",
+    "security-audit": "npm audit"
   },
   "keywords": ["ecommerce", "api", "supabase", "postgresql", "express"],
   "author": "Floya Store",
@@ -20,9 +30,11 @@
     "dotenv": "^16.3.1",
     "express-rate-limit": "^7.1.5",
     "@supabase/supabase-js": "^2.39.0",
-    "pg": "^8.11.3"
+    "pg": "^8.11.3",
+    "morgan": "^1.10.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "nodemon": "^3.0.2",
+    "eslint": "^8.56.0"
   }
 }
