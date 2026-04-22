@@ -169,6 +169,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
         const updates = [];
         const values = [];
+        let paramIndex = 1;
 
         for (const [key, value] of Object.entries(req.body)) {
             if (!allowedFields.includes(key)) continue;
@@ -178,45 +179,45 @@ router.put('/:id', authMiddleware, async (req, res) => {
             switch (key) {
                 case 'name':
                     if (typeof value === 'string' && value.trim()) {
-                        updates.push(`${dbField} = ?`);
+                        updates.push(`${dbField} = $${paramIndex++}`);
                         values.push(sanitizeInput(value.trim(), 200));
                     }
                     break;
                 case 'description':
-                    updates.push(`${dbField} = ?`);
+                    updates.push(`${dbField} = $${paramIndex++}`);
                     values.push(value ? sanitizeInput(value.trim(), 2000) : null);
                     break;
                 case 'price':
                     if (!isNaN(value) && parseFloat(value) > 0 && parseFloat(value) < 10000000) {
-                        updates.push(`${dbField} = ?`);
+                        updates.push(`${dbField} = $${paramIndex++}`);
                         values.push(parseFloat(value));
                     }
                     break;
                 case 'promoPrice':
-                    updates.push(`${dbField} = ?`);
+                    updates.push(`${dbField} = $${paramIndex++}`);
                     values.push(value ? parseFloat(value) : null);
                     break;
                 case 'category':
                     if (typeof value === 'string' && value.trim()) {
-                        updates.push(`${dbField} = ?`);
+                        updates.push(`${dbField} = $${paramIndex++}`);
                         values.push(sanitizeInput(value.trim(), 100));
                     }
                     break;
                 case 'image':
                     if (isValidUrl(value)) {
-                        updates.push(`${dbField} = ?`);
+                        updates.push(`${dbField} = $${paramIndex++}`);
                         values.push(value.trim());
                     } else {
-                        updates.push(`${dbField} = ?`);
+                        updates.push(`${dbField} = $${paramIndex++}`);
                         values.push(null);
                     }
                     break;
                 case 'stock':
-                    updates.push(`${dbField} = ?`);
+                    updates.push(`${dbField} = $${paramIndex++}`);
                     values.push(parseInt(value) || 0);
                     break;
                 case 'is_active':
-                    updates.push(`${dbField} = ?`);
+                    updates.push(`${dbField} = $${paramIndex++}`);
                     values.push(value ? 1 : 0);
                     break;
             }
@@ -228,21 +229,16 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
         updates.push('updated_at = CURRENT_TIMESTAMP');
 
-        // Build parameterized query for Supabase - replace ? with $1, $2, etc.
-        let paramIndex = 1;
-        const parameterizedUpdates = updates.map(u => {
-            return u.replace('= ?', `= $${paramIndex++}`);
-        });
-
         // Add the WHERE clause parameter
+        const whereParamIndex = paramIndex++;
         values.push(req.params.id);
 
         await db.run(
-            `UPDATE products SET ${parameterizedUpdates.join(', ')} WHERE id = $${paramIndex}`,
+            `UPDATE products SET ${updates.join(', ')} WHERE id = $${whereParamIndex}`,
             values
         );
 
-        const product = await db.get(`SELECT * FROM products WHERE id = $${paramIndex}`, [req.params.id]);
+        const product = await db.get('SELECT * FROM products WHERE id = $1', [req.params.id]);
 
         res.json({
             success: true,

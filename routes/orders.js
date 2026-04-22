@@ -41,16 +41,17 @@ router.get('/', authMiddleware, async (req, res) => {
             WHERE 1=1
         `;
         const params = [];
+        let paramIndex = 1;
 
         if (status) {
             if (!VALID_STATUSES.includes(status)) {
                 return res.status(400).json({ error: 'Invalid status filter' });
             }
-            query += ' AND o.status = ?';
+            query += ` AND o.status = $${paramIndex++}`;
             params.push(status);
         }
 
-        query += ' ORDER BY o.created_at DESC LIMIT ? OFFSET ?';
+        query += ` ORDER BY o.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
         params.push(parsedLimit, parsedOffset);
 
         const orders = await db.all(query, params);
@@ -78,39 +79,40 @@ router.get('/', authMiddleware, async (req, res) => {
 // Get order statistics (protected - admin only)
 router.get('/stats', authMiddleware, async (req, res) => {
     try {
-        const total = await db.get('SELECT COUNT(*) as count FROM orders');
-        const newOrders = await db.get("SELECT COUNT(*) as count FROM orders WHERE status = 'جديد'");
-        const processing = await db.get("SELECT COUNT(*) as count FROM orders WHERE status = 'قيد المعالجة'");
-        const shipped = await db.get("SELECT COUNT(*) as count FROM orders WHERE status = 'تم الشحن'");
-        const delivered = await db.get("SELECT COUNT(*) as count FROM orders WHERE status = 'تم التسليم'");
-        const cancelled = await db.get("SELECT COUNT(*) as count FROM orders WHERE status = 'ملغي'");
+        // Use parameterized queries with $1 for Supabase compatibility
+        const total = await db.get('SELECT COUNT(*) as count FROM orders WHERE 1=1', []);
+        const newOrders = await db.get("SELECT COUNT(*) as count FROM orders WHERE status = $1", ['جديد']);
+        const processing = await db.get("SELECT COUNT(*) as count FROM orders WHERE status = $1", ['قيد المعالجة']);
+        const shipped = await db.get("SELECT COUNT(*) as count FROM orders WHERE status = $1", ['تم الشحن']);
+        const delivered = await db.get("SELECT COUNT(*) as count FROM orders WHERE status = $1", ['تم التسليم']);
+        const cancelled = await db.get("SELECT COUNT(*) as count FROM orders WHERE status = $1", ['ملغي']);
 
         // Revenue stats
         const revenue = await db.get(`
             SELECT COALESCE(SUM(product_price), 0) as total
             FROM orders
-            WHERE status != 'ملغي'
-        `);
+            WHERE status != $1
+        `, ['ملغي']);
 
         const todayRevenue = await db.get(`
             SELECT COALESCE(SUM(product_price), 0) as total
             FROM orders
-            WHERE status != 'ملغي'
-            AND DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Africa/Algiers') = CURRENT_DATE
-        `);
+            WHERE status != $1
+            AND DATE(created_at) = CURRENT_DATE
+        `, ['ملغي']);
 
         res.json({
             counts: {
-                total: total.count,
-                new: newOrders.count,
-                processing: processing.count,
-                shipped: shipped.count,
-                delivered: delivered.count,
-                cancelled: cancelled.count
+                total: total?.count || 0,
+                new: newOrders?.count || 0,
+                processing: processing?.count || 0,
+                shipped: shipped?.count || 0,
+                delivered: delivered?.count || 0,
+                cancelled: cancelled?.count || 0
             },
             revenue: {
-                total: revenue.total,
-                today: todayRevenue.total
+                total: revenue?.total || 0,
+                today: todayRevenue?.total || 0
             }
         });
     } catch (err) {
@@ -131,7 +133,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
             `SELECT o.*, p.image as product_image
              FROM orders o
              LEFT JOIN products p ON o.product_id = p.id
-             WHERE o.id = ?`,
+             WHERE o.id = $1`,
             [req.params.id]
         );
 
@@ -194,8 +196,8 @@ router.post('/', async (req, res) => {
 
         // Verify product exists and is active
         const product = await db.get(
-            'SELECT id, name, price, promo_price FROM products WHERE id = ? AND is_active = 1',
-            [productId]
+            'SELECT id, name, price, promo_price FROM products WHERE id = $1 AND is_active = $2',
+            [productId, 1]
         );
 
         if (!product) {
@@ -213,7 +215,7 @@ router.post('/', async (req, res) => {
         do {
             id = 'ord_' + Date.now() + '_' + crypto.randomBytes(8).toString('hex');
             attempts++;
-        } while (await db.get('SELECT id FROM orders WHERE id = ?', [id]) && attempts < 5);
+        } while (await db.get('SELECT id FROM orders WHERE id = $1', [id]) && attempts < 5);
 
         if (attempts >= 5) {
             return res.status(500).json({ error: 'Failed to generate order ID' });
@@ -225,7 +227,7 @@ router.post('/', async (req, res) => {
 
         await db.run(
             `INSERT INTO orders (id, product_id, product_name, product_price, customer_name, customer_state, customer_phone, status, notes)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
             [
                 id,
                 productId,
@@ -239,7 +241,7 @@ router.post('/', async (req, res) => {
             ]
         );
 
-        const order = await db.get('SELECT * FROM orders WHERE id = ?', [id]);
+        const order = await db.get('SELECT * FROM orders WHERE id = $1', [id]);
 
         res.status(201).json({
             success: true,
@@ -276,13 +278,13 @@ router.patch('/:id/status', authMiddleware, async (req, res) => {
             return res.status(400).json({ error: 'Invalid status' });
         }
 
-        const existing = await db.get('SELECT id FROM orders WHERE id = ?', [req.params.id]);
+        const existing = await db.get('SELECT id FROM orders WHERE id = $1', [req.params.id]);
         if (!existing) {
             return res.status(404).json({ error: 'Order not found' });
         }
 
         await db.run(
-            'UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            'UPDATE orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
             [status, req.params.id]
         );
 
@@ -303,7 +305,7 @@ router.patch('/:id/notes', authMiddleware, async (req, res) => {
             return res.status(400).json({ error: 'Invalid order ID format' });
         }
 
-        const existing = await db.get('SELECT id FROM orders WHERE id = ?', [req.params.id]);
+        const existing = await db.get('SELECT id FROM orders WHERE id = $1', [req.params.id]);
         if (!existing) {
             return res.status(404).json({ error: 'Order not found' });
         }
@@ -311,7 +313,7 @@ router.patch('/:id/notes', authMiddleware, async (req, res) => {
         const sanitizedNotes = notes ? sanitizeInput(notes, MAX_NOTES_LENGTH) : null;
 
         await db.run(
-            'UPDATE orders SET notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            'UPDATE orders SET notes = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
             [sanitizedNotes, req.params.id]
         );
 
@@ -330,12 +332,12 @@ router.delete('/:id', authMiddleware, async (req, res) => {
             return res.status(400).json({ error: 'Invalid order ID format' });
         }
 
-        const existing = await db.get('SELECT id FROM orders WHERE id = ?', [req.params.id]);
+        const existing = await db.get('SELECT id FROM orders WHERE id = $1', [req.params.id]);
         if (!existing) {
             return res.status(404).json({ error: 'Order not found' });
         }
 
-        await db.run('DELETE FROM orders WHERE id = ?', [req.params.id]);
+        await db.run('DELETE FROM orders WHERE id = $1', [req.params.id]);
 
         res.json({ success: true, message: 'Order deleted' });
     } catch (err) {

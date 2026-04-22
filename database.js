@@ -23,36 +23,173 @@ class SupabaseDatabase {
             pgSql = pgSql.replace('?', `$${i + 1}`);
         }
 
-        // Handle different SQL operations
+        // Handle different SQL operations using direct Supabase methods
         const normalizedSql = pgSql.trim().toUpperCase();
 
         try {
             if (normalizedSql.startsWith('INSERT')) {
-                const { data, error } = await this.supabase.rpc('exec_insert', {
-                    query_sql: pgSql,
-                    params: params
-                });
-                if (error) throw error;
-                return { id: data, changes: 1 };
-            } else if (normalizedSql.startsWith('UPDATE') || normalizedSql.startsWith('DELETE')) {
-                const { data, error } = await this.supabase.rpc('exec_update', {
-                    query_sql: pgSql,
-                    params: params
-                });
-                if (error) throw error;
-                return { changes: data || 1 };
+                return await this.handleInsert(pgSql, params);
+            } else if (normalizedSql.startsWith('UPDATE')) {
+                return await this.handleUpdate(pgSql, params);
+            } else if (normalizedSql.startsWith('DELETE')) {
+                return await this.handleDelete(pgSql, params);
+            } else if (normalizedSql.startsWith('SELECT') || normalizedSql.startsWith('WITH')) {
+                return await this.handleSelect(pgSql, params);
             } else {
-                const { data, error } = await this.supabase.rpc('exec_query', {
-                    query_sql: pgSql,
-                    params: params
-                });
-                if (error) throw error;
-                return data;
+                throw new Error('Unsupported SQL operation: ' + sql.substring(0, 50));
             }
         } catch (err) {
-            // Fallback: use direct table operations
-            return this.fallbackOperation(sql, params);
+            console.error('Database error:', err.message);
+            throw err;
         }
+    }
+
+    async handleInsert(sql, params) {
+        // Parse: INSERT INTO table (col1, col2) VALUES ($1, $2)
+        const tableMatch = sql.match(/INSERT\s+INTO\s+(\w+)\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/i);
+        if (!tableMatch) {
+            throw new Error('Could not parse INSERT statement');
+        }
+
+        const table = tableMatch[1].toLowerCase();
+        const columns = tableMatch[2].split(',').map(c => c.trim());
+        const values = tableMatch[3].match(/\$?\d+/g) || [];
+
+        const insertData = {};
+        columns.forEach((col, idx) => {
+            if (params[idx] !== undefined) {
+                insertData[col] = params[idx];
+            }
+        });
+
+        const { data, error } = await this.supabase
+            .from(table)
+            .insert(insertData)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return { id: data?.id || data?.Id, changes: 1 };
+    }
+
+    async handleUpdate(sql, params) {
+        // Parse: UPDATE table SET col1 = $1, col2 = $2 WHERE id = $3
+        const tableMatch = sql.match(/UPDATE\s+(\w+)\s+SET\s+(.+?)\s+WHERE\s+(.+)/i);
+        if (!tableMatch) {
+            throw new Error('Could not parse UPDATE statement');
+        }
+
+        const table = tableMatch[1].toLowerCase();
+        const setClause = tableMatch[2];
+        const whereClause = tableMatch[3];
+
+        // Parse SET columns
+        const updateData = {};
+        const setMatches = setClause.matchAll(/(\w+)\s*=\s*\$(\d+)/gi);
+        for (const match of setMatches) {
+            const col = match[1];
+            const paramIndex = parseInt(match[2]) - 1;
+            if (params[paramIndex] !== undefined) {
+                updateData[col] = params[paramIndex];
+            }
+        }
+
+        // Parse WHERE condition
+        const whereMatches = whereClause.matchAll(/(\w+)\s*=\s*\$(\d+)/gi);
+        let query = this.supabase.from(table).update(updateData);
+
+        for (const match of whereMatches) {
+            const col = match[1];
+            const paramIndex = parseInt(match[2]) - 1;
+            if (params[paramIndex] !== undefined) {
+                query = query.eq(col, params[paramIndex]);
+            }
+        }
+
+        const { data, error } = await query.select();
+        if (error) throw error;
+        return { changes: data?.length || 0 };
+    }
+
+    async handleDelete(sql, params) {
+        // Parse: DELETE FROM table WHERE col = $1
+        const tableMatch = sql.match(/DELETE\s+FROM\s+(\w+)\s+WHERE\s+(.+)/i);
+        if (!tableMatch) {
+            throw new Error('Could not parse DELETE statement');
+        }
+
+        const table = tableMatch[1].toLowerCase();
+        const whereClause = tableMatch[2];
+
+        const whereMatches = whereClause.matchAll(/(\w+)\s*=\s*\$(\d+)/gi);
+        let query = this.supabase.from(table).delete();
+
+        for (const match of whereMatches) {
+            const col = match[1];
+            const paramIndex = parseInt(match[2]) - 1;
+            if (params[paramIndex] !== undefined) {
+                query = query.eq(col, params[paramIndex]);
+            }
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return { changes: data?.length || 0 };
+    }
+
+    async handleSelect(sql, params) {
+        // Parse: SELECT ... FROM table WHERE ... ORDER BY ... LIMIT ...
+        const fromMatch = sql.match(/FROM\s+(\w+)/i);
+        if (!fromMatch) {
+            throw new Error('Could not parse SELECT statement');
+        }
+
+        const table = fromMatch[1].toLowerCase();
+        let query = this.supabase.from(table).select('*');
+
+        // Parse WHERE conditions
+        const whereMatch = sql.match(/WHERE\s+(.+?)(?:ORDER|LIMIT|GROUP|HAVING|$)/i);
+        if (whereMatch) {
+            const whereClause = whereMatch[1].trim();
+
+            // Handle multiple conditions with AND
+            const conditions = whereClause.split(/\s+AND\s+/i);
+            for (const condition of conditions) {
+                const eqMatch = condition.match(/(\w+)\s*=\s*\$(\d+)/i);
+                if (eqMatch) {
+                    const col = eqMatch[1];
+                    const paramIndex = parseInt(eqMatch[2]) - 1;
+                    if (params[paramIndex] !== undefined) {
+                        query = query.eq(col, params[paramIndex]);
+                    }
+                }
+            }
+        }
+
+        // Parse ORDER BY
+        const orderMatch = sql.match(/ORDER\s+BY\s+(\w+)(?:\s+(ASC|DESC))?/i);
+        if (orderMatch) {
+            const col = orderMatch[1];
+            const ascending = !orderMatch[2] || orderMatch[2].toUpperCase() === 'ASC';
+            query = query.order(col, { ascending });
+        }
+
+        // Parse LIMIT and OFFSET
+        const limitMatch = sql.match(/LIMIT\s+\$(\d+)/i);
+        const offsetMatch = sql.match(/OFFSET\s+\$(\d+)/i);
+
+        if (limitMatch) {
+            const limitIndex = parseInt(limitMatch[1]) - 1;
+            query = query.limit(params[limitIndex]);
+        }
+        if (offsetMatch) {
+            const offsetIndex = parseInt(offsetMatch[1]) - 1;
+            query = query.range(params[offsetIndex], (params[limitIndex] || 50) + (params[offsetIndex] || 0) - 1);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
     }
 
     async fallbackOperation(sql, params) {
@@ -153,63 +290,8 @@ class SupabaseDatabase {
     }
 
     async all(sql, params = []) {
-        // Convert SQLite-style ? to PostgreSQL-style $1, $2, etc.
-        let pgSql = sql;
-        params.forEach((_, index) => {
-            pgSql = pgSql.replace('?', `$${index + 1}`);
-        });
-
-        try {
-            // Use Supabase REST API for queries
-            const match = pgSql.match(/FROM\s+(\w+)/i);
-            if (match) {
-                const table = match[1].toLowerCase();
-                let query = this.supabase.from(table).select('*');
-
-                // Add WHERE conditions
-                const whereMatch = pgSql.match(/WHERE\s+(.+?)(?:ORDER|LIMIT|$)/i);
-                if (whereMatch) {
-                    const whereClause = whereMatch[1].trim();
-                    // Match all equality conditions: col = $1 AND col2 = $2
-                    const eqMatches = whereClause.matchAll(/(\w+)\s*=\s*\$(\d+)/gi);
-                    for (const eqMatch of eqMatches) {
-                        const col = eqMatch[1];
-                        const paramIndex = parseInt(eqMatch[2]) - 1;
-                        query = query.eq(col, params[paramIndex]);
-                    }
-                }
-
-                // Add ORDER BY
-                const orderMatch = pgSql.match(/ORDER\s+BY\s+(\w+)\s*(ASC|DESC)?/i);
-                if (orderMatch) {
-                    const col = orderMatch[1];
-                    const ascending = !orderMatch[2] || orderMatch[2].toUpperCase() === 'ASC';
-                    query = query.order(col, { ascending });
-                }
-
-                // Add LIMIT
-                const limitMatch = pgSql.match(/LIMIT\s+\$(\d+)/i);
-                if (limitMatch) {
-                    const limitIndex = parseInt(limitMatch[1]) - 1;
-                    query = query.limit(params[limitIndex]);
-                }
-
-                const { data, error } = await query;
-                if (error) throw error;
-                return data || [];
-            }
-
-            // For complex queries, use raw SQL via RPC
-            const { data, error } = await this.supabase.rpc('exec_select', {
-                query_sql: pgSql,
-                params: params
-            });
-            if (error) throw error;
-            return data || [];
-        } catch (err) {
-            console.error('Database query error:', err);
-            throw err;
-        }
+        // Use the handleSelect method for all SELECT queries
+        return await this.handleSelect(sql, params);
     }
 
     async createDefaultAdmin() {
