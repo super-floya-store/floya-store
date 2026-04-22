@@ -133,5 +133,11 @@ app.use((req, res) => {
     res.status(404).json({ error: 'Not Found' });
 });
 
-// Export for Vercel
+// Export for Vercel Serverless
 module.exports = app;
+
+// Vercel serverless function handler - wraps Express for serverless runtime
+exports.default = (req, res) => {
+    // Handle Vercel's serverless request format
+    app(req, res);
+};

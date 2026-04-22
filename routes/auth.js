@@ -81,7 +81,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 router.get('/profile', authMiddleware, async (req, res) => {
     try {
         const user = await db.get(
-            'SELECT id, username, role, last_login, created_at FROM admin_users WHERE id = ?',
+            'SELECT id, username, role, last_login, created_at FROM admin_users WHERE id = $1',
             [req.user.id]
         );
 

@@ -96,7 +96,7 @@ router.get('/stats', authMiddleware, async (req, res) => {
             SELECT COALESCE(SUM(product_price), 0) as total
             FROM orders
             WHERE status != 'ملغي'
-            AND DATE(created_at) = DATE('now', 'localtime')
+            AND DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Africa/Algiers') = CURRENT_DATE
         `);
 
         res.json({

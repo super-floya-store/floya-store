@@ -311,7 +311,7 @@
                             </div>
                             <div class="form-group">
                                 <label>كلمة المرور الجديدة</label>
-                                <input type="password" id="newPassword" placeholder="أدخل كلمة المرور الجديدة (6 أحرف على الأقل)" minlength="6" required oninput="checkPasswordStrength(this.value)">
+                                <input type="password" id="newPassword" placeholder="أدخل كلمة المرور الجديدة (8 أحرف على الأقل)" minlength="8" required oninput="checkPasswordStrength(this.value)">
                                 <div class="password-strength" id="passwordStrength"></div>
                             </div>
                             <div class="form-group">
@@ -355,8 +355,8 @@ function checkPasswordStrength(password){
     if(!password){strengthEl.textContent='';return}
 
     let strength=0;
-    if(password.length>=6)strength++;
-    if(password.length>=10)strength++;
+    if(password.length>=8)strength++;
+    if(password.length>=12)strength++;
     if(/[a-z]/.test(password)&&/[A-Z]/.test(password))strength++;
     if(/[0-9]/.test(password))strength++;
     if(/[^a-zA-Z0-9]/.test(password))strength++;
@@ -496,8 +496,8 @@ async function handleChangePassword(e){
     }
     matchError.style.display='none';
 
-    if(newPass.length<6){
-        showToast('كلمة المرور يجب أن تكون 6 أحرف على الأقل','error');
+    if(newPass.length<8){
+        showToast('كلمة المرور يجب أن تكون 8 أحرف على الأقل','error');
         return;
     }
 
@@ -644,8 +644,9 @@ function renderAdminOrders(){
     list.innerHTML=allOrders.map(o=>{
         const date=new Date(o.created_at);
         const dateStr=date.toLocaleDateString('ar-DZ',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-        const sc={'جديد':'status-new','مؤكد':'status-confirmed','مكتمل':'status-completed','ملغي':'status-cancelled'}[o.status]||'status-new';
-        return `<div class="order-item ${sc} fade-in"><div class="order-header"><span class="order-id"><i class="fas fa-hashtag" style="margin-left:4px;"></i>طلب ${String(o.id).slice(0,8)}</span><span class="order-date">${dateStr}</span></div><div class="order-details"><div class="order-detail-item product-name"><span>المنتج: </span><strong>${o.product_name}</strong></div><div class="order-detail-item"><span>الاسم: </span><strong>${o.customer_name}</strong></div><div class="order-detail-item"><span>الولاية: </span><strong>${o.customer_state}</strong></div><div class="order-detail-item"><span>الهاتف: </span><strong dir="ltr" style="display:inline-block;">${o.customer_phone}</strong></div><div class="order-detail-item"><span>السعر: </span><strong>${formatPrice(o.product_price)} د.ج</strong></div><div class="order-detail-item"><span>الحالة: </span><select class="order-status-select" onchange="updateOrderStatus('${o.id}',this.value)"><option value="جديد" ${o.status==='جديد'?'selected':''}>جديد</option><option value="مؤكد" ${o.status==='مؤكد'?'selected':''}>مؤكد</option><option value="مكتمل" ${o.status==='مكتمل'?'selected':''}>مكتمل</option><option value="ملغي" ${o.status==='ملغي'?'selected':''}>ملغي</option></select></div></div></div>`;
+        const sc={'جديد':'status-new','قيد المعالجة':'status-confirmed','تم الشحن':'status-confirmed','تم التسليم':'status-completed','ملغي':'status-cancelled'}[o.status]||'status-new';
+        const currentStatus = o.status || 'جديد';
+        return `<div class="order-item ${sc} fade-in"><div class="order-header"><span class="order-id"><i class="fas fa-hashtag" style="margin-left:4px;"></i>طلب ${String(o.id).slice(0,8)}</span><span class="order-date">${dateStr}</span></div><div class="order-details"><div class="order-detail-item product-name"><span>المنتج: </span><strong>${o.product_name}</strong></div><div class="order-detail-item"><span>الاسم: </span><strong>${o.customer_name}</strong></div><div class="order-detail-item"><span>الولاية: </span><strong>${o.customer_state}</strong></div><div class="order-detail-item"><span>الهاتف: </span><strong dir="ltr" style="display:inline-block;">${o.customer_phone}</strong></div><div class="order-detail-item"><span>السعر: </span><strong>${formatPrice(o.product_price)} د.ج</strong></div><div class="order-detail-item"><span>الحالة: </span><select class="order-status-select" onchange="updateOrderStatus('${o.id}',this.value)"><option value="جديد" ${currentStatus==='جديد'?'selected':''}>جديد</option><option value="قيد المعالجة" ${currentStatus==='قيد المعالجة'?'selected':''}>قيد المعالجة</option><option value="تم الشحن" ${currentStatus==='تم الشحن'?'selected':''}>تم الشحن</option><option value="تم التسليم" ${currentStatus==='تم التسليم'?'selected':''}>تم التسليم</option><option value="ملغي" ${currentStatus==='ملغي'?'selected':''}>ملغي</option></select></div></div></div>`;
     }).join('');
 }
 

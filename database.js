@@ -19,9 +19,9 @@ class SupabaseDatabase {
     async run(sql, params = []) {
         // Convert SQLite-style ? placeholders to PostgreSQL-style $1, $2, etc.
         let pgSql = sql;
-        params.forEach((_, index) => {
-            pgSql = pgSql.replace('?', `$${index + 1}`);
-        });
+        for (let i = 0; i < params.length; i++) {
+            pgSql = pgSql.replace('?', `$${i + 1}`);
+        }
 
         // Handle different SQL operations
         const normalizedSql = pgSql.trim().toUpperCase();
