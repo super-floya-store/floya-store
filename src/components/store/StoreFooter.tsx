@@ -5,6 +5,7 @@ import { Phone, Mail, MapPin, Facebook, Instagram, ArrowUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useUIStore } from '@/stores/ui-store'
 import { useAuth } from '@/hooks/useAuth'
+import { useStoreBranding } from '@/hooks/useStoreBranding'
 
 interface Settings {
   store_phone?: string
@@ -17,6 +18,7 @@ interface Settings {
 export function StoreFooter() {
   const locale = useUIStore((state) => state.locale)
   const { user } = useAuth()
+  const branding = useStoreBranding()
   const [settings, setSettings] = useState<Settings>({})
 
   useEffect(() => {
@@ -33,7 +35,6 @@ export function StoreFooter() {
   const copy = locale === 'ar'
     ? {
         kicker: 'واجهة متجر راقية',
-        title: 'فلويا ستور',
         body: 'تسوق واضح يركز على سهولة التصفح، سرعة الوصول إلى المنتج، وتجربة تبدو احترافية على الهاتف وسطح المكتب.',
         fastTitle: 'خدمة سريعة',
         fastBody: 'استفسارات سريعة، ردود أوضح، وتجربة تبدو احترافية.',
@@ -46,11 +47,10 @@ export function StoreFooter() {
         ],
         contact: 'تواصل معنا',
         top: 'العودة إلى الأعلى',
-        rights: '© 2026 فلويا ستور. جميع الحقوق محفوظة.',
+        rights: `© 2026 ${branding.nameAr}. جميع الحقوق محفوظة.`,
       }
     : {
         kicker: 'PREMIUM STOREFRONT',
-        title: 'Floya Store',
         body: 'A cleaner shopping experience focused on easy browsing, faster product discovery, and a polished feel on mobile and desktop.',
         fastTitle: 'Fast support',
         fastBody: 'Quick questions, clearer answers, and a more professional experience.',
@@ -63,7 +63,7 @@ export function StoreFooter() {
         ],
         contact: 'Contact us',
         top: 'Back to top',
-        rights: '© 2026 Floya Store. All rights reserved.',
+        rights: `© 2026 ${branding.nameEn}. All rights reserved.`,
       }
 
   return (
@@ -77,7 +77,7 @@ export function StoreFooter() {
           <div className="flex flex-col gap-5">
             <span className="section-kicker w-fit border-white/10 bg-white/10 text-primary-foreground">{copy.kicker}</span>
             <div>
-              <h3 className="text-3xl font-bold md:text-4xl">{copy.title}</h3>
+              <h3 className="text-3xl font-bold md:text-4xl">{locale === 'ar' ? branding.nameAr : branding.nameEn}</h3>
               <p className="mt-4 max-w-xl text-sm leading-8 text-secondary-foreground/78 md:text-base">
                 {copy.body}
               </p>

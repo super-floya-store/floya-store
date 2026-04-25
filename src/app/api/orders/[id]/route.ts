@@ -180,7 +180,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       const settings = await getStoreSettings()
       if (settings.order_email_enabled !== false) {
         const email = buildOrderStatusEmail({ ...data, items: items || [] } as any, settings)
-        const fromName = settings.email_sender_name || settings.store_name?.ar || 'Floya Store'
+        const fromName = settings.email_sender_name || settings.store_name?.en || settings.store_name?.ar || 'Store'
         const fromAddress = settings.email_sender_address || 'onboarding@resend.dev'
 
         await sendResendEmail({

@@ -1,10 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils/cn'
 import { useUIStore } from '@/stores/ui-store'
+import { useStoreBranding } from '@/hooks/useStoreBranding'
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -47,9 +49,9 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
   const pathname = usePathname()
   const { user, logout } = useAuth()
   const locale = useUIStore((state) => state.locale)
+  const branding = useStoreBranding()
   const copy = locale === 'ar'
     ? {
-        brand: 'فلويا ستور',
         storefront: 'الواجهة',
         products: 'المنتجات',
         visitStore: 'زيارة المتجر',
@@ -57,13 +59,13 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         logout: 'تسجيل الخروج',
       }
     : {
-        brand: 'Floya Store',
         storefront: 'Storefront',
         products: 'Products',
         visitStore: 'Visit store',
         profile: 'Profile',
         logout: 'Log out',
       }
+  const brandName = locale === 'ar' ? branding.nameAr : branding.nameEn
 
   return (
     <>
@@ -87,7 +89,12 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         <div className="flex h-full flex-col">
           <div className="border-b border-white/10 p-6">
             <Link href="/admin" className="text-xl font-bold text-white">
-              {copy.brand}
+              <span className="flex items-center gap-3">
+                {branding.logoUrl ? (
+                  <Image src={branding.logoUrl} alt={brandName} width={36} height={36} className="rounded-full object-cover" />
+                ) : null}
+                <span>{brandName}</span>
+              </span>
             </Link>
             {user && <p className="mt-1 text-sm text-white/60">{user.full_name || user.username}</p>}
             <div className="mt-4 flex gap-2">
@@ -171,7 +178,12 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         <div className="flex h-full flex-col">
           <div className="border-b border-white/10 p-6">
             <Link href="/admin" className="text-xl font-bold text-white">
-              {copy.brand}
+              <span className="flex items-center gap-3">
+                {branding.logoUrl ? (
+                  <Image src={branding.logoUrl} alt={brandName} width={36} height={36} className="rounded-full object-cover" />
+                ) : null}
+                <span>{brandName}</span>
+              </span>
             </Link>
             {user && <p className="mt-1 text-sm text-white/60">{user.full_name || user.username}</p>}
             <div className="mt-4 flex gap-2">

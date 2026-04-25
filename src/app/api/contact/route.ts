@@ -43,8 +43,9 @@ export async function POST(request: NextRequest) {
     const settings = await getStoreSettings()
     const adminEmail = settings.admin_notification_email || settings.store_email
     if (adminEmail) {
+      const fromName = settings.email_sender_name || settings.store_name?.en || settings.store_name?.ar || 'Store'
       await sendResendEmail({
-        from: `${settings.email_sender_name || 'Floya Store'} <${settings.email_sender_address || 'onboarding@resend.dev'}>`,
+        from: `${fromName} <${settings.email_sender_address || 'onboarding@resend.dev'}>`,
         to: adminEmail,
         subject: `رسالة تواصل جديدة${payload.subject ? ` - ${payload.subject}` : ''}`,
         html: `<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;line-height:1.9"><h2>رسالة جديدة من الموقع</h2><p><strong>الاسم:</strong> ${payload.customer_name}</p><p><strong>البريد:</strong> ${payload.customer_email || '-'}</p><p><strong>الهاتف:</strong> ${payload.customer_phone || '-'}</p><p><strong>الموضوع:</strong> ${payload.subject || '-'}</p><p><strong>الرسالة:</strong><br/>${payload.message}</p></div>`,

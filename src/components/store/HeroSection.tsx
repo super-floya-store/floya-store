@@ -6,16 +6,18 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { heroFallbackImages } from '@/lib/storefront-images'
 import { useUIStore } from '@/stores/ui-store'
+import { useStoreBranding } from '@/hooks/useStoreBranding'
 
 export function HeroSection() {
   const locale = useUIStore((state) => state.locale)
+  const branding = useStoreBranding()
   const [heroImages, setHeroImages] = useState(heroFallbackImages)
   const primaryHeroImage = heroImages[0] || heroFallbackImages[0]
+  const brandName = locale === 'ar' ? branding.nameAr : branding.nameEn
 
   const copy = locale === 'ar'
     ? {
         kicker: 'تجربة تسوق راقية',
-        title: 'فلويا ستور',
         subtitle: 'منتجات مختارة بعناية، عرض أوضح، وصور أفضل لتجربة شراء أسهل وأسرع على الهاتف وسطح المكتب.',
         primaryCta: 'تسوق الآن',
         secondaryCta: 'وصل حديثاً',
@@ -27,7 +29,6 @@ export function HeroSection() {
       }
     : {
         kicker: 'Premium shopping experience',
-        title: 'Floya Store',
         subtitle: 'Carefully selected products, clearer presentation, and stronger imagery for a faster buying experience across mobile and desktop.',
         primaryCta: 'Shop now',
         secondaryCta: 'New arrivals',
@@ -54,7 +55,7 @@ export function HeroSection() {
       <div className="container mx-auto">
         <div className="relative overflow-hidden rounded-[34px] bg-gradient-to-br from-secondary via-brand-ink to-brand-night px-6 py-16 text-secondary-foreground shadow-heavy md:px-10 lg:px-14 lg:py-24">
           <div className="absolute inset-0">
-            <Image src={primaryHeroImage} alt={copy.title} fill className="object-cover opacity-20" sizes="100vw" priority />
+            <Image src={primaryHeroImage} alt={brandName} fill className="object-cover opacity-20" sizes="100vw" priority />
             <div className="absolute inset-0 bg-gradient-to-b from-brand-night/85 via-secondary/72 to-black/68" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(214,163,124,0.16),transparent_28%)]" />
           </div>
@@ -64,7 +65,7 @@ export function HeroSection() {
 
           <div className="relative mx-auto flex max-w-4xl flex-col items-center text-center">
             <span className="section-kicker w-fit border-white/10 bg-white/10 text-primary-foreground">{copy.kicker}</span>
-            <h1 className="mt-6 text-4xl font-bold leading-[1.1] md:text-6xl lg:text-7xl">{copy.title}</h1>
+            <h1 className="mt-6 text-4xl font-bold leading-[1.1] md:text-6xl lg:text-7xl">{brandName}</h1>
             <p className="mt-5 max-w-2xl text-base leading-8 text-secondary-foreground/80 md:text-lg">{copy.subtitle}</p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">

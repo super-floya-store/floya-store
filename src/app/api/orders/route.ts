@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
       if (settings.order_email_enabled !== false) {
         const orderWithItems = { ...order, items: orderItemsWithOrderId }
         const email = buildOrderConfirmationEmail(orderWithItems as any, settings)
-        const fromName = settings.email_sender_name || settings.store_name?.ar || 'Floya Store'
+        const fromName = settings.email_sender_name || settings.store_name?.en || settings.store_name?.ar || 'Store'
         const fromAddress = settings.email_sender_address || 'onboarding@resend.dev'
 
         await sendResendEmail({

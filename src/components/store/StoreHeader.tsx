@@ -7,6 +7,8 @@ import { useUIStore } from '@/stores/ui-store'
 import { useEffect, useState } from 'react'
 import { useWishlistStore } from '@/stores/wishlist-store'
 import { useAuth } from '@/hooks/useAuth'
+import { useStoreBranding } from '@/hooks/useStoreBranding'
+import Image from 'next/image'
 
 export function StoreHeader() {
   const hasHydrated = useCartStore((s) => s.hasHydrated)
@@ -16,8 +18,10 @@ export function StoreHeader() {
   const locale = useUIStore((s) => s.locale)
   const setLocale = useUIStore((s) => s.setLocale)
   const { user } = useAuth()
+  const branding = useStoreBranding()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const brandTitle = locale === 'ar' ? branding.nameAr : branding.nameEn
 
   const copy = locale === 'ar'
     ? {
@@ -39,7 +43,6 @@ export function StoreHeader() {
         mobileCta: 'ابدأ التسوق الآن',
         close: 'إغلاق',
         ready: 'جاهز للتسوق',
-        brandTitle: 'فلويا ستور',
       }
     : {
         home: 'Home',
@@ -60,7 +63,6 @@ export function StoreHeader() {
         mobileCta: 'Start shopping',
         close: 'Close',
         ready: 'Ready to shop',
-        brandTitle: 'Floya Store',
       }
 
   useEffect(() => {
@@ -93,11 +95,15 @@ export function StoreHeader() {
               <span className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/10 via-transparent to-secondary/10" />
               <span className="relative flex items-center gap-3">
                 <span className="flex size-10 items-center justify-center rounded-full bg-secondary text-sm font-bold text-secondary-foreground shadow-soft">
-                  F
+                  {branding.logoUrl ? (
+                    <Image src={branding.logoUrl} alt={brandTitle} width={40} height={40} className="size-10 rounded-full object-cover" />
+                  ) : (
+                    brandTitle.charAt(0).toUpperCase()
+                  )}
                 </span>
                 <span className="flex flex-col leading-none">
-                  <span className="text-sm font-semibold tracking-[0.24em] text-primary">FLOYA</span>
-                  <span className="mt-1 text-base font-bold">{copy.brandTitle}</span>
+                  <span className="text-sm font-semibold tracking-[0.24em] text-primary">{brandTitle.toUpperCase()}</span>
+                  <span className="mt-1 text-base font-bold">{brandTitle}</span>
                 </span>
               </span>
             </Link>
@@ -208,7 +214,7 @@ export function StoreHeader() {
       >
         <div className="flex items-center justify-between border-b border-border pb-4">
           <div className="flex flex-col">
-            <span className="text-xs font-semibold tracking-[0.24em] text-primary">FLOYA STORE</span>
+            <span className="text-xs font-semibold tracking-[0.24em] text-primary">{brandTitle.toUpperCase()}</span>
             <span className="mt-1 text-lg font-bold text-secondary">{copy.mobileTitle}</span>
           </div>
           <button

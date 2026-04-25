@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -191,6 +192,13 @@ export default function AdminSettingsPage() {
         throw new Error(data?.error?.message || `تعذر حفظ الإعدادات (${res.status})`)
       }
 
+      setSettings((current) => ({
+        ...current,
+        store_name_ar: data.data?.store_name?.ar || current.store_name_ar,
+        store_name_en: data.data?.store_name?.en || current.store_name_en,
+        logo_url: data.data?.logo_url || current.logo_url,
+      }))
+      window.dispatchEvent(new CustomEvent('store-branding-updated', { detail: data.data }))
       setMessage('تم حفظ الإعدادات بنجاح')
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'تعذر حفظ الإعدادات')
@@ -289,6 +297,13 @@ export default function AdminSettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="logo-url">رابط الشعار</Label>
               <Input id="logo-url" value={settings.logo_url} onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })} />
+              <p className="text-xs text-muted-foreground">سيتم استخدام هذا الرابط للشعار والهوية الظاهرة في الواجهة وتبويب المتصفح.</p>
+              {settings.logo_url ? (
+                <div className="flex items-center gap-3 rounded-md border border-input p-3">
+                  <Image src={settings.logo_url} alt="Logo preview" width={40} height={40} className="rounded-md object-cover" />
+                  <span className="text-sm text-muted-foreground">معاينة الشعار الحالي</span>
+                </div>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="hero-images">صور الواجهة</Label>

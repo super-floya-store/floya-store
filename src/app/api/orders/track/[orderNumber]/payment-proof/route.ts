@@ -54,7 +54,7 @@ export async function POST(request: NextRequest, { params }: { params: { orderNu
     const adminEmail = settings.admin_notification_email || settings.store_email
     if (adminEmail) {
       await sendResendEmail({
-        from: `${settings.email_sender_name || 'Floya Store'} <${settings.email_sender_address || 'onboarding@resend.dev'}>`,
+        from: `${settings.email_sender_name || settings.store_name?.en || settings.store_name?.ar || 'Store'} <${settings.email_sender_address || 'onboarding@resend.dev'}>`,
         to: adminEmail,
         subject: `إثبات دفع جديد للطلب ${params.orderNumber}`,
         html: `<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;line-height:1.9"><h2>إثبات دفع جديد</h2><p><strong>رقم الطلب:</strong> ${params.orderNumber}</p><p><strong>رقم العملية:</strong> ${transactionId}</p><p><a href="${publicData.publicUrl}">عرض الصورة</a></p></div>`,

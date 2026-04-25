@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     if (adminEmail) {
       const email = buildNewCommentEmail(data as Comment, settings)
-      const fromName = settings.email_sender_name || settings.store_name?.ar || 'Floya Store'
+      const fromName = settings.email_sender_name || settings.store_name?.en || settings.store_name?.ar || 'Store'
       const fromAddress = settings.email_sender_address || 'onboarding@resend.dev'
 
       await sendResendEmail({

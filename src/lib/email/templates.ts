@@ -19,7 +19,7 @@ export function buildOrderConfirmationEmail(order: OrderWithItems, settings: Sto
     customer_name: order.customer_name,
     order_number: order.order_number,
     order_total: `${order.total.toLocaleString()} د.ج`,
-    store_name: settings.store_name?.ar || 'فلويا ستور',
+    store_name: settings.store_name?.en || settings.store_name?.ar || 'Store',
   }
 
   return {
@@ -40,7 +40,7 @@ export function buildOrderStatusEmail(order: OrderWithItems, settings: StoreSett
     order_number: order.order_number,
     order_status: order.status,
     tracking_block: order.tracking_number ? `رقم التتبع: ${order.tracking_number}` : '',
-    store_name: settings.store_name?.ar || 'فلويا ستور',
+    store_name: settings.store_name?.en || settings.store_name?.ar || 'Store',
   }
 
   return {
