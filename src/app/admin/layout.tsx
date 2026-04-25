@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
 import { AdminHeader } from '@/components/admin/AdminHeader'
-import { useUIStore } from '@/stores/ui-store'
 
 export default function AdminLayout({
   children,
@@ -14,7 +13,6 @@ export default function AdminLayout({
 }) {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const locale = useUIStore((state) => state.locale)
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   useEffect(() => {
@@ -36,7 +34,7 @@ export default function AdminLayout({
   if (!user) return null
 
   return (
-    <div className={`min-h-screen bg-muted/30 lg:flex ${locale === 'ar' ? 'lg:flex-row-reverse' : 'lg:flex-row'}`}>
+    <div className="min-h-screen bg-muted/30 lg:flex lg:flex-row-reverse">
       {sidebarOpen ? <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} /> : null}
       <div className="flex min-w-0 flex-1 flex-col">
         <AdminHeader sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((value) => !value)} />

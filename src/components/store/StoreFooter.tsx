@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Phone, Mail, MapPin, Facebook, Instagram, ArrowUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useUIStore } from '@/stores/ui-store'
+import { useAuth } from '@/hooks/useAuth'
 
 interface Settings {
   store_phone?: string
@@ -15,6 +16,7 @@ interface Settings {
 
 export function StoreFooter() {
   const locale = useUIStore((state) => state.locale)
+  const { user } = useAuth()
   const [settings, setSettings] = useState<Settings>({})
 
   useEffect(() => {
@@ -41,8 +43,6 @@ export function StoreFooter() {
           { href: '/products', label: 'جميع المنتجات' },
           { href: '/search', label: 'البحث' },
           { href: '/contact', label: 'تواصل معنا' },
-          { href: '/login', label: 'دخول الحساب' },
-          { href: '/signup', label: 'إنشاء حساب' },
         ],
         contact: 'تواصل معنا',
         top: 'العودة إلى الأعلى',
@@ -60,8 +60,6 @@ export function StoreFooter() {
           { href: '/products', label: 'All products' },
           { href: '/search', label: 'Search' },
           { href: '/contact', label: 'Contact us' },
-          { href: '/login', label: 'Sign in' },
-          { href: '/signup', label: 'Create account' },
         ],
         contact: 'Contact us',
         top: 'Back to top',
@@ -104,7 +102,10 @@ export function StoreFooter() {
             <h3 className="text-lg font-bold">{copy.quickLinks}</h3>
             <div className="h-px w-16 bg-gradient-to-r from-primary to-transparent" />
             <div className="flex flex-col gap-3 text-sm">
-              {copy.links.map((item) => (
+              {[...copy.links, ...(user ? [{ href: '/account', label: locale === 'ar' ? 'الحساب' : 'Account' }] : [
+                { href: '/login', label: locale === 'ar' ? 'دخول الحساب' : 'Sign in' },
+                { href: '/signup', label: locale === 'ar' ? 'إنشاء حساب' : 'Create account' },
+              ])].map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}

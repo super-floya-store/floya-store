@@ -5,12 +5,14 @@ import { ProductCard } from './ProductCard'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Product } from '@/types/product'
 import { Button } from '@/components/ui/button'
+import { useUIStore } from '@/stores/ui-store'
 
 interface ProductGridProps {
   categorySlug?: string
 }
 
 export function ProductGrid({ categorySlug }: ProductGridProps) {
+  const locale = useUIStore((state) => state.locale)
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [sort, setSort] = useState('newest')
@@ -18,6 +20,33 @@ export function ProductGrid({ categorySlug }: ProductGridProps) {
   const [inStockOnly, setInStockOnly] = useState(false)
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
+  const copy = locale === 'ar'
+    ? {
+        empty: 'لا توجد منتجات متاحة حالياً',
+        emptyBody: 'سيظهر هذا القسم بشكل رائع فور إضافة أول المنتجات إلى المتجر.',
+        search: 'ابحث داخل المنتجات',
+        newest: 'الأحدث',
+        priceAsc: 'السعر: من الأقل',
+        priceDesc: 'السعر: من الأعلى',
+        name: 'الاسم',
+        minPrice: 'أقل سعر',
+        maxPrice: 'أعلى سعر',
+        inStockOnly: 'المتوفر فقط',
+        inStockFilter: 'فلتر المتوفر',
+      }
+    : {
+        empty: 'No products are available right now',
+        emptyBody: 'This section will populate as soon as products are added to the store.',
+        search: 'Search products',
+        newest: 'Newest',
+        priceAsc: 'Price: low to high',
+        priceDesc: 'Price: high to low',
+        name: 'Name',
+        minPrice: 'Min price',
+        maxPrice: 'Max price',
+        inStockOnly: 'In stock only',
+        inStockFilter: 'Stock filter',
+      }
 
   useEffect(() => {
     async function fetchProducts() {
@@ -66,8 +95,8 @@ export function ProductGrid({ categorySlug }: ProductGridProps) {
     return (
       <div className="surface-card flex flex-col items-center gap-4 rounded-[30px] px-6 py-12 text-center">
         <div className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary">✦</div>
-        <p className="text-base font-semibold text-secondary">لا توجد منتجات متاحة حالياً</p>
-        <p className="max-w-md text-sm leading-7 text-muted-foreground">سيظهر هذا القسم بشكل رائع فور إضافة أول المنتجات إلى المتجر.</p>
+        <p className="text-base font-semibold text-secondary">{copy.empty}</p>
+        <p className="max-w-md text-sm leading-7 text-muted-foreground">{copy.emptyBody}</p>
       </div>
     )
   }
@@ -76,17 +105,17 @@ export function ProductGrid({ categorySlug }: ProductGridProps) {
     <div className="space-y-5">
       <div className="surface-card rounded-[28px] p-4">
         <div className="grid gap-3 md:grid-cols-5">
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ابحث داخل المنتجات" className="min-h-[46px] rounded-2xl border border-border bg-white px-4 text-sm text-foreground" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={copy.search} className="min-h-[46px] rounded-2xl border border-border bg-white px-4 text-sm text-foreground" />
           <select value={sort} onChange={(e) => setSort(e.target.value)} className="min-h-[46px] rounded-2xl border border-border bg-white px-4 text-sm text-foreground">
-            <option value="newest">الأحدث</option>
-            <option value="price_asc">السعر: من الأقل</option>
-            <option value="price_desc">السعر: من الأعلى</option>
-            <option value="name_asc">الاسم</option>
+            <option value="newest">{copy.newest}</option>
+            <option value="price_asc">{copy.priceAsc}</option>
+            <option value="price_desc">{copy.priceDesc}</option>
+            <option value="name_asc">{copy.name}</option>
           </select>
-          <input value={minPrice} onChange={(e) => setMinPrice(e.target.value)} type="number" placeholder="أقل سعر" className="min-h-[46px] rounded-2xl border border-border bg-white px-4 text-sm text-foreground" />
-          <input value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} type="number" placeholder="أعلى سعر" className="min-h-[46px] rounded-2xl border border-border bg-white px-4 text-sm text-foreground" />
+          <input value={minPrice} onChange={(e) => setMinPrice(e.target.value)} type="number" placeholder={copy.minPrice} className="min-h-[46px] rounded-2xl border border-border bg-white px-4 text-sm text-foreground" />
+          <input value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} type="number" placeholder={copy.maxPrice} className="min-h-[46px] rounded-2xl border border-border bg-white px-4 text-sm text-foreground" />
           <Button type="button" variant={inStockOnly ? 'default' : 'outline'} className="min-h-[46px] rounded-2xl" onClick={() => setInStockOnly((v) => !v)}>
-            {inStockOnly ? 'المتوفر فقط' : 'فلتر المتوفر'}
+            {inStockOnly ? copy.inStockOnly : copy.inStockFilter}
           </Button>
         </div>
       </div>

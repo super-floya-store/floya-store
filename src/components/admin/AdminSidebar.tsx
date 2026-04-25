@@ -25,17 +25,17 @@ import {
 } from 'lucide-react'
 
 const navItems = [
-  { href: '/admin', label: 'لوحة التحكم', icon: LayoutDashboard },
-  { href: '/admin/products', label: 'المنتجات', icon: ShoppingBag },
-  { href: '/admin/categories', label: 'الفئات', icon: Shapes },
-  { href: '/admin/orders', label: 'الطلبات', icon: Receipt },
-  { href: '/admin/payments', label: 'المدفوعات', icon: ShieldAlert },
-  { href: '/admin/analytics', label: 'التحليلات', icon: BarChart3 },
-  { href: '/admin/comments', label: 'التعليقات', icon: MessageSquare },
-  { href: '/admin/inbox', label: 'الرسائل', icon: Mail },
-  { href: '/admin/customers', label: 'العملاء', icon: PackageSearch },
-  { href: '/admin/suppliers', label: 'الموردون', icon: Truck },
-  { href: '/admin/settings', label: 'الإعدادات', icon: Settings },
+  { href: '/admin', labelAr: 'لوحة التحكم', labelEn: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/products', labelAr: 'المنتجات', labelEn: 'Products', icon: ShoppingBag },
+  { href: '/admin/categories', labelAr: 'الفئات', labelEn: 'Categories', icon: Shapes },
+  { href: '/admin/orders', labelAr: 'الطلبات', labelEn: 'Orders', icon: Receipt },
+  { href: '/admin/payments', labelAr: 'المدفوعات', labelEn: 'Payments', icon: ShieldAlert },
+  { href: '/admin/analytics', labelAr: 'التحليلات', labelEn: 'Analytics', icon: BarChart3 },
+  { href: '/admin/comments', labelAr: 'التعليقات', labelEn: 'Comments', icon: MessageSquare },
+  { href: '/admin/inbox', labelAr: 'الرسائل', labelEn: 'Inbox', icon: Mail },
+  { href: '/admin/customers', labelAr: 'العملاء', labelEn: 'Customers', icon: PackageSearch },
+  { href: '/admin/suppliers', labelAr: 'الموردون', labelEn: 'Suppliers', icon: Truck },
+  { href: '/admin/settings', labelAr: 'الإعدادات', labelEn: 'Settings', icon: Settings },
 ]
 
 interface AdminSidebarProps {
@@ -47,6 +47,23 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
   const pathname = usePathname()
   const { user, logout } = useAuth()
   const locale = useUIStore((state) => state.locale)
+  const copy = locale === 'ar'
+    ? {
+        brand: 'فلويا ستور',
+        storefront: 'الواجهة',
+        products: 'المنتجات',
+        visitStore: 'زيارة المتجر',
+        profile: 'الملف الشخصي',
+        logout: 'تسجيل الخروج',
+      }
+    : {
+        brand: 'Floya Store',
+        storefront: 'Storefront',
+        products: 'Products',
+        visitStore: 'Visit store',
+        profile: 'Profile',
+        logout: 'Log out',
+      }
 
   return (
     <>
@@ -58,15 +75,13 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
       />
       <aside
         className={`fixed top-0 z-40 h-[100dvh] w-[86vw] max-w-sm bg-secondary text-secondary-foreground shadow-heavy transition-transform duration-300 lg:hidden ${
-          locale === 'ar'
-            ? open ? 'right-0 translate-x-0 border-l border-white/10' : 'right-0 translate-x-full border-l border-white/10'
-            : open ? 'left-0 translate-x-0 border-r border-white/10' : 'left-0 -translate-x-full border-r border-white/10'
+          open ? 'right-0 translate-x-0 border-l border-white/10' : 'right-0 translate-x-full border-l border-white/10'
         }`}
       >
         <div className="flex h-full flex-col">
           <div className="border-b border-white/10 p-6">
             <Link href="/admin" className="text-xl font-bold text-white">
-              فلويا ستور
+              {copy.brand}
             </Link>
             {user && <p className="mt-1 text-sm text-white/60">{user.full_name || user.username}</p>}
             <div className="mt-4 flex gap-2">
@@ -76,7 +91,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
                 className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-medium text-white/85 transition hover:bg-white/15"
               >
                 <Store className="h-3.5 w-3.5" />
-                الواجهة
+                {copy.storefront}
               </Link>
               <Link
                 href="/products"
@@ -84,7 +99,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
                 className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-medium text-white/85 transition hover:bg-white/15"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
-                المنتجات
+                {copy.products}
               </Link>
             </div>
           </div>
@@ -105,7 +120,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
                   )}
                 >
                   <Icon className="h-5 w-5" />
-                  <span>{item.label}</span>
+                  <span>{locale === 'ar' ? item.labelAr : item.labelEn}</span>
                   {isActive && <ChevronRight className={cn('h-4 w-4', locale === 'ar' ? 'mr-auto' : 'ml-auto rotate-180')} />}
                 </Link>
               )
@@ -119,7 +134,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
             >
               <ExternalLink className="h-5 w-5" />
-              <span>زيارة المتجر</span>
+              <span>{copy.visitStore}</span>
             </Link>
             <Link
               href="/admin/profile"
@@ -131,26 +146,24 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               )}
             >
               <User className="h-5 w-5" />
-              <span>الملف الشخصي</span>
+              <span>{copy.profile}</span>
             </Link>
             <button
               onClick={logout}
               className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
             >
               <LogOut className="h-5 w-5" />
-              <span>تسجيل الخروج</span>
+              <span>{copy.logout}</span>
             </button>
           </div>
         </div>
       </aside>
 
-      <aside className={`sticky top-0 hidden h-screen w-64 shrink-0 bg-secondary text-secondary-foreground shadow-heavy xl:w-72 2xl:w-80 lg:block ${
-        locale === 'ar' ? 'border-l border-white/10' : 'border-r border-white/10'
-      }`}>
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-l border-white/10 bg-secondary text-secondary-foreground shadow-heavy xl:w-72 2xl:w-80 lg:block">
         <div className="flex h-full flex-col">
           <div className="border-b border-white/10 p-6">
             <Link href="/admin" className="text-xl font-bold text-white">
-              فلويا ستور
+              {copy.brand}
             </Link>
             {user && <p className="mt-1 text-sm text-white/60">{user.full_name || user.username}</p>}
             <div className="mt-4 flex gap-2">
@@ -160,7 +173,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
                 className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-medium text-white/85 transition hover:bg-white/15"
               >
                 <Store className="h-3.5 w-3.5" />
-                الواجهة
+                {copy.storefront}
               </Link>
               <Link
                 href="/products"
@@ -168,7 +181,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
                 className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-medium text-white/85 transition hover:bg-white/15"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
-                المنتجات
+                {copy.products}
               </Link>
             </div>
           </div>
@@ -189,7 +202,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
                   )}
                 >
                   <Icon className="h-5 w-5" />
-                  <span>{item.label}</span>
+                  <span>{locale === 'ar' ? item.labelAr : item.labelEn}</span>
                   {isActive && <ChevronRight className={cn('h-4 w-4', locale === 'ar' ? 'mr-auto' : 'ml-auto rotate-180')} />}
                 </Link>
               )
@@ -203,7 +216,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
             >
               <ExternalLink className="h-5 w-5" />
-              <span>زيارة المتجر</span>
+              <span>{copy.visitStore}</span>
             </Link>
             <Link
               href="/admin/profile"
@@ -215,14 +228,14 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
               )}
             >
               <User className="h-5 w-5" />
-              <span>الملف الشخصي</span>
+              <span>{copy.profile}</span>
             </Link>
             <button
               onClick={logout}
               className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
             >
               <LogOut className="h-5 w-5" />
-              <span>تسجيل الخروج</span>
+              <span>{copy.logout}</span>
             </button>
           </div>
         </div>

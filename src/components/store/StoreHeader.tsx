@@ -6,6 +6,7 @@ import { useCartStore } from '@/stores/cart-store'
 import { useUIStore } from '@/stores/ui-store'
 import { useEffect, useState } from 'react'
 import { useWishlistStore } from '@/stores/wishlist-store'
+import { useAuth } from '@/hooks/useAuth'
 
 export function StoreHeader() {
   const hasHydrated = useCartStore((s) => s.hasHydrated)
@@ -14,6 +15,7 @@ export function StoreHeader() {
   const toggleCart = useUIStore((s) => s.toggleCartDrawer)
   const locale = useUIStore((s) => s.locale)
   const setLocale = useUIStore((s) => s.setLocale)
+  const { user } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
 
@@ -29,6 +31,7 @@ export function StoreHeader() {
         menu: 'القائمة',
         signIn: 'دخول الحساب',
         signUp: 'إنشاء حساب',
+        profile: 'الحساب',
         switchLabel: 'AR / EN',
         switchTitle: 'English',
         mobileTitle: 'تسوق أوضح وأسرع',
@@ -49,6 +52,7 @@ export function StoreHeader() {
         menu: 'Menu',
         signIn: 'Sign in',
         signUp: 'Create account',
+        profile: 'Account',
         switchLabel: 'AR / EN',
         switchTitle: 'العربية',
         mobileTitle: 'Clean, premium shopping',
@@ -115,18 +119,29 @@ export function StoreHeader() {
             </nav>
 
             <div className="flex items-center gap-2 md:gap-3">
-              <Link
-                href="/login"
-                className="surface-card premium-outline hidden min-h-[48px] items-center justify-center rounded-full px-4 text-xs font-semibold text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft md:inline-flex"
-              >
-                {copy.signIn}
-              </Link>
-              <Link
-                href="/signup"
-                className="surface-card premium-outline hidden min-h-[48px] items-center justify-center rounded-full px-4 text-xs font-semibold text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft md:inline-flex"
-              >
-                {copy.signUp}
-              </Link>
+              {user ? (
+                <Link
+                  href="/account"
+                  className="surface-card premium-outline hidden min-h-[48px] items-center justify-center rounded-full px-4 text-xs font-semibold text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft md:inline-flex"
+                >
+                  {copy.profile}
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="surface-card premium-outline hidden min-h-[48px] items-center justify-center rounded-full px-4 text-xs font-semibold text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft md:inline-flex"
+                  >
+                    {copy.signIn}
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="surface-card premium-outline hidden min-h-[48px] items-center justify-center rounded-full px-4 text-xs font-semibold text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft md:inline-flex"
+                  >
+                    {copy.signUp}
+                  </Link>
+                </>
+              )}
               <Link
                 href="/search"
                 className="surface-card premium-outline hidden min-h-[48px] min-w-[48px] items-center justify-center rounded-full text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft md:inline-flex"
@@ -211,8 +226,12 @@ export function StoreHeader() {
             { href: '/categories/new-arrivals', label: copy.arrivals },
             { href: '/search', label: copy.search },
             { href: '/contact', label: copy.contact },
-            { href: '/login', label: copy.signIn },
-            { href: '/signup', label: copy.signUp },
+            ...(user
+              ? [{ href: '/account', label: copy.profile }]
+              : [
+                  { href: '/login', label: copy.signIn },
+                  { href: '/signup', label: copy.signUp },
+                ]),
           ].map((item) => (
             <Link
               key={item.href}

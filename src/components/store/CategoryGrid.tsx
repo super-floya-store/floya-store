@@ -6,10 +6,15 @@ import Image from 'next/image'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Category } from '@/types/category'
 import { getFallbackCategoryImage } from '@/lib/storefront-images'
+import { useUIStore } from '@/stores/ui-store'
 
 export function CategoryGrid() {
+  const locale = useUIStore((state) => state.locale)
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
+  const copy = locale === 'ar'
+    ? { kicker: 'الفئات الأكثر طلباً', title: 'تصفح الفئات', cta: 'تسوق الآن' }
+    : { kicker: 'Top categories', title: 'Browse categories', cta: 'Shop now' }
 
   useEffect(() => {
     async function fetchCategories() {
@@ -47,8 +52,8 @@ export function CategoryGrid() {
     <section className="px-4 md:px-6">
       <div className="container mx-auto">
         <div className="mb-8 flex flex-col gap-3 md:mb-10">
-          <span className="section-kicker w-fit">الفئات الأكثر طلباً</span>
-          <h2 className="section-title">تصفح الفئات</h2>
+          <span className="section-kicker w-fit">{copy.kicker}</span>
+          <h2 className="section-title">{copy.title}</h2>
           <div className="section-divider" />
         </div>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
@@ -61,7 +66,7 @@ export function CategoryGrid() {
               <div className="relative flex aspect-square items-end overflow-hidden rounded-[26px] px-4 py-5 text-white">
                 <Image
                   src={category.image_url || category.gallery_images?.[0] || getFallbackCategoryImage(index)}
-                  alt={category.name_ar}
+                  alt={locale === 'ar' ? category.name_ar : category.name_en}
                   fill
                   className="object-cover transition duration-500 group-hover:scale-110"
                   sizes="(max-width: 768px) 50vw, 20vw"
@@ -70,9 +75,9 @@ export function CategoryGrid() {
                 <div className="absolute -left-10 top-6 size-24 rounded-full bg-primary/20 blur-2xl transition duration-500 group-hover:scale-125" />
                 <div className="absolute bottom-0 right-0 h-24 w-24 rounded-full bg-white/10 blur-2xl transition duration-500 group-hover:translate-x-2 group-hover:translate-y-1" />
                 <div className="relative flex w-full flex-col gap-3">
-                  <span className="w-fit rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-primary-foreground">تسوق الآن</span>
+                  <span className="w-fit rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-primary-foreground">{copy.cta}</span>
                   <span className="text-lg font-bold leading-relaxed transition-transform group-hover:-translate-y-0.5">
-                    {category.name_ar}
+                    {locale === 'ar' ? category.name_ar : category.name_en}
                   </span>
                 </div>
               </div>
