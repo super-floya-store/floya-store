@@ -19,6 +19,12 @@ type AdminSettingsForm = {
   logo_url: string
   hero_images: string
   baridimob_rip: string
+  binance_wallet_address: string
+  payment_methods: {
+    baridimob: boolean
+    cod: boolean
+    binance: boolean
+  }
   admin_notification_email: string
   email_sender_name: string
   email_sender_address: string
@@ -40,6 +46,12 @@ const defaultSettings: AdminSettingsForm = {
   logo_url: '',
   hero_images: '',
   baridimob_rip: '00799999004419717033',
+  binance_wallet_address: '',
+  payment_methods: {
+    baridimob: true,
+    cod: true,
+    binance: false,
+  },
   admin_notification_email: 'contact@floya.dz',
   email_sender_name: 'Floya Store',
   email_sender_address: 'onboarding@resend.dev',
@@ -88,6 +100,8 @@ export default function AdminSettingsPage() {
           logo_url: data.data?.logo_url || defaultSettings.logo_url,
           hero_images: Array.isArray(data.data?.hero_images) ? data.data.hero_images.join('\n') : defaultSettings.hero_images,
           baridimob_rip: data.data?.baridimob_rip || defaultSettings.baridimob_rip,
+          binance_wallet_address: data.data?.binance_wallet_address || defaultSettings.binance_wallet_address,
+          payment_methods: data.data?.payment_methods || defaultSettings.payment_methods,
           admin_notification_email: data.data?.admin_notification_email || data.data?.store_email || defaultSettings.admin_notification_email,
           email_sender_name: data.data?.email_sender_name || defaultSettings.email_sender_name,
           email_sender_address: data.data?.email_sender_address || defaultSettings.email_sender_address,
@@ -134,6 +148,8 @@ export default function AdminSettingsPage() {
         logo_url: settings.logo_url,
         hero_images: settings.hero_images.split('\n').map((item) => item.trim()).filter(Boolean),
         baridimob_rip: settings.baridimob_rip,
+        binance_wallet_address: settings.binance_wallet_address,
+        payment_methods: settings.payment_methods,
         admin_notification_email: settings.admin_notification_email,
         email_sender_name: settings.email_sender_name,
         email_sender_address: settings.email_sender_address,
@@ -227,6 +243,35 @@ export default function AdminSettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="baridimob-rip">RIP باريدي موب</Label>
               <Input id="baridimob-rip" value={settings.baridimob_rip} onChange={(e) => setSettings({ ...settings, baridimob_rip: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="binance-wallet-address">عنوان محفظة Binance / USDT</Label>
+              <Input id="binance-wallet-address" value={settings.binance_wallet_address} onChange={(e) => setSettings({ ...settings, binance_wallet_address: e.target.value })} />
+            </div>
+            <div className="space-y-3">
+              <Label>طرق الدفع المتاحة</Label>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[
+                  { key: 'baridimob', label: 'BaridiMob' },
+                  { key: 'cod', label: 'الدفع عند الاستلام' },
+                  { key: 'binance', label: 'Binance / USDT' },
+                ].map((item) => (
+                  <label key={item.key} className="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={settings.payment_methods[item.key as keyof AdminSettingsForm['payment_methods']]}
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        payment_methods: {
+                          ...settings.payment_methods,
+                          [item.key]: e.target.checked,
+                        },
+                      })}
+                    />
+                    <span>{item.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="logo-url">رابط الشعار</Label>

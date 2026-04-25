@@ -11,6 +11,12 @@ export interface Settings {
   logo_url: string
   hero_images: string[]
   baridimob_rip?: string
+  binance_wallet_address?: string
+  payment_methods?: {
+    baridimob: boolean
+    cod: boolean
+    binance: boolean
+  }
   social_links: Record<string, string>
   seo_defaults: Record<string, string>
   email_notifications: { new_order: boolean; status_change: boolean }

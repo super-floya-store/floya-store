@@ -9,8 +9,41 @@ import Link from 'next/link'
 
 export function CartDrawer() {
   const { items, removeItem, updateQuantity, subtotal, clearCart, hasHydrated } = useCartStore()
-  const { cartDrawerOpen, closeCartDrawer } = useUIStore()
+  const { cartDrawerOpen, closeCartDrawer, locale } = useUIStore()
   const total = subtotal()
+  const copy = locale === 'ar'
+    ? {
+        title: 'سلة التسوق',
+        empty: 'سلة التسوق فارغة',
+        emptyBody: 'أضف بعض المنتجات المميزة لتبدأ تجربة شراء أنيقة وسريعة.',
+        shopNow: 'تسوق الآن',
+        subtotal: 'المجموع الفرعي',
+        delivery: 'رسوم التوصيل',
+        total: 'الإجمالي',
+        checkout: 'إتمام الطلب',
+        clear: 'إفراغ السلة',
+        close: 'إغلاق',
+        decrease: 'تقليل',
+        increase: 'زيادة',
+        remove: 'حذف',
+        bag: 'YOUR BAG',
+      }
+    : {
+        title: 'Shopping cart',
+        empty: 'Your cart is empty',
+        emptyBody: 'Add a few products to start a faster and cleaner checkout flow.',
+        shopNow: 'Shop now',
+        subtotal: 'Subtotal',
+        delivery: 'Delivery',
+        total: 'Total',
+        checkout: 'Checkout',
+        clear: 'Clear cart',
+        close: 'Close',
+        decrease: 'Decrease quantity',
+        increase: 'Increase quantity',
+        remove: 'Remove item',
+        bag: 'YOUR BAG',
+      }
 
   if (!hasHydrated) return null
   if (!cartDrawerOpen) return null
@@ -18,13 +51,15 @@ export function CartDrawer() {
   return (
     <>
       <div className="fixed inset-0 z-50 bg-secondary/35 backdrop-blur-md" onClick={closeCartDrawer} />
-      <div className="fixed left-0 top-0 z-50 flex h-full w-full max-w-md flex-col overflow-hidden border-r border-white/40 bg-background/90 shadow-heavy backdrop-blur-2xl rtl:right-0 rtl:left-auto">
+      <div className={`fixed top-0 z-50 flex h-full w-full max-w-md flex-col overflow-hidden bg-background/90 shadow-heavy backdrop-blur-2xl ${
+        locale === 'ar' ? 'right-0 border-l border-white/40' : 'left-0 border-r border-white/40'
+      }`}>
         <div className="flex items-center justify-between border-b border-border/70 px-5 py-4">
           <div>
-            <p className="text-xs font-semibold tracking-[0.16em] text-primary">YOUR BAG</p>
-            <h2 className="mt-1 text-xl font-bold text-secondary">سلة التسوق</h2>
+            <p className="text-xs font-semibold tracking-[0.16em] text-primary">{copy.bag}</p>
+            <h2 className="mt-1 text-xl font-bold text-secondary">{copy.title}</h2>
           </div>
-          <button onClick={closeCartDrawer} className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-secondary text-secondary-foreground transition hover:bg-primary" aria-label="إغلاق">
+          <button onClick={closeCartDrawer} className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-secondary text-secondary-foreground transition hover:bg-primary" aria-label={copy.close}>
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -35,10 +70,10 @@ export function CartDrawer() {
               <div className="flex size-20 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <ShoppingCart className="h-10 w-10" />
               </div>
-              <p className="text-lg font-bold text-secondary">سلة التسوق فارغة</p>
-              <p className="max-w-xs text-sm leading-7 text-muted-foreground">أضيفي بعض المنتجات المميزة لتبدئي تجربة شراء أنيقة وسريعة.</p>
+              <p className="text-lg font-bold text-secondary">{copy.empty}</p>
+              <p className="max-w-xs text-sm leading-7 text-muted-foreground">{copy.emptyBody}</p>
               <Button onClick={closeCartDrawer} className="rounded-full px-6" asChild>
-                <Link href="/products">تسوق الآن</Link>
+                <Link href="/products">{copy.shopNow}</Link>
               </Button>
             </div>
           ) : (
@@ -61,7 +96,7 @@ export function CartDrawer() {
                       <button
                         onClick={() => updateQuantity(item.productId, item.quantity - 1)}
                         className="inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-full bg-secondary/5 transition hover:bg-secondary hover:text-secondary-foreground"
-                        aria-label="تقليل"
+                        aria-label={copy.decrease}
                       >
                         <Minus className="h-4 w-4" />
                       </button>
@@ -69,14 +104,14 @@ export function CartDrawer() {
                       <button
                         onClick={() => updateQuantity(item.productId, item.quantity + 1)}
                         className="inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-full bg-secondary/5 transition hover:bg-secondary hover:text-secondary-foreground"
-                        aria-label="زيادة"
+                        aria-label={copy.increase}
                       >
                         <Plus className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => removeItem(item.productId)}
                         className="ml-auto inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-full text-destructive transition hover:bg-destructive/10"
-                        aria-label="حذف"
+                        aria-label={copy.remove}
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -92,22 +127,22 @@ export function CartDrawer() {
           <div className="border-t border-border/70 bg-white/55 p-4">
             <div className="surface-card flex flex-col gap-4 rounded-[28px] p-4">
               <div className="flex justify-between text-sm">
-                <span>المجموع الفرعي</span>
+                <span>{copy.subtotal}</span>
                 <span className="font-bold">{total.toLocaleString()} د.ج</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>رسوم التوصيل</span>
+                <span>{copy.delivery}</span>
                 <span className="font-bold">500 د.ج</span>
               </div>
               <div className="flex justify-between border-t pt-2 text-lg font-bold">
-                <span>الإجمالي</span>
+                <span>{copy.total}</span>
                 <span>{(total + 500).toLocaleString()} د.ج</span>
               </div>
               <Button className="min-h-[48px] w-full rounded-full bg-gradient-to-r from-primary to-brand-gold text-primary-foreground shadow-glow" asChild onClick={closeCartDrawer}>
-                <Link href="/checkout">إتمام الطلب</Link>
+                <Link href="/checkout">{copy.checkout}</Link>
               </Button>
               <Button variant="outline" className="min-h-[48px] w-full rounded-full" onClick={clearCart}>
-                إفراغ السلة
+                {copy.clear}
               </Button>
             </div>
           </div>

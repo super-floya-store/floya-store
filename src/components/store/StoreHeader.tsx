@@ -19,6 +19,7 @@ export function StoreHeader() {
 
   const copy = locale === 'ar'
     ? {
+        home: 'الرئيسية',
         products: 'المنتجات',
         arrivals: 'وصل حديثاً',
         contact: 'تواصل معنا',
@@ -26,15 +27,19 @@ export function StoreHeader() {
         wishlist: 'المفضلة',
         cart: 'سلة التسوق',
         menu: 'القائمة',
-        signIn: 'تسجيل الدخول',
+        signIn: 'دخول الحساب',
         signUp: 'إنشاء حساب',
         switchLabel: 'AR / EN',
         switchTitle: 'English',
-        mobileTitle: 'تسوق أنيق وواضح',
-        mobileBody: 'اكتشفي منتجات واضحة التفاصيل وصوراً أجمل وتجربة شراء أسرع.',
-        mobileCta: 'ابدئي التسوق الآن',
+        mobileTitle: 'تسوق أوضح وأسرع',
+        mobileBody: 'اكتشف منتجات موضحة جيداً، صوراً أفضل، وتجربة شراء أسهل من أول زيارة.',
+        mobileCta: 'ابدأ التسوق الآن',
+        close: 'إغلاق',
+        ready: 'جاهز للتسوق',
+        brandTitle: 'فلويا ستور',
       }
     : {
+        home: 'Home',
         products: 'Products',
         arrivals: 'New Arrivals',
         contact: 'Contact',
@@ -49,6 +54,9 @@ export function StoreHeader() {
         mobileTitle: 'Clean, premium shopping',
         mobileBody: 'Discover clear products, better imagery, and a faster buying journey.',
         mobileCta: 'Start shopping',
+        close: 'Close',
+        ready: 'Ready to shop',
+        brandTitle: 'Floya Store',
       }
 
   useEffect(() => {
@@ -84,7 +92,7 @@ export function StoreHeader() {
                 </span>
                 <span className="flex flex-col leading-none">
                   <span className="text-sm font-semibold tracking-[0.24em] text-primary">FLOYA</span>
-                  <span className="mt-1 text-base font-bold">فلويا ستور</span>
+                  <span className="mt-1 text-base font-bold">{copy.brandTitle}</span>
                 </span>
               </span>
             </Link>
@@ -177,18 +185,20 @@ export function StoreHeader() {
 
       <aside
         className={`premium-scrollbar fixed bottom-0 top-0 z-50 w-[86vw] max-w-sm overflow-y-auto bg-white/92 p-5 shadow-heavy backdrop-blur-2xl transition-transform duration-500 lg:hidden ${
-          mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-        } right-0`}
+          locale === 'ar'
+            ? mobileMenuOpen ? 'right-0 translate-x-0' : 'right-0 translate-x-full'
+            : mobileMenuOpen ? 'left-0 translate-x-0' : 'left-0 -translate-x-full'
+        }`}
       >
         <div className="flex items-center justify-between border-b border-border pb-4">
           <div className="flex flex-col">
             <span className="text-xs font-semibold tracking-[0.24em] text-primary">FLOYA STORE</span>
-            <span className="mt-1 text-lg font-bold text-secondary">تسوق أنيق وواضح</span>
+            <span className="mt-1 text-lg font-bold text-secondary">{copy.mobileTitle}</span>
           </div>
           <button
             onClick={() => setMobileMenuOpen(false)}
             className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-full bg-secondary text-secondary-foreground"
-            aria-label="إغلاق"
+            aria-label={copy.close}
           >
             <X className="h-5 w-5" />
           </button>
@@ -196,11 +206,11 @@ export function StoreHeader() {
 
         <nav className="mt-6 flex flex-col gap-3">
           {[
-            { href: '/', label: 'الرئيسية' },
-            { href: '/products', label: 'المنتجات' },
-            { href: '/categories/new-arrivals', label: 'وصل حديثاً' },
-            { href: '/search', label: 'البحث' },
-            { href: '/contact', label: 'تواصل معنا' },
+            { href: '/', label: copy.home },
+            { href: '/products', label: copy.products },
+            { href: '/categories/new-arrivals', label: copy.arrivals },
+            { href: '/search', label: copy.search },
+            { href: '/contact', label: copy.contact },
             { href: '/login', label: copy.signIn },
             { href: '/signup', label: copy.signUp },
           ].map((item) => (
@@ -211,13 +221,13 @@ export function StoreHeader() {
               onClick={() => setMobileMenuOpen(false)}
             >
               <span>{item.label}</span>
-              <span className="text-primary/70">←</span>
+              <span className="text-primary/70">{locale === 'ar' ? '←' : '→'}</span>
             </Link>
           ))}
         </nav>
 
         <div className="mt-8 rounded-[28px] bg-gradient-to-br from-secondary via-brand-ink to-brand-night p-5 text-secondary-foreground shadow-heavy">
-          <p className="text-xs font-semibold tracking-[0.2em] text-primary/90">جاهز للتسوق</p>
+          <p className="text-xs font-semibold tracking-[0.2em] text-primary/90">{copy.ready}</p>
           <h3 className="mt-3 text-2xl font-bold leading-relaxed">{copy.mobileTitle}</h3>
           <p className="mt-3 text-sm leading-8 text-white/85">{copy.mobileBody}</p>
           <Link

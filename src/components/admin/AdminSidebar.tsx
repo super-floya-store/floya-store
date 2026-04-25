@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils/cn'
+import { useUIStore } from '@/stores/ui-store'
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -45,6 +46,7 @@ interface AdminSidebarProps {
 export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
   const pathname = usePathname()
   const { user, logout } = useAuth()
+  const locale = useUIStore((state) => state.locale)
 
   return (
     <>
@@ -55,8 +57,10 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         onClick={onClose}
       />
       <aside
-        className={`fixed right-0 top-0 z-40 h-[100dvh] w-[86vw] max-w-sm border-l border-white/10 bg-secondary text-secondary-foreground shadow-heavy transition-transform duration-300 lg:hidden ${
-          open ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed top-0 z-40 h-[100dvh] w-[86vw] max-w-sm bg-secondary text-secondary-foreground shadow-heavy transition-transform duration-300 lg:hidden ${
+          locale === 'ar'
+            ? open ? 'right-0 translate-x-0 border-l border-white/10' : 'right-0 translate-x-full border-l border-white/10'
+            : open ? 'left-0 translate-x-0 border-r border-white/10' : 'left-0 -translate-x-full border-r border-white/10'
         }`}
       >
         <div className="flex h-full flex-col">
@@ -102,7 +106,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
                 >
                   <Icon className="h-5 w-5" />
                   <span>{item.label}</span>
-                  {isActive && <ChevronRight className="mr-auto h-4 w-4" />}
+                  {isActive && <ChevronRight className={cn('h-4 w-4', locale === 'ar' ? 'mr-auto' : 'ml-auto rotate-180')} />}
                 </Link>
               )
             })}
@@ -140,7 +144,9 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         </div>
       </aside>
 
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-l border-white/10 bg-secondary text-secondary-foreground shadow-heavy xl:w-72 2xl:w-80 lg:block">
+      <aside className={`sticky top-0 hidden h-screen w-64 shrink-0 bg-secondary text-secondary-foreground shadow-heavy xl:w-72 2xl:w-80 lg:block ${
+        locale === 'ar' ? 'border-l border-white/10' : 'border-r border-white/10'
+      }`}>
         <div className="flex h-full flex-col">
           <div className="border-b border-white/10 p-6">
             <Link href="/admin" className="text-xl font-bold text-white">
@@ -184,7 +190,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
                 >
                   <Icon className="h-5 w-5" />
                   <span>{item.label}</span>
-                  {isActive && <ChevronRight className="mr-auto h-4 w-4" />}
+                  {isActive && <ChevronRight className={cn('h-4 w-4', locale === 'ar' ? 'mr-auto' : 'ml-auto rotate-180')} />}
                 </Link>
               )
             })}

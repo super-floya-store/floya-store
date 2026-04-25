@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Phone, Mail, MapPin, Facebook, Instagram, ArrowUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useUIStore } from '@/stores/ui-store'
 
 interface Settings {
   store_phone?: string
@@ -13,6 +14,7 @@ interface Settings {
 }
 
 export function StoreFooter() {
+  const locale = useUIStore((state) => state.locale)
   const [settings, setSettings] = useState<Settings>({})
 
   useEffect(() => {
@@ -26,6 +28,45 @@ export function StoreFooter() {
 
   const socialLinks = typeof settings.social_links === 'string' ? JSON.parse(settings.social_links) : (settings.social_links || {})
   const address = typeof settings.store_address === 'string' ? JSON.parse(settings.store_address) : (settings.store_address || { ar: 'تيزي وزو' })
+  const copy = locale === 'ar'
+    ? {
+        kicker: 'واجهة متجر راقية',
+        title: 'فلويا ستور',
+        body: 'تسوق واضح يركز على سهولة التصفح، سرعة الوصول إلى المنتج، وتجربة تبدو احترافية على الهاتف وسطح المكتب.',
+        fastTitle: 'خدمة سريعة',
+        fastBody: 'استفسارات سريعة، ردود أوضح، وتجربة تبدو احترافية.',
+        whatsapp: 'تواصل عبر واتساب',
+        quickLinks: 'روابط سريعة',
+        links: [
+          { href: '/products', label: 'جميع المنتجات' },
+          { href: '/search', label: 'البحث' },
+          { href: '/contact', label: 'تواصل معنا' },
+          { href: '/login', label: 'دخول الحساب' },
+          { href: '/signup', label: 'إنشاء حساب' },
+        ],
+        contact: 'تواصل معنا',
+        top: 'العودة إلى الأعلى',
+        rights: '© 2026 فلويا ستور. جميع الحقوق محفوظة.',
+      }
+    : {
+        kicker: 'PREMIUM STOREFRONT',
+        title: 'Floya Store',
+        body: 'A cleaner shopping experience focused on easy browsing, faster product discovery, and a polished feel on mobile and desktop.',
+        fastTitle: 'Fast support',
+        fastBody: 'Quick questions, clearer answers, and a more professional experience.',
+        whatsapp: 'Chat on WhatsApp',
+        quickLinks: 'Quick links',
+        links: [
+          { href: '/products', label: 'All products' },
+          { href: '/search', label: 'Search' },
+          { href: '/contact', label: 'Contact us' },
+          { href: '/login', label: 'Sign in' },
+          { href: '/signup', label: 'Create account' },
+        ],
+        contact: 'Contact us',
+        top: 'Back to top',
+        rights: '© 2026 Floya Store. All rights reserved.',
+      }
 
   return (
     <footer className="relative overflow-hidden border-t border-white/10 bg-footer-gradient text-secondary-foreground">
@@ -36,17 +77,17 @@ export function StoreFooter() {
       <div className="container relative mx-auto px-4 py-14 md:px-6 lg:py-20">
         <div className="grid gap-8 lg:grid-cols-[1.4fr_0.8fr_1fr]">
           <div className="flex flex-col gap-5">
-            <span className="section-kicker w-fit border-white/10 bg-white/10 text-primary-foreground">PREMIUM STOREFRONT</span>
+            <span className="section-kicker w-fit border-white/10 bg-white/10 text-primary-foreground">{copy.kicker}</span>
             <div>
-              <h3 className="text-3xl font-bold md:text-4xl">فلويا ستور</h3>
+              <h3 className="text-3xl font-bold md:text-4xl">{copy.title}</h3>
               <p className="mt-4 max-w-xl text-sm leading-8 text-secondary-foreground/78 md:text-base">
-                تسوق أنيق وواضح يركز على سهولة التصفح، سرعة الوصول إلى المنتج، وتجربة تبدو احترافية على الهاتف وسطح المكتب.
+                {copy.body}
               </p>
             </div>
             <div className="surface-card flex max-w-xl flex-col gap-3 rounded-[28px] border-white/10 bg-white/10 p-5 text-sm text-secondary md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-xs font-semibold tracking-[0.2em] text-primary">خدمة سريعة</p>
-                <p className="mt-2 text-base font-semibold text-white">استفسارات سريعة، ردود أوضح، وتجربة تبدو احترافية.</p>
+                <p className="text-xs font-semibold tracking-[0.2em] text-primary">{copy.fastTitle}</p>
+                <p className="mt-2 text-base font-semibold text-white">{copy.fastBody}</p>
               </div>
               <a
                 href={`https://wa.me/${settings.store_whatsapp || '213555123456'}`}
@@ -54,36 +95,30 @@ export function StoreFooter() {
                 rel="noopener noreferrer"
                 className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition duration-300 hover:-translate-y-0.5 hover:shadow-glow"
               >
-                تواصل عبر واتساب
+                {copy.whatsapp}
               </a>
             </div>
           </div>
 
           <div className="flex flex-col gap-5">
-            <h3 className="text-lg font-bold">روابط سريعة</h3>
+            <h3 className="text-lg font-bold">{copy.quickLinks}</h3>
             <div className="h-px w-16 bg-gradient-to-r from-primary to-transparent" />
             <div className="flex flex-col gap-3 text-sm">
-              {[
-                { href: '/products', label: 'جميع المنتجات' },
-                { href: '/search', label: 'البحث' },
-                { href: '/contact', label: 'تواصل معنا' },
-                { href: '/login', label: 'تسجيل الدخول' },
-                { href: '/signup', label: 'إنشاء حساب' },
-              ].map((item) => (
+              {copy.links.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   className="group inline-flex min-h-[44px] items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition duration-300 hover:border-primary/40 hover:bg-white/10"
                 >
                   <span>{item.label}</span>
-                  <span className="text-primary transition duration-300 group-hover:-translate-x-1">←</span>
+                  <span className="text-primary transition duration-300 group-hover:-translate-x-1">{locale === 'ar' ? '←' : '→'}</span>
                 </Link>
               ))}
             </div>
           </div>
 
           <div className="flex flex-col gap-5">
-            <h3 className="text-lg font-bold">تواصل معنا</h3>
+            <h3 className="text-lg font-bold">{copy.contact}</h3>
             <div className="h-px w-16 bg-gradient-to-r from-primary to-transparent" />
             <div className="flex flex-col gap-4 text-sm">
               <div className="surface-card flex items-center gap-3 rounded-2xl border-white/10 bg-white/8 px-4 py-3">
@@ -96,7 +131,7 @@ export function StoreFooter() {
               </div>
               <div className="surface-card flex items-center gap-3 rounded-2xl border-white/10 bg-white/8 px-4 py-3">
                 <MapPin className="h-4 w-4 text-primary" />
-                <span>{address?.ar || 'تيزي وزو'}</span>
+                <span>{locale === 'ar' ? (address?.ar || 'تيزي وزو') : (address?.en || 'Algeria')}</span>
               </div>
             </div>
 
@@ -134,7 +169,7 @@ export function StoreFooter() {
               <button
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 className="ml-auto inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-full bg-white/10 text-secondary-foreground transition duration-300 hover:-translate-y-1 hover:bg-primary hover:text-primary-foreground"
-                aria-label="العودة إلى الأعلى"
+                aria-label={copy.top}
               >
                 <ArrowUp className="h-5 w-5" />
               </button>
@@ -143,8 +178,8 @@ export function StoreFooter() {
         </div>
 
         <div className="mt-10 flex flex-col gap-3 border-t border-white/10 pt-6 text-center text-xs text-secondary-foreground/65 md:flex-row md:items-center md:justify-between md:text-sm">
-          <p>© 2026 فلويا ستور. جميع الحقوق محفوظة.</p>
-          <p>{address?.ar || 'الجزائر'} • {settings.store_email || 'contact@floya.dz'}</p>
+          <p>{copy.rights}</p>
+          <p>{locale === 'ar' ? (address?.ar || 'الجزائر') : (address?.en || 'Algeria')} • {settings.store_email || 'contact@floya.dz'}</p>
         </div>
       </div>
     </footer>

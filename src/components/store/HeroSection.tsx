@@ -5,8 +5,10 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { heroFallbackImages } from '@/lib/storefront-images'
 import { useEffect, useState } from 'react'
+import { useUIStore } from '@/stores/ui-store'
 
 export function HeroSection() {
+  const locale = useUIStore((state) => state.locale)
   const [heroImages, setHeroImages] = useState(heroFallbackImages)
   const primaryHeroImage = heroImages[0] || heroFallbackImages[0]
   const secondaryHeroImage = heroImages[1] || heroFallbackImages[1] || primaryHeroImage
@@ -22,6 +24,54 @@ export function HeroSection() {
       })
       .catch(() => {})
   }, [])
+
+  const copy = locale === 'ar'
+    ? {
+        kicker: 'تجربة تسوق راقية',
+        title: 'فلويا ستور',
+        subtitle: 'تشكيلة أنيقة من المنتجات المختارة بعناية مع تفاصيل واضحة، صور أجمل، وتجربة شراء مريحة من أول زيارة.',
+        primaryCta: 'تسوق الآن',
+        secondaryCta: 'وصل حديثاً',
+        stats: [
+          { value: '24/7', label: 'دعم سريع' },
+          { value: '58', label: 'ولاية توصيل' },
+          { value: 'ثقة', label: 'تجربة واضحة' },
+        ],
+        seasonKicker: 'مختارات الموسم',
+        seasonTitle: 'منتجات يومية بتقديم أكثر أناقة',
+        seasonTag: 'وصول سريع',
+        collectionTag: 'اختيارات منتقاة',
+        collectionText: 'صور هادئة ومنسقة تبرز المنتج من غير كسر توازن الواجهة.',
+        touchText: 'واجهة لمسية مريحة ومناسبة للهاتف',
+        chips: [
+          { label: 'تجربة شراء أوضح', value: 'واجهة سهلة' },
+          { label: 'صور مضبوطة', value: 'Responsive' },
+          { label: 'خيارات دفع', value: 'BaridiMob / COD / Binance' },
+        ],
+      }
+    : {
+        kicker: 'Premium shopping experience',
+        title: 'Floya Store',
+        subtitle: 'A refined selection of products with clearer details, better imagery, and a smoother buying journey from the first visit.',
+        primaryCta: 'Shop now',
+        secondaryCta: 'New arrivals',
+        stats: [
+          { value: '24/7', label: 'Fast support' },
+          { value: '58', label: 'Delivery regions' },
+          { value: 'Trust', label: 'Clear shopping flow' },
+        ],
+        seasonKicker: 'Season highlights',
+        seasonTitle: 'Everyday products with a sharper presentation',
+        seasonTag: 'Fast arrival',
+        collectionTag: 'Curated picks',
+        collectionText: 'Balanced photography and layout that keep the product in focus.',
+        touchText: 'Comfortable mobile-first browsing',
+        chips: [
+          { label: 'Clearer checkout', value: 'Easy flow' },
+          { label: 'Sharper media', value: 'Responsive' },
+          { label: 'Payment options', value: 'BaridiMob / COD / Binance' },
+        ],
+      }
 
   return (
     <section className="relative overflow-hidden px-4 pt-6 md:px-6 md:pt-8">
@@ -46,13 +96,13 @@ export function HeroSection() {
 
           <div className="relative grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="fade-up-in flex flex-col gap-6">
-              <span className="section-kicker w-fit border-white/10 bg-white/10 text-primary-foreground">تجربة تسوق راقية</span>
+              <span className="section-kicker w-fit border-white/10 bg-white/10 text-primary-foreground">{copy.kicker}</span>
               <div className="flex flex-col gap-4">
                 <h1 className="max-w-3xl text-4xl font-bold leading-[1.15] md:text-6xl lg:text-7xl">
-                  فلويا ستور
+                  {copy.title}
                 </h1>
                 <p className="max-w-2xl text-base leading-8 text-secondary-foreground/78 md:text-lg">
-                  تشكيلة أنيقة من المنتجات المختارة بعناية مع تفاصيل واضحة، صور أجمل، وتجربة شراء مريحة من أول زيارة.
+                  {copy.subtitle}
                 </p>
               </div>
 
@@ -62,7 +112,7 @@ export function HeroSection() {
                   className="glow-pulse min-h-[52px] rounded-full bg-gradient-to-r from-primary to-brand-gold px-8 text-base font-bold text-primary-foreground shadow-glow transition duration-300 hover:-translate-y-0.5"
                   asChild
                 >
-                  <Link href="/products">تسوقي الآن</Link>
+                  <Link href="/products">{copy.primaryCta}</Link>
                 </Button>
                 <Button
                   size="lg"
@@ -70,16 +120,12 @@ export function HeroSection() {
                   className="min-h-[52px] rounded-full border-white/20 bg-white/10 px-8 text-base font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/15"
                   asChild
                 >
-                  <Link href="/categories/new-arrivals">وصل حديثاً</Link>
+                  <Link href="/categories/new-arrivals">{copy.secondaryCta}</Link>
                 </Button>
               </div>
 
               <div className="grid gap-4 pt-3 sm:grid-cols-3">
-                {[
-                  { value: '24/7', label: 'دعم سريع' },
-                  { value: '58', label: 'ولاية توصيل' },
-                  { value: 'WOW', label: 'انطباع أول' },
-                ].map((item) => (
+                {copy.stats.map((item) => (
                   <div key={item.label} className="surface-card rounded-[24px] border-white/10 bg-white/10 px-4 py-4 text-center">
                     <div className="text-xl font-bold text-white md:text-2xl">{item.value}</div>
                     <div className="mt-1 text-xs text-secondary-foreground/70 md:text-sm">{item.label}</div>
@@ -93,10 +139,10 @@ export function HeroSection() {
                 <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-semibold tracking-[0.2em] text-primary">مختارات الموسم</p>
-                    <h3 className="mt-2 text-2xl font-bold text-white md:text-3xl">أزياء ولمسات يومية بتقديم أكثر أناقة</h3>
+                    <p className="text-xs font-semibold tracking-[0.2em] text-primary">{copy.seasonKicker}</p>
+                    <h3 className="mt-2 text-2xl font-bold text-white md:text-3xl">{copy.seasonTitle}</h3>
                   </div>
-                  <span className="inline-flex rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white/80">وصول سريع</span>
+                  <span className="inline-flex rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white/80">{copy.seasonTag}</span>
                 </div>
 
                 <div className="mt-8 grid gap-4 md:grid-cols-[1.15fr_0.85fr]">
@@ -111,10 +157,10 @@ export function HeroSection() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/18 to-transparent" />
                     <div className="absolute inset-x-0 bottom-0 p-5">
                       <div className="inline-flex rounded-full border border-white/20 bg-black/20 px-3 py-1 text-xs font-semibold text-white/88 backdrop-blur">
-                        وصولات مختارة
+                        {copy.collectionTag}
                       </div>
                       <p className="mt-3 max-w-xs text-xl font-bold leading-8 text-white">
-                        صور هادئة ومنسقة تبرز المنتج من غير ما تكسّر توازن الواجهة
+                        {copy.collectionText}
                       </p>
                     </div>
                   </div>
@@ -129,22 +175,16 @@ export function HeroSection() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/72 via-black/12 to-transparent" />
                       <div className="absolute bottom-0 right-0 p-4">
-                        <p className="text-sm font-bold text-white">واجهة لمسية مريحة ومثالية للهاتف</p>
+                        <p className="text-sm font-bold text-white">{copy.touchText}</p>
                       </div>
                     </div>
                     <div className="grid min-h-[152px] gap-3 rounded-[24px] border border-white/10 bg-black/12 p-4 backdrop-blur-xl">
-                      <div className="flex items-center justify-between rounded-[18px] border border-white/10 bg-white/8 px-4 py-3">
-                        <span className="text-sm font-medium text-white/78">تجربة شراء أوضح</span>
-                        <span className="text-base font-bold text-white">RTL</span>
-                      </div>
-                      <div className="flex items-center justify-between rounded-[18px] border border-white/10 bg-white/8 px-4 py-3">
-                        <span className="text-sm font-medium text-white/78">صور مضبوطة</span>
-                        <span className="text-base font-bold text-white">Responsive</span>
-                      </div>
-                      <div className="flex items-center justify-between rounded-[18px] border border-white/10 bg-white/8 px-4 py-3">
-                        <span className="text-sm font-medium text-white/78">ثقة أعلى</span>
-                        <span className="text-base font-bold text-white">BaridiMob</span>
-                      </div>
+                      {copy.chips.map((item) => (
+                        <div key={item.label} className="flex items-center justify-between rounded-[18px] border border-white/10 bg-white/8 px-4 py-3">
+                          <span className="text-sm font-medium text-white/78">{item.label}</span>
+                          <span className="text-base font-bold text-white">{item.value}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>

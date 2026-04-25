@@ -1,10 +1,17 @@
 import { z } from 'zod'
 
+const normalizeUrl = (value: unknown) => {
+  if (typeof value !== 'string') return value
+  const trimmed = value.trim()
+  if (!trimmed) return trimmed
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+}
+
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  NEXT_PUBLIC_APP_URL: z.string().url(),
+  NEXT_PUBLIC_APP_URL: z.preprocess(normalizeUrl, z.string().url()),
   NEXT_PUBLIC_APP_NAME: z.string().default('Floya Store'),
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+  NEXT_PUBLIC_SUPABASE_URL: z.preprocess(normalizeUrl, z.string().url()),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   JWT_SECRET: z.string().min(64),

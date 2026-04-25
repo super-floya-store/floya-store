@@ -1,5 +1,5 @@
 export type OrderStatus = 'pending' | 'submitted' | 'payment_submitted' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'
-export type PaymentMethod = 'baridimob'
+export type PaymentMethod = 'baridimob' | 'cod' | 'binance'
 export type PaymentStatus = 'pending' | 'submitted' | 'paid' | 'rejected' | 'failed' | 'refunded'
 
 export interface Order {

@@ -1,15 +1,14 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
-import { CheckCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import Image from 'next/image'
-import { Upload, Copy, Check } from 'lucide-react'
+import { CheckCircle, Upload, Copy, Check } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
 const paymentLabels: Record<string, string> = {
-  pending: 'بانتظار رفع إثبات الدفع',
-  submitted: 'تم رفع إثبات الدفع وهو قيد المراجعة',
+  pending: 'بانتظار الدفع أو المراجعة',
+  submitted: 'تم رفع الإثبات وهو قيد المراجعة',
   paid: 'تم قبول الدفع',
   rejected: 'تم رفض الدفع، يرجى رفع إثبات صحيح',
   failed: 'فشل',
@@ -18,14 +17,14 @@ const paymentLabels: Record<string, string> = {
 
 export default function OrderConfirmationPage({ params }: { params: { id: string } }) {
   const [order, setOrder] = useState<any>(null)
+  const [settings, setSettings] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [transactionId, setTransactionId] = useState('')
   const [message, setMessage] = useState('')
   const [selectedFileName, setSelectedFileName] = useState('')
-  const [copiedRip, setCopiedRip] = useState(false)
+  const [copiedValue, setCopiedValue] = useState<'rip' | 'wallet' | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
-  const ripValue = '00799999004419717033'
 
   useEffect(() => {
     fetch(`/api/orders/track/${params.id}`)
@@ -34,7 +33,23 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
         if (data.success) setOrder(data.data)
       })
       .finally(() => setLoading(false))
+
+    fetch('/api/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setSettings(data.data)
+      })
+      .catch(() => {})
   }, [params.id])
+
+  const ripValue = settings?.baridimob_rip || '00799999004419717033'
+  const binanceAddress = settings?.binance_wallet_address || ''
+  const needsProof = order?.payment_method === 'baridimob' || order?.payment_method === 'binance'
+  const paymentMethodLabel = order?.payment_method === 'cod'
+    ? 'الدفع عند الاستلام'
+    : order?.payment_method === 'binance'
+      ? 'Binance / USDT'
+      : 'BaridiMob'
 
   const uploadProof = async (file: File) => {
     setUploading(true)
@@ -56,11 +71,11 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
     }
   }
 
-  const handleCopyRip = async () => {
+  const handleCopy = async (value: string, type: 'rip' | 'wallet') => {
     try {
-      await navigator.clipboard.writeText(ripValue)
-      setCopiedRip(true)
-      window.setTimeout(() => setCopiedRip(false), 1800)
+      await navigator.clipboard.writeText(value)
+      setCopiedValue(type)
+      window.setTimeout(() => setCopiedValue(null), 1800)
     } catch {
       // ignore
     }
@@ -78,7 +93,9 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
             رقم الطلب: <span className="font-bold text-foreground">{params.id}</span>
           </p>
           <p className="mx-auto max-w-xl text-sm leading-8 text-muted-foreground md:text-base">
-            ارفعي الآن إثبات الدفع عبر BaridiMob، وبعد المراجعة سيتم تحديث حالة الطلب هنا مباشرة.
+            {needsProof
+              ? `ارفع الآن إثبات الدفع عبر ${paymentMethodLabel}، وبعد المراجعة سيتم تحديث حالة الطلب هنا مباشرة.`
+              : 'طلبك مسجل بنجاح. بما أنك اخترت الدفع عند الاستلام فلا حاجة إلى رفع إثبات دفع، وسيتم تحديث حالة الطلب هنا مباشرة.'}
           </p>
 
           {!loading && order ? (
@@ -86,67 +103,72 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
               <div className="rounded-[28px] border border-border bg-white/70 p-5">
                 <p className="text-sm text-muted-foreground">حالة الدفع</p>
                 <p className="mt-2 text-lg font-bold text-foreground">{paymentLabels[order.payment_status] || order.payment_status}</p>
+                <p className="mt-3 text-sm text-muted-foreground">طريقة الدفع: <span className="font-semibold text-foreground">{paymentMethodLabel}</span></p>
                 <p className="mt-3 text-sm text-muted-foreground">حالة الطلب: <span className="font-semibold text-foreground">{order.status}</span></p>
                 {order.tracking_number ? <p className="mt-2 text-sm text-muted-foreground">رقم التتبع: <span className="font-semibold text-foreground">{order.tracking_number}</span></p> : null}
               </div>
 
-              <div className="rounded-[28px] border border-border bg-white/70 p-5">
-                <label htmlFor="transaction-id" className="mb-2 block text-sm font-medium text-foreground">رقم العملية</label>
-                <input id="transaction-id" value={transactionId} onChange={(e) => setTransactionId(e.target.value)} className="min-h-[48px] w-full rounded-2xl border border-border bg-white px-4 text-foreground" />
-                <div className="mt-4 rounded-[22px] border border-border bg-white p-4">
-                  <p className="mb-3 text-sm font-medium text-foreground">صورة وصل الدفع</p>
-                  <input
-                    ref={fileInputRef}
-                    id="receipt-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    disabled={uploading || !transactionId.trim()}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) {
-                        setSelectedFileName(file.name)
-                        uploadProof(file)
-                      }
-                    }}
-                  />
-                  <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                    <Button
-                      type="button"
-                      className="min-h-[48px] rounded-full px-5"
+              {needsProof ? (
+                <div className="rounded-[28px] border border-border bg-white/70 p-5">
+                  <label htmlFor="transaction-id" className="mb-2 block text-sm font-medium text-foreground">رقم العملية / التحويل</label>
+                  <input id="transaction-id" value={transactionId} onChange={(e) => setTransactionId(e.target.value)} className="min-h-[48px] w-full rounded-2xl border border-border bg-white px-4 text-foreground" />
+                  <div className="mt-4 rounded-[22px] border border-border bg-white p-4">
+                    <p className="mb-3 text-sm font-medium text-foreground">صورة إثبات الدفع</p>
+                    <input
+                      ref={fileInputRef}
+                      id="receipt-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
                       disabled={uploading || !transactionId.trim()}
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Upload className="ml-2 h-4 w-4" />
-                      اختر صورة الوصل
-                    </Button>
-                    <span className="text-sm text-muted-foreground">
-                      {selectedFileName || 'PNG أو JPG بحجم واضح'}
-                    </span>
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          setSelectedFileName(file.name)
+                          uploadProof(file)
+                        }
+                      }}
+                    />
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                      <Button type="button" className="min-h-[48px] rounded-full px-5" disabled={uploading || !transactionId.trim()} onClick={() => fileInputRef.current?.click()}>
+                        <Upload className="ml-2 h-4 w-4" />
+                        اختر صورة الإثبات
+                      </Button>
+                      <span className="text-sm text-muted-foreground">{selectedFileName || 'PNG أو JPG بحجم واضح'}</span>
+                    </div>
+                    {transactionId.trim()
+                      ? <p className="mt-3 text-xs text-muted-foreground">بعد اختيار الصورة سيتم رفعها مباشرة.</p>
+                      : <p className="mt-3 text-xs text-muted-foreground">أدخل رقم العملية أو التحويل أولاً لتفعيل رفع الصورة.</p>}
                   </div>
-                  {transactionId.trim() ? (
-                    <p className="mt-3 text-xs text-muted-foreground">بعد اختيار الصورة سيتم رفعها مباشرة.</p>
-                  ) : (
-                    <p className="mt-3 text-xs text-muted-foreground">أدخلي رقم العملية أولاً لتفعيل رفع الصورة.</p>
-                  )}
+                  {message ? <p className="mt-3 text-sm text-muted-foreground">{message}</p> : null}
                 </div>
-                {message ? <p className="mt-3 text-sm text-muted-foreground">{message}</p> : null}
-              </div>
+              ) : null}
 
-              <div className="rounded-[28px] border border-primary/15 bg-white/85 p-5 text-right">
-                <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground">RIP</p>
-                <p className="mt-2 whitespace-nowrap overflow-x-auto text-lg font-extrabold tracking-[0.14em] text-black sm:text-xl md:text-2xl">
-                  {ripValue}
-                </p>
-                <Button type="button" variant="outline" className="mt-4 min-h-[48px] rounded-full border-border bg-white px-5 text-sm font-semibold text-foreground" onClick={handleCopyRip}>
-                  {copiedRip ? <Check className="ml-2 h-4 w-4" /> : <Copy className="ml-2 h-4 w-4" />}
-                  {copiedRip ? 'تم النسخ' : 'نسخ RIP'}
-                </Button>
-              </div>
+              {order.payment_method === 'baridimob' ? (
+                <div className="rounded-[28px] border border-primary/15 bg-white/85 p-5 text-right">
+                  <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground">RIP</p>
+                  <p className="mt-2 whitespace-nowrap overflow-x-auto text-lg font-extrabold tracking-[0.14em] text-black sm:text-xl md:text-2xl">{ripValue}</p>
+                  <Button type="button" variant="outline" className="mt-4 min-h-[48px] rounded-full border-border bg-white px-5 text-sm font-semibold text-foreground" onClick={() => handleCopy(ripValue, 'rip')}>
+                    {copiedValue === 'rip' ? <Check className="ml-2 h-4 w-4" /> : <Copy className="ml-2 h-4 w-4" />}
+                    {copiedValue === 'rip' ? 'تم النسخ' : 'نسخ RIP'}
+                  </Button>
+                </div>
+              ) : null}
+
+              {order.payment_method === 'binance' && binanceAddress ? (
+                <div className="rounded-[28px] border border-primary/15 bg-white/85 p-5 text-right">
+                  <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground">USDT Wallet</p>
+                  <p className="mt-2 overflow-x-auto text-sm font-extrabold text-black md:text-base">{binanceAddress}</p>
+                  <Button type="button" variant="outline" className="mt-4 min-h-[48px] rounded-full border-border bg-white px-5 text-sm font-semibold text-foreground" onClick={() => handleCopy(binanceAddress, 'wallet')}>
+                    {copiedValue === 'wallet' ? <Check className="ml-2 h-4 w-4" /> : <Copy className="ml-2 h-4 w-4" />}
+                    {copiedValue === 'wallet' ? 'تم النسخ' : 'نسخ العنوان'}
+                  </Button>
+                </div>
+              ) : null}
 
               {order.payment_receipt_url ? (
                 <div className="rounded-[28px] border border-border bg-white/70 p-5">
-                  <p className="mb-3 text-sm font-medium text-foreground">الوصل المرفوع</p>
+                  <p className="mb-3 text-sm font-medium text-foreground">الإثبات المرفوع</p>
                   <div className="relative h-72 overflow-hidden rounded-2xl border bg-white">
                     <Image src={order.payment_receipt_url} alt="وصل الدفع" fill className="object-contain" />
                   </div>
@@ -166,11 +188,11 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
                           : 'الطلب تم تأكيده وجارٍ المتابعة'}
                   </h2>
                   <p className="mt-3 text-sm leading-8 text-muted-foreground">
-                    بعد قبول الدفع تظهر هنا حالة الطلب وتقدير الوصول حتى تكوني على علم دائم بمكان المنتج.
+                    بعد قبول الدفع تظهر هنا حالة الطلب وتقدير الوصول حتى تكون على علم دائم بمكان المنتج.
                   </p>
                   <div className="mt-5 grid gap-3 md:grid-cols-3">
                     {[
-                      { label: 'المرحلة الحالية', value: order.status === 'confirmed' ? 'تم قبول الدفع' : order.status === 'processing' ? 'قيد التحضير' : order.status === 'shipped' ? 'في الشحن' : order.status === 'delivered' ? 'تم التسليم' : 'بإنتظار التأكيد' },
+                      { label: 'المرحلة الحالية', value: order.status === 'confirmed' ? 'تم قبول الدفع' : order.status === 'processing' ? 'قيد التحضير' : order.status === 'shipped' ? 'في الشحن' : order.status === 'delivered' ? 'تم التسليم' : 'بانتظار التأكيد' },
                       {
                         label: 'تقدير الوصول',
                         value: order.estimated_delivery_date
@@ -179,11 +201,7 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
                             ? `خلال ${order.estimated_delivery_days} يوم`
                             : 'سيتم تحديده بعد قبول الدفع',
                       },
-                      {
-                        label: 'رسالة المتابعة',
-                        value: order.follow_up_message || 'يمكنك مراسلة البائع في أي وقت عبر صفحة التواصل.',
-                      },
-                      { label: 'طريقة التواصل', value: 'إرسال رسالة للبائع' },
+                      { label: 'رسالة المتابعة', value: order.follow_up_message || 'يمكنك مراسلة البائع في أي وقت عبر صفحة التواصل.' },
                     ].map((item) => (
                       <div key={item.label} className="rounded-[22px] border border-border bg-background px-4 py-4">
                         <p className="text-xs font-semibold tracking-[0.16em] text-muted-foreground">{item.label}</p>

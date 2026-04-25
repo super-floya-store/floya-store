@@ -21,7 +21,7 @@ export const orderSchema = z.object({
     .min(10, 'عنوان التوصيل يجب أن يكون 10 أحرف على الأقل')
     .max(500, 'عنوان التوصيل يجب أن لا يتجاوز 500 حرف'),
   notes: z.string().max(500).optional().nullable(),
-  paymentMethod: z.enum(['baridimob']),
+  paymentMethod: z.enum(['baridimob', 'cod', 'binance']),
   items: z
     .array(
       z.object({

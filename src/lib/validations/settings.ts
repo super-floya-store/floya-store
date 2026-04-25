@@ -22,6 +22,12 @@ export const settingsSchema = z.object({
   logo_url: z.string(),
   hero_images: z.array(z.string()),
   baridimob_rip: z.string().optional(),
+  binance_wallet_address: z.string().optional(),
+  payment_methods: z.object({
+    baridimob: z.boolean(),
+    cod: z.boolean(),
+    binance: z.boolean(),
+  }).optional(),
   social_links: z.record(z.string()),
   seo_defaults: z.record(z.string()),
   email_notifications: z.object({

@@ -31,17 +31,21 @@ export function AuthPanel({ initialMode }: AuthPanelProps) {
 
   const copy = locale === 'ar'
     ? {
-        loginTitle: 'تسجيل الدخول',
+        loginTitle: 'دخول الحساب',
         signupTitle: 'إنشاء حساب',
-        subtitle: 'ادخلي بحسابك أو أنشئي حساباً جديداً لمتابعة الطلبات بسهولة.',
+        subtitle: 'ادخل بحسابك أو أنشئ حساباً جديداً لإتمام الطلبات ومتابعة حالتها بسهولة.',
         username: 'اسم المستخدم',
         password: 'كلمة المرور',
         confirmPassword: 'تأكيد كلمة المرور',
-        loginButton: 'تسجيل الدخول',
+        loginButton: 'دخول الحساب',
         signupButton: 'إنشاء الحساب',
         switchToLogin: 'عندي حساب بالفعل',
         switchToSignup: 'أريد إنشاء حساب',
         homeLink: 'العودة إلى المتجر',
+        loadingLogin: 'جارٍ تسجيل الدخول...',
+        loadingSignup: 'جارٍ إنشاء الحساب...',
+        loginError: 'فشل تسجيل الدخول',
+        signupError: 'تعذر إنشاء الحساب',
       }
     : {
         loginTitle: 'Sign in',
@@ -67,10 +71,9 @@ export function AuthPanel({ initialMode }: AuthPanelProps) {
       : await signup(username, password, confirmPassword)
 
     if (result.success) {
-      const role = result.data?.user?.role
-      router.replace(role === 'admin' || role === 'super_admin' ? '/admin' : '/')
+      router.replace('/')
     } else {
-      setError(result.error?.message || (mode === 'login' ? 'فشل تسجيل الدخول' : 'تعذر إنشاء الحساب'))
+      setError(result.error?.message || (mode === 'login' ? copy.loginError : copy.signupError))
     }
 
     setLoading(false)
@@ -168,7 +171,7 @@ export function AuthPanel({ initialMode }: AuthPanelProps) {
             )}
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (mode === 'login' ? 'جاري تسجيل الدخول...' : 'جاري إنشاء الحساب...') : mode === 'login' ? copy.loginButton : copy.signupButton}
+              {loading ? (mode === 'login' ? copy.loadingLogin : copy.loadingSignup) : mode === 'login' ? copy.loginButton : copy.signupButton}
             </Button>
           </form>
 
