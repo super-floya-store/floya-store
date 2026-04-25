@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { useUIStore } from '@/stores/ui-store'
 import type { CommentEntityType, Comment } from '@/types/comment'
 
 interface CommentsSectionProps {
@@ -11,6 +12,7 @@ interface CommentsSectionProps {
 }
 
 export function CommentsSection({ entityType, entityId, title = 'آراء العملاء' }: CommentsSectionProps) {
+  const locale = useUIStore((state) => state.locale)
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -21,6 +23,39 @@ export function CommentsSection({ entityType, entityId, title = 'آراء الع
     rating: '5',
     comment: '',
   })
+  const copy = locale === 'ar'
+    ? {
+        defaultTitle: 'آراء العملاء',
+        body: 'تعليقات حقيقية بعد مراجعة الإدارة للحفاظ على الجودة.',
+        empty: 'لا توجد تعليقات منشورة بعد.',
+        addTitle: 'أضف رأيك',
+        name: 'الاسم',
+        email: 'البريد الإلكتروني',
+        rating: 'التقييم',
+        comment: 'التعليق',
+        submit: 'إرسال التعليق',
+        submitting: 'جاري الإرسال...',
+        success: 'تم استلام تعليقك وسيظهر بعد المراجعة.',
+        error: 'تعذر إرسال التعليق.',
+        stars: ['5 نجوم', '4 نجوم', '3 نجوم', 'نجمتان', 'نجمة واحدة'],
+        localeTag: 'ar-DZ',
+      }
+    : {
+        defaultTitle: 'Customer reviews',
+        body: 'Real comments reviewed by the admin team before publication.',
+        empty: 'No published comments yet.',
+        addTitle: 'Add your review',
+        name: 'Name',
+        email: 'Email',
+        rating: 'Rating',
+        comment: 'Comment',
+        submit: 'Submit review',
+        submitting: 'Submitting...',
+        success: 'Your review was received and will appear after moderation.',
+        error: 'Unable to submit your review.',
+        stars: ['5 stars', '4 stars', '3 stars', '2 stars', '1 star'],
+        localeTag: 'en-US',
+      }
 
   useEffect(() => {
     async function fetchComments() {
@@ -67,12 +102,12 @@ export function CommentsSection({ entityType, entityId, title = 'آراء الع
           rating: '5',
           comment: '',
         })
-        setMessage('تم استلام تعليقك وسيظهر بعد المراجعة.')
+        setMessage(copy.success)
       } else {
-        setMessage(data.error?.message || 'تعذر إرسال التعليق.')
+        setMessage(data.error?.message || copy.error)
       }
     } catch {
-      setMessage('تعذر إرسال التعليق.')
+      setMessage(copy.error)
     } finally {
       setSubmitting(false)
     }
@@ -81,8 +116,8 @@ export function CommentsSection({ entityType, entityId, title = 'آراء الع
   return (
     <section className="mt-10 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
       <div className="surface-card rounded-[30px] p-6">
-        <h2 className="text-2xl font-bold text-foreground">{title}</h2>
-        <p className="mt-2 text-sm leading-7 text-muted-foreground">تعليقات حقيقية بعد مراجعة الإدارة للحفاظ على الجودة.</p>
+        <h2 className="text-2xl font-bold text-foreground">{title === 'آراء العملاء' ? copy.defaultTitle : title}</h2>
+        <p className="mt-2 text-sm leading-7 text-muted-foreground">{copy.body}</p>
 
         <div className="mt-6 space-y-4">
           {loading ? (
@@ -97,7 +132,7 @@ export function CommentsSection({ entityType, entityId, title = 'آراء الع
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="font-bold text-foreground">{comment.customer_name}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(comment.created_at).toLocaleDateString('ar-DZ')}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(comment.created_at).toLocaleDateString(copy.localeTag)}</p>
                   </div>
                   <div className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
                     {'★'.repeat(comment.rating)}
@@ -108,17 +143,17 @@ export function CommentsSection({ entityType, entityId, title = 'آراء الع
             ))
           ) : (
             <div className="rounded-[24px] border border-dashed border-border px-5 py-10 text-center text-sm text-muted-foreground">
-              لا توجد تعليقات منشورة بعد.
+              {copy.empty}
             </div>
           )}
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="surface-card rounded-[30px] p-6">
-        <h3 className="text-xl font-bold text-foreground">أضيفي رأيك</h3>
+        <h3 className="text-xl font-bold text-foreground">{copy.addTitle}</h3>
         <div className="mt-5 space-y-4">
           <div className="space-y-2">
-            <label htmlFor="comment-name" className="text-sm font-medium text-foreground">الاسم</label>
+            <label htmlFor="comment-name" className="text-sm font-medium text-foreground">{copy.name}</label>
             <input
               id="comment-name"
               value={form.customerName}
@@ -128,7 +163,7 @@ export function CommentsSection({ entityType, entityId, title = 'آراء الع
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="comment-email" className="text-sm font-medium text-foreground">البريد الإلكتروني</label>
+            <label htmlFor="comment-email" className="text-sm font-medium text-foreground">{copy.email}</label>
             <input
               id="comment-email"
               type="email"
@@ -138,22 +173,22 @@ export function CommentsSection({ entityType, entityId, title = 'آراء الع
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="comment-rating" className="text-sm font-medium text-foreground">التقييم</label>
+            <label htmlFor="comment-rating" className="text-sm font-medium text-foreground">{copy.rating}</label>
             <select
               id="comment-rating"
               value={form.rating}
               onChange={(e) => setForm({ ...form, rating: e.target.value })}
               className="min-h-[48px] w-full rounded-2xl border border-border bg-white px-4 text-foreground outline-none transition focus:border-primary"
             >
-              <option value="5">5 نجوم</option>
-              <option value="4">4 نجوم</option>
-              <option value="3">3 نجوم</option>
-              <option value="2">2 نجوم</option>
-              <option value="1">نجمة واحدة</option>
+              <option value="5">{copy.stars[0]}</option>
+              <option value="4">{copy.stars[1]}</option>
+              <option value="3">{copy.stars[2]}</option>
+              <option value="2">{copy.stars[3]}</option>
+              <option value="1">{copy.stars[4]}</option>
             </select>
           </div>
           <div className="space-y-2">
-            <label htmlFor="comment-body" className="text-sm font-medium text-foreground">التعليق</label>
+            <label htmlFor="comment-body" className="text-sm font-medium text-foreground">{copy.comment}</label>
             <textarea
               id="comment-body"
               rows={5}
@@ -164,7 +199,7 @@ export function CommentsSection({ entityType, entityId, title = 'آراء الع
             />
           </div>
           <Button type="submit" className="min-h-[48px] w-full rounded-full" disabled={submitting}>
-            {submitting ? 'جاري الإرسال...' : 'إرسال التعليق'}
+            {submitting ? copy.submitting : copy.submit}
           </Button>
           {message && <p className="text-sm text-muted-foreground">{message}</p>}
         </div>

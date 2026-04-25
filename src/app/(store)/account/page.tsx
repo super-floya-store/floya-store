@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useUIStore } from '@/stores/ui-store'
 
 export default function AccountPage() {
-  const { user, loading, logout } = useAuth()
+  const { user, loading, logout, isAdmin } = useAuth()
   const locale = useUIStore((state) => state.locale)
   const router = useRouter()
 
@@ -21,28 +21,30 @@ export default function AccountPage() {
         username: 'اسم المستخدم',
         role: 'نوع الحساب',
         customer: 'عميل',
+        admin: 'مدير',
         orders: 'متابعة الطلبات',
         ordersBody: 'إذا كان لديك رقم طلب، يمكنك فتح صفحة المتابعة مباشرة.',
-        openOrder: 'فتح صفحة طلب',
         contact: 'تواصل معنا',
         continueShopping: 'متابعة التسوق',
+        adminPanel: 'لوحة الإدارة',
+        adminBody: 'هذا الحساب يملك صلاحية الإدارة، ويمكنك الانتقال مباشرة إلى لوحة المتجر.',
         logout: 'تسجيل الخروج',
-        loginRequired: 'يجب تسجيل الدخول أولاً.',
       }
     : {
         title: 'Account',
-        subtitle: 'Use this page for quick access to order follow-up and shopping links.',
+        subtitle: 'Use this page for quick access to your orders, support, and shopping links.',
         profile: 'Account details',
         username: 'Username',
         role: 'Account type',
         customer: 'Customer',
+        admin: 'Admin',
         orders: 'Order follow-up',
         ordersBody: 'If you already have an order number, open its tracking page directly.',
-        openOrder: 'Open order page',
         contact: 'Contact us',
         continueShopping: 'Continue shopping',
+        adminPanel: 'Open admin panel',
+        adminBody: 'This account has admin access, so you can jump straight to the store dashboard.',
         logout: 'Log out',
-        loginRequired: 'You need to sign in first.',
       }
 
   useEffect(() => {
@@ -68,7 +70,7 @@ export default function AccountPage() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <p><span className="font-semibold">{copy.username}:</span> {user.username}</p>
-            <p><span className="font-semibold">{copy.role}:</span> {copy.customer}</p>
+            <p><span className="font-semibold">{copy.role}:</span> {isAdmin ? copy.admin : copy.customer}</p>
           </CardContent>
         </Card>
 
@@ -79,6 +81,14 @@ export default function AccountPage() {
           <CardContent className="space-y-4 text-sm">
             <p className="leading-7 text-muted-foreground">{copy.ordersBody}</p>
             <div className="flex flex-col gap-3">
+              {isAdmin ? (
+                <>
+                  <p className="leading-7 text-muted-foreground">{copy.adminBody}</p>
+                  <Button asChild className="rounded-full">
+                    <Link href="/admin">{copy.adminPanel}</Link>
+                  </Button>
+                </>
+              ) : null}
               <Button asChild className="rounded-full">
                 <Link href="/contact">{copy.contact}</Link>
               </Button>

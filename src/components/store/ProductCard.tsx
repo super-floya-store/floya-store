@@ -10,12 +10,14 @@ import type { Product } from '@/types/product'
 import { getFallbackProductImage } from '@/lib/storefront-images'
 import { useWishlistStore } from '@/stores/wishlist-store'
 import { useRouter } from 'next/navigation'
+import { useUIStore } from '@/stores/ui-store'
 
 interface ProductCardProps {
   product: Product
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const locale = useUIStore((state) => state.locale)
   const addItem = useCartStore((s) => s.addItem)
   const toggleWishlist = useWishlistStore((s) => s.toggle)
   const isWishlisted = useWishlistStore((s) => s.has(product.id))
@@ -26,6 +28,27 @@ export function ProductCard({ product }: ProductCardProps) {
   const isOutOfStock = product.stock_quantity === 0
   const isNew = Date.now() - new Date(product.created_at).getTime() < 1000 * 60 * 60 * 24 * 21
   const isLowStock = product.stock_quantity > 0 && product.stock_quantity <= 3
+  const productName = locale === 'ar' ? product.name_ar : product.name_en
+  const currency = 'DZD'
+  const copy = locale === 'ar'
+    ? {
+        new: 'جديد',
+        lowStock: 'كمية محدودة',
+        outOfStock: 'نفذ المخزون',
+        wishlist: 'المفضلة',
+        add: 'أضف',
+        soldOutShort: 'نفذ',
+        buyNow: 'شراء الآن',
+      }
+    : {
+        new: 'New',
+        lowStock: 'Low stock',
+        outOfStock: 'Out of stock',
+        wishlist: 'Wishlist',
+        add: 'Add',
+        soldOutShort: 'Sold out',
+        buyNow: 'Buy now',
+      }
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -33,7 +56,7 @@ export function ProductCard({ product }: ProductCardProps) {
     if (isOutOfStock) return
     addItem({
       productId: product.id,
-      name: product.name_ar,
+      name: productName,
       price: hasPromo ? product.promo_price! : product.price,
       image: primaryImage,
     })
@@ -51,7 +74,7 @@ export function ProductCard({ product }: ProductCardProps) {
           {primaryImage ? (
             <Image
               src={primaryImage}
-              alt={product.name_ar}
+              alt={productName}
               fill
               className="object-cover transition duration-500 group-hover:scale-110"
               loading="lazy"
@@ -67,13 +90,13 @@ export function ProductCard({ product }: ProductCardProps) {
               -{discount}%
             </Badge>
           )}
-          {isNew && <Badge className="absolute left-3 top-3 rounded-full bg-secondary text-secondary-foreground">جديد</Badge>}
-          {isLowStock && <Badge className="absolute left-3 top-12 rounded-full bg-amber-500 text-white">كمية محدودة</Badge>}
+          {isNew && <Badge className="absolute left-3 top-3 rounded-full bg-secondary text-secondary-foreground">{copy.new}</Badge>}
+          {isLowStock && <Badge className="absolute left-3 top-12 rounded-full bg-amber-500 text-white">{copy.lowStock}</Badge>}
           {isOutOfStock && (
             <>
               <div className="absolute inset-0 bg-secondary/50 backdrop-blur-[2px]" />
               <Badge variant="secondary" className="absolute left-3 top-3 rounded-full border border-white/20 bg-white/90 px-3 py-1 text-secondary shadow-soft">
-                نفذ المخزون
+                {copy.outOfStock}
               </Badge>
             </>
           )}
@@ -81,7 +104,7 @@ export function ProductCard({ product }: ProductCardProps) {
             type="button"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(product.id) }}
             className={`absolute bottom-3 left-3 inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-full border border-white/30 backdrop-blur ${isWishlisted ? 'bg-primary text-primary-foreground' : 'bg-white/85 text-foreground'}`}
-            aria-label="المفضلة"
+            aria-label={copy.wishlist}
           >
             <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
           </button>
@@ -91,18 +114,18 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="flex flex-col gap-3 p-4">
         <Link href={`/products/${product.id}`}>
           <h3 className="min-h-[44px] line-clamp-2 text-sm font-bold leading-7 text-foreground transition-colors group-hover:text-primary md:text-base">
-            {product.name_ar}
+            {productName}
           </h3>
         </Link>
 
         <div className="flex items-end gap-2">
           {hasPromo ? (
             <>
-              <span className="text-lg font-bold text-primary md:text-xl">{product.promo_price!.toLocaleString()} د.ج</span>
-              <span className="text-muted-foreground text-sm line-through">{product.price.toLocaleString()} د.ج</span>
+              <span className="text-lg font-bold text-primary md:text-xl">{product.promo_price!.toLocaleString()} {currency}</span>
+              <span className="text-muted-foreground text-sm line-through">{product.price.toLocaleString()} {currency}</span>
             </>
           ) : (
-            <span className="text-lg font-bold text-foreground md:text-xl">{product.price.toLocaleString()} د.ج</span>
+            <span className="text-lg font-bold text-foreground md:text-xl">{product.price.toLocaleString()} {currency}</span>
           )}
         </div>
 
@@ -114,11 +137,11 @@ export function ProductCard({ product }: ProductCardProps) {
             onClick={handleAddToCart}
           >
             <ShoppingCart className="h-4 w-4 ml-2" />
-            {isOutOfStock ? 'نفذ' : 'أضف'}
+            {isOutOfStock ? copy.soldOutShort : copy.add}
           </Button>
           <Button size="sm" variant="outline" className="min-h-[44px] rounded-full" disabled={isOutOfStock} onClick={handleBuyNow}>
             <Zap className="h-4 w-4 ml-2" />
-            شراء الآن
+            {copy.buyNow}
           </Button>
         </div>
       </div>

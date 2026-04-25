@@ -27,6 +27,7 @@ export function CartDrawer() {
         increase: 'زيادة',
         remove: 'حذف',
         bag: 'YOUR BAG',
+        currency: 'د.ج',
       }
     : {
         title: 'Shopping cart',
@@ -43,6 +44,7 @@ export function CartDrawer() {
         increase: 'Increase quantity',
         remove: 'Remove item',
         bag: 'YOUR BAG',
+        currency: 'DZD',
       }
 
   if (!hasHydrated) return null
@@ -91,7 +93,7 @@ export function CartDrawer() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="truncate text-sm font-bold text-secondary">{item.name}</h3>
-                    <p className="mt-1 text-sm font-bold text-primary">{item.price.toLocaleString()} د.ج</p>
+                    <p className="mt-1 text-sm font-bold text-primary">{item.price.toLocaleString()} {copy.currency}</p>
                     <div className="mt-3 flex items-center gap-2">
                       <button
                         onClick={() => updateQuantity(item.productId, item.quantity - 1)}
@@ -128,15 +130,15 @@ export function CartDrawer() {
             <div className="surface-card flex flex-col gap-4 rounded-[28px] p-4">
               <div className="flex justify-between text-sm">
                 <span>{copy.subtotal}</span>
-                <span className="font-bold">{total.toLocaleString()} د.ج</span>
+                <span className="font-bold">{total.toLocaleString()} {copy.currency}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>{copy.delivery}</span>
-                <span className="font-bold">500 د.ج</span>
+                <span className="font-bold">500 {copy.currency}</span>
               </div>
               <div className="flex justify-between border-t pt-2 text-lg font-bold">
                 <span>{copy.total}</span>
-                <span>{(total + 500).toLocaleString()} د.ج</span>
+                <span>{(total + 500).toLocaleString()} {copy.currency}</span>
               </div>
               <Button className="min-h-[48px] w-full rounded-full bg-gradient-to-r from-primary to-brand-gold text-primary-foreground shadow-glow" asChild onClick={closeCartDrawer}>
                 <Link href="/checkout">{copy.checkout}</Link>

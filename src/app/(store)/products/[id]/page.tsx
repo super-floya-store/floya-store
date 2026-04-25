@@ -14,10 +14,12 @@ import { CommentsSection } from '@/components/store/CommentsSection'
 import { getFallbackProductImage } from '@/lib/storefront-images'
 import { useRecentlyViewedStore } from '@/stores/recently-viewed-store'
 import { useWishlistStore } from '@/stores/wishlist-store'
+import { useUIStore } from '@/stores/ui-store'
 import { Heart, Zap } from 'lucide-react'
 
 export default function ProductDetailPage() {
   const params = useParams()
+  const locale = useUIStore((state) => state.locale)
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
@@ -26,6 +28,45 @@ export default function ProductDetailPage() {
   const addRecentlyViewed = useRecentlyViewedStore((s) => s.add)
   const toggleWishlist = useWishlistStore((s) => s.toggle)
   const isWishlisted = useWishlistStore((s) => product ? s.has(product.id) : false)
+  const copy = locale === 'ar'
+    ? {
+        notFound: 'المنتج غير موجود',
+        back: 'العودة للمنتجات',
+        details: 'تفاصيل المنتج',
+        save: 'وفر',
+        outOfStock: 'نفذ المخزون',
+        available: 'متوفر',
+        pieces: 'قطعة',
+        sizeGuide: 'دليل المقاس',
+        sizeGuideBody: 'اختر مقاسك المعتاد، وإذا كنت بين مقاسين فاختر الأكبر.',
+        colors: 'الألوان',
+        delivery: 'التوصيل',
+        deliveryBody: 'يشحن عادة خلال 24-72 ساعة حسب الولاية.',
+        addToCart: 'أضف للسلة',
+        buyNow: 'شراء الآن',
+        wishlist: 'المفضلة',
+        mobileAddToCart: 'أضف للسلة',
+        currency: 'د.ج',
+      }
+    : {
+        notFound: 'Product not found',
+        back: 'Back to products',
+        details: 'Product details',
+        save: 'Save',
+        outOfStock: 'Out of stock',
+        available: 'In stock',
+        pieces: 'pcs',
+        sizeGuide: 'Size guide',
+        sizeGuideBody: 'Choose your usual size. If you are between sizes, pick the larger one.',
+        colors: 'Colors',
+        delivery: 'Delivery',
+        deliveryBody: 'Usually ships within 24-72 hours depending on the wilaya.',
+        addToCart: 'Add to cart',
+        buyNow: 'Buy now',
+        wishlist: 'Wishlist',
+        mobileAddToCart: 'Add to cart',
+        currency: 'DZD',
+      }
 
   useEffect(() => {
     async function fetchProduct() {
@@ -68,9 +109,9 @@ export default function ProductDetailPage() {
   if (!product) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold mb-4">المنتج غير موجود</h1>
+        <h1 className="text-2xl font-bold mb-4">{copy.notFound}</h1>
         <Button asChild>
-          <Link href="/products">العودة للمنتجات</Link>
+          <Link href="/products">{copy.back}</Link>
         </Button>
       </div>
     )
@@ -80,12 +121,15 @@ export default function ProductDetailPage() {
   const primaryImage = galleryImages[selectedImageIndex] || galleryImages[product.primary_image_index] || galleryImages[0]
   const hasPromo = product.promo_price && product.promo_price < product.price
   const isOutOfStock = product.stock_quantity === 0
+  const productName = locale === 'ar' ? product.name_ar : product.name_en
+  const productDescription = locale === 'ar' ? product.description_ar : (product.description_en || product.description_ar)
+  const categoryName = product.category ? (locale === 'ar' ? product.category.name_ar : product.category.name_en) : null
 
   const handleAddToCart = () => {
     if (isOutOfStock) return
     addItem({
       productId: product.id,
-      name: product.name_ar,
+      name: productName,
       price: hasPromo ? product.promo_price! : product.price,
       image: primaryImage,
       quantity,
@@ -105,7 +149,7 @@ export default function ProductDetailPage() {
           {primaryImage ? (
             <Image
               src={primaryImage}
-              alt={product.name_ar}
+              alt={productName}
               fill
               className="object-cover transition duration-700 hover:scale-110"
               priority
@@ -117,7 +161,7 @@ export default function ProductDetailPage() {
           )}
             {hasPromo && (
               <div className="absolute right-4 top-4 rounded-full bg-gradient-to-r from-destructive to-primary px-4 py-2 text-sm font-bold text-white shadow-glow">
-                وفر {Math.round(((product.price - product.promo_price!) / product.price) * 100)}%
+                {copy.save} {Math.round(((product.price - product.promo_price!) / product.price) * 100)}%
               </div>
             )}
           </div>
@@ -131,7 +175,7 @@ export default function ProductDetailPage() {
                   selectedImageIndex === index ? 'border-primary ring-2 ring-primary/20' : 'border-white/70'
                 }`}
               >
-                <Image src={image} alt={`${product.name_ar} ${index + 1}`} fill className="object-cover" sizes="20vw" />
+                <Image src={image} alt={`${productName} ${index + 1}`} fill className="object-cover" sizes="20vw" />
               </button>
             ))}
           </div>
@@ -139,11 +183,11 @@ export default function ProductDetailPage() {
 
         <div className="flex flex-col gap-6">
           <div>
-            <span className="section-kicker w-fit">تفاصيل المنتج</span>
-            <h1 className="mt-4 text-3xl font-bold leading-tight text-foreground md:text-5xl">{product.name_ar}</h1>
+            <span className="section-kicker w-fit">{copy.details}</span>
+            <h1 className="mt-4 text-3xl font-bold leading-tight text-foreground md:text-5xl">{productName}</h1>
             {product.category && (
               <Link href={`/categories/${product.category.slug}`} className="mt-4 inline-flex">
-                <Badge variant="secondary" className="rounded-full px-4 py-1.5 text-sm shadow-soft">{product.category.name_ar}</Badge>
+                <Badge variant="secondary" className="rounded-full px-4 py-1.5 text-sm shadow-soft">{categoryName}</Badge>
               </Link>
             )}
           </div>
@@ -151,38 +195,38 @@ export default function ProductDetailPage() {
           <div className="surface-card flex flex-wrap items-center gap-3 rounded-[30px] px-5 py-5">
             {hasPromo ? (
               <>
-                <span className="text-3xl font-bold text-primary md:text-4xl">{product.promo_price!.toLocaleString()} د.ج</span>
-                <span className="text-lg text-muted-foreground line-through md:text-2xl">{product.price.toLocaleString()} د.ج</span>
+                <span className="text-3xl font-bold text-primary md:text-4xl">{product.promo_price!.toLocaleString()} {copy.currency}</span>
+                <span className="text-lg text-muted-foreground line-through md:text-2xl">{product.price.toLocaleString()} {copy.currency}</span>
               </>
             ) : (
-              <span className="text-3xl font-bold text-secondary md:text-4xl">{product.price.toLocaleString()} د.ج</span>
+              <span className="text-3xl font-bold text-secondary md:text-4xl">{product.price.toLocaleString()} {copy.currency}</span>
             )}
           </div>
 
           <div className="flex items-center gap-2 text-sm md:text-base">
             <span className={`text-sm font-medium ${isOutOfStock ? 'text-destructive' : 'text-green-600'}`}>
-              {isOutOfStock ? 'نفذ المخزون' : `متوفر (${product.stock_quantity} قطعة)`}
+              {isOutOfStock ? copy.outOfStock : `${copy.available} (${product.stock_quantity} ${copy.pieces})`}
             </span>
           </div>
 
-          {product.description_ar && (
+          {productDescription && (
             <div className="surface-card rounded-[30px] px-5 py-5">
-              <h2 className="text-lg font-bold text-secondary">تفاصيل المنتج</h2>
-              <p className="mt-3 text-sm leading-8 text-muted-foreground md:text-base">{product.description_ar}</p>
+              <h2 className="text-lg font-bold text-secondary">{copy.details}</h2>
+              <p className="mt-3 text-sm leading-8 text-muted-foreground md:text-base">{productDescription}</p>
               <div className="mt-5 grid gap-3 md:grid-cols-3">
                 <div className="rounded-2xl bg-white/75 p-4">
-                  <p className="text-xs text-muted-foreground">دليل المقاس</p>
-                  <p className="mt-2 font-bold text-foreground">اختاري مقاسك المعتاد، وإذا كنت بين مقاسين اختاري الأكبر.</p>
+                  <p className="text-xs text-muted-foreground">{copy.sizeGuide}</p>
+                  <p className="mt-2 font-bold text-foreground">{copy.sizeGuideBody}</p>
                 </div>
                 <div className="rounded-2xl bg-white/75 p-4">
-                  <p className="text-xs text-muted-foreground">الألوان</p>
+                  <p className="text-xs text-muted-foreground">{copy.colors}</p>
                   <div className="mt-3 flex gap-2">
                     {['#111827', '#d6a37c', '#f2e9e4'].map((color) => <span key={color} className="size-6 rounded-full border" style={{ backgroundColor: color }} />)}
                   </div>
                 </div>
                 <div className="rounded-2xl bg-white/75 p-4">
-                  <p className="text-xs text-muted-foreground">التوصيل</p>
-                  <p className="mt-2 font-bold text-foreground">يشحن عادة خلال 24-72 ساعة حسب الولاية.</p>
+                  <p className="text-xs text-muted-foreground">{copy.delivery}</p>
+                  <p className="mt-2 font-bold text-foreground">{copy.deliveryBody}</p>
                 </div>
               </div>
             </div>
@@ -209,13 +253,13 @@ export default function ProductDetailPage() {
 
             <Button size="lg" className="glow-pulse min-h-[52px] flex-1 rounded-full bg-gradient-to-r from-primary to-brand-gold text-base font-bold text-primary-foreground shadow-glow transition duration-300 hover:-translate-y-0.5" disabled={isOutOfStock} onClick={handleAddToCart}>
               <ShoppingCart className="h-5 w-5 ml-2" />
-              {isOutOfStock ? 'نفذ المخزون' : 'أضف للسلة'}
+              {isOutOfStock ? copy.outOfStock : copy.addToCart}
             </Button>
             <Button size="lg" variant="outline" className="min-h-[52px] rounded-full" disabled={isOutOfStock} onClick={handleBuyNow}>
               <Zap className="h-5 w-5 ml-2" />
-              شراء الآن
+              {copy.buyNow}
             </Button>
-            <Button size="icon" variant="outline" className="min-h-[52px] min-w-[52px] rounded-full" onClick={() => toggleWishlist(product.id)}>
+            <Button size="icon" variant="outline" className="min-h-[52px] min-w-[52px] rounded-full" onClick={() => toggleWishlist(product.id)} aria-label={copy.wishlist}>
               <Heart className={`h-5 w-5 ${isWishlisted ? 'fill-current text-primary' : ''}`} />
             </Button>
           </div>
@@ -225,7 +269,7 @@ export default function ProductDetailPage() {
       <div className="fixed inset-x-4 bottom-4 z-40 md:hidden">
         <Button size="lg" className="min-h-[54px] w-full rounded-full bg-gradient-to-r from-secondary to-brand-ink text-base font-bold text-secondary-foreground shadow-heavy" disabled={isOutOfStock} onClick={handleAddToCart}>
           <ShoppingCart className="h-5 w-5 ml-2" />
-          {isOutOfStock ? 'نفذ المخزون' : 'أضف للسلة'}
+          {isOutOfStock ? copy.outOfStock : copy.mobileAddToCart}
         </Button>
       </div>
 

@@ -72,6 +72,7 @@ export default function CheckoutPage() {
         instructionsBody: 'بعد إنشاء الطلب سيتم توجيهك إلى صفحة متابعة الطلب. إذا اخترت BaridiMob أو Binance يمكنك هناك رفع صورة الإثبات وإدخال رقم العملية أو التحويل. أما الدفع عند الاستلام فلا يحتاج أي إثبات.',
         orderFailed: 'فشل إنشاء الطلب',
         retry: 'حدث خطأ. يرجى المحاولة مرة أخرى.',
+        currency: 'د.ج',
       }
     : {
         title: 'Checkout',
@@ -106,6 +107,7 @@ export default function CheckoutPage() {
         instructionsBody: 'After the order is created you will be sent to the order tracking page. If you choose BaridiMob or Binance, you can upload payment proof and enter the transaction reference there. Cash on delivery does not require proof.',
         orderFailed: 'Failed to create order',
         retry: 'Something went wrong. Please try again.',
+        currency: 'DZD',
       }
 
   useEffect(() => {
@@ -219,7 +221,7 @@ export default function CheckoutPage() {
             <select id="wilaya" required className="flex min-h-[48px] w-full rounded-2xl border border-white/80 bg-white/80 px-3 py-2 text-sm" value={formData.wilaya} onChange={(e) => setFormData({ ...formData, wilaya: e.target.value })}>
               <option value="">{copy.chooseWilaya}</option>
               {wilayas.map((w) => (
-                <option key={w} value={w}>{w}</option>
+                <option key={w.ar} value={w.ar}>{locale === 'ar' ? w.ar : w.fr}</option>
               ))}
             </select>
           </div>
@@ -298,21 +300,21 @@ export default function CheckoutPage() {
               {items.map((item) => (
                 <div key={item.productId} className="flex justify-between text-sm">
                   <span>{item.name} × {item.quantity}</span>
-                  <span>{(item.price * item.quantity).toLocaleString()} د.ج</span>
+                  <span>{(item.price * item.quantity).toLocaleString()} {copy.currency}</span>
                 </div>
               ))}
               <div className="space-y-2 border-t pt-4">
                 <div className="flex justify-between text-sm">
                   <span>{copy.subtotal}</span>
-                  <span>{subtotal().toLocaleString()} د.ج</span>
+                  <span>{subtotal().toLocaleString()} {copy.currency}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>{copy.delivery}</span>
-                  <span>{deliveryFee.toLocaleString()} د.ج</span>
+                  <span>{deliveryFee.toLocaleString()} {copy.currency}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold">
                   <span>{copy.total}</span>
-                  <span>{total.toLocaleString()} د.ج</span>
+                  <span>{total.toLocaleString()} {copy.currency}</span>
                 </div>
               </div>
             </CardContent>
