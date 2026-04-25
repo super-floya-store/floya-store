@@ -75,7 +75,13 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
       />
       <aside
         className={`fixed top-0 z-40 h-[100dvh] w-[86vw] max-w-sm bg-secondary text-secondary-foreground shadow-heavy transition-transform duration-300 lg:hidden ${
-          open ? 'right-0 translate-x-0 border-l border-white/10' : 'right-0 translate-x-full border-l border-white/10'
+          locale === 'ar'
+            ? open
+              ? 'left-0 translate-x-0 border-r border-white/10'
+              : 'left-0 -translate-x-full border-r border-white/10'
+            : open
+              ? 'right-0 translate-x-0 border-l border-white/10'
+              : 'right-0 translate-x-full border-l border-white/10'
         }`}
       >
         <div className="flex h-full flex-col">
@@ -159,7 +165,9 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         </div>
       </aside>
 
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-l border-white/10 bg-secondary text-secondary-foreground shadow-heavy xl:w-72 2xl:w-80 lg:block">
+      <aside className={`sticky top-0 hidden h-screen w-64 shrink-0 bg-secondary text-secondary-foreground shadow-heavy xl:w-72 2xl:w-80 lg:block ${
+        locale === 'ar' ? 'border-r border-white/10' : 'border-l border-white/10'
+      }`}>
         <div className="flex h-full flex-col">
           <div className="border-b border-white/10 p-6">
             <Link href="/admin" className="text-xl font-bold text-white">

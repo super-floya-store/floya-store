@@ -68,6 +68,19 @@ export default function AdminSettingsPage() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
+  const parseApiResponse = async (res: Response) => {
+    const text = await res.text()
+    if (!text.trim()) {
+      return null
+    }
+
+    try {
+      return JSON.parse(text)
+    } catch {
+      throw new Error(`استجابة غير صالحة من الخادم (${res.status})`)
+    }
+  }
+
   const parseDeliveryFees = (value: string) => {
     if (!value.trim()) return {}
     try {
@@ -172,10 +185,10 @@ export default function AdminSettingsPage() {
         body: JSON.stringify(payload),
       })
 
-      const data = await res.json()
+      const data = await parseApiResponse(res)
 
-      if (!data.success) {
-        throw new Error(data.error?.message || 'تعذر حفظ الإعدادات')
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error?.message || `تعذر حفظ الإعدادات (${res.status})`)
       }
 
       setMessage('تم حفظ الإعدادات بنجاح')
