@@ -1,0 +1,98 @@
+{
+  "store": {
+    "hero": {
+      "title": "Floya Store",
+      "subtitle": "A premium shopping experience designed for the Algerian market",
+      "cta": "Shop Now",
+      "newArrivals": "New Arrivals"
+    },
+    "products": {
+      "title": "Products",
+      "addToCart": "Add to Cart",
+      "outOfStock": "Out of Stock",
+      "featured": "Featured Products",
+      "newArrivals": "New Arrivals"
+    },
+    "cart": {
+      "title": "Shopping Cart",
+      "empty": "Your cart is empty",
+      "checkout": "Checkout",
+      "subtotal": "Subtotal",
+      "delivery": "Delivery",
+      "total": "Total",
+      "continueShopping": "Continue Shopping",
+      "clearCart": "Clear Cart"
+    },
+    "checkout": {
+      "title": "Checkout",
+      "customerInfo": "Customer Information",
+      "name": "Full Name",
+      "phone": "Phone Number",
+      "email": "Email",
+      "wilaya": "Wilaya",
+      "commune": "Commune",
+      "address": "Delivery Address",
+      "notes": "Notes",
+      "paymentMethod": "Payment Method",
+      "cod": "Cash on Delivery",
+      "confirm": "Confirm Order"
+    },
+    "search": {
+      "placeholder": "Search for products...",
+      "noResults": "No results found"
+    },
+    "contact": {
+      "title": "Contact Us",
+      "phone": "Phone",
+      "email": "Email",
+      "address": "Address",
+      "hours": "Business Hours",
+      "whatsapp": "Contact via WhatsApp"
+    },
+    "order": {
+      "confirmation": "Your order is confirmed!",
+      "orderNumber": "Order Number",
+      "thankYou": "We will contact you soon to confirm the order"
+    }
+  },
+  "admin": {
+    "dashboard": "Dashboard",
+    "products": "Products",
+    "orders": "Orders",
+    "categories": "Categories",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "profile": "Profile",
+    "logout": "Logout",
+    "visitStore": "Visit Store",
+    "revenue": "Revenue",
+    "totalOrders": "Total Orders",
+    "publishedProducts": "Published Products",
+    "outOfStock": "Out of Stock",
+    "addProduct": "Add Product",
+    "editProduct": "Edit Product",
+    "save": "Save",
+    "cancel": "Cancel",
+    "search": "Search",
+    "status": "Status",
+    "actions": "Actions"
+  },
+  "auth": {
+    "login": "Login",
+    "username": "Username",
+    "password": "Password",
+    "forgotPassword": "Forgot Password",
+    "rememberMe": "Remember Me",
+    "adminLogin": "Admin Dashboard Login"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit"
+  }
+}

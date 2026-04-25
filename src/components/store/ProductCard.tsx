@@ -1,0 +1,127 @@
+'use client'
+
+import Image from 'next/image'
+import Link from 'next/link'
+import { Heart, ShoppingCart, Zap } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { useCartStore } from '@/stores/cart-store'
+import type { Product } from '@/types/product'
+import { getFallbackProductImage } from '@/lib/storefront-images'
+import { useWishlistStore } from '@/stores/wishlist-store'
+import { useRouter } from 'next/navigation'
+
+interface ProductCardProps {
+  product: Product
+}
+
+export function ProductCard({ product }: ProductCardProps) {
+  const addItem = useCartStore((s) => s.addItem)
+  const toggleWishlist = useWishlistStore((s) => s.toggle)
+  const isWishlisted = useWishlistStore((s) => s.has(product.id))
+  const router = useRouter()
+  const primaryImage = product.images[product.primary_image_index] || product.images[0] || getFallbackProductImage(product.name_ar.length)
+  const hasPromo = product.promo_price && product.promo_price < product.price
+  const discount = hasPromo ? Math.round(((product.price - product.promo_price!) / product.price) * 100) : 0
+  const isOutOfStock = product.stock_quantity === 0
+  const isNew = Date.now() - new Date(product.created_at).getTime() < 1000 * 60 * 60 * 24 * 21
+  const isLowStock = product.stock_quantity > 0 && product.stock_quantity <= 3
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (isOutOfStock) return
+    addItem({
+      productId: product.id,
+      name: product.name_ar,
+      price: hasPromo ? product.promo_price! : product.price,
+      image: primaryImage,
+    })
+  }
+
+  const handleBuyNow = (e: React.MouseEvent) => {
+    handleAddToCart(e)
+    router.push('/checkout')
+  }
+
+  return (
+    <div className="group fade-up-in relative overflow-hidden rounded-[30px] border border-white/60 bg-gradient-to-br from-white/95 to-white/72 shadow-soft transition duration-300 hover:-translate-y-1 hover:shadow-medium">
+      <Link href={`/products/${product.id}`}>
+        <div className="relative aspect-[4/5] overflow-hidden bg-muted">
+          {primaryImage ? (
+            <Image
+              src={primaryImage}
+              alt={product.name_ar}
+              fill
+              className="object-cover transition duration-500 group-hover:scale-110"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center bg-gradient-to-br from-muted to-background">
+              <ShoppingCart className="h-12 w-12 text-muted-foreground" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-secondary/40 via-transparent to-transparent opacity-80" />
+          {hasPromo && (
+            <Badge className="absolute right-3 top-3 rounded-full border-0 bg-gradient-to-r from-destructive to-primary px-3 py-1 text-white shadow-soft">
+              -{discount}%
+            </Badge>
+          )}
+          {isNew && <Badge className="absolute left-3 top-3 rounded-full bg-secondary text-secondary-foreground">جديد</Badge>}
+          {isLowStock && <Badge className="absolute left-3 top-12 rounded-full bg-amber-500 text-white">كمية محدودة</Badge>}
+          {isOutOfStock && (
+            <>
+              <div className="absolute inset-0 bg-secondary/50 backdrop-blur-[2px]" />
+              <Badge variant="secondary" className="absolute left-3 top-3 rounded-full border border-white/20 bg-white/90 px-3 py-1 text-secondary shadow-soft">
+                نفذ المخزون
+              </Badge>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(product.id) }}
+            className={`absolute bottom-3 left-3 inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-full border border-white/30 backdrop-blur ${isWishlisted ? 'bg-primary text-primary-foreground' : 'bg-white/85 text-foreground'}`}
+            aria-label="المفضلة"
+          >
+            <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
+          </button>
+        </div>
+      </Link>
+
+      <div className="flex flex-col gap-3 p-4">
+        <Link href={`/products/${product.id}`}>
+          <h3 className="min-h-[44px] line-clamp-2 text-sm font-bold leading-7 text-foreground transition-colors group-hover:text-primary md:text-base">
+            {product.name_ar}
+          </h3>
+        </Link>
+
+        <div className="flex items-end gap-2">
+          {hasPromo ? (
+            <>
+              <span className="text-lg font-bold text-primary md:text-xl">{product.promo_price!.toLocaleString()} د.ج</span>
+              <span className="text-muted-foreground text-sm line-through">{product.price.toLocaleString()} د.ج</span>
+            </>
+          ) : (
+            <span className="text-lg font-bold text-foreground md:text-xl">{product.price.toLocaleString()} د.ج</span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            size="sm"
+            className="min-h-[44px] w-full rounded-full bg-gradient-to-r from-secondary to-brand-ink text-secondary-foreground shadow-soft transition duration-300 hover:-translate-y-0.5 hover:shadow-medium"
+            disabled={isOutOfStock}
+            onClick={handleAddToCart}
+          >
+            <ShoppingCart className="h-4 w-4 ml-2" />
+            {isOutOfStock ? 'نفذ' : 'أضف'}
+          </Button>
+          <Button size="sm" variant="outline" className="min-h-[44px] rounded-full" disabled={isOutOfStock} onClick={handleBuyNow}>
+            <Zap className="h-4 w-4 ml-2" />
+            شراء الآن
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
