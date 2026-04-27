@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { getProductTypeLabel, getProductTypeTone } from '@/components/admin/product-ui-config'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Product } from '@/types/product'
@@ -166,6 +167,7 @@ export default function AdminProductsPage() {
                 </th>
                 <th className="px-4 py-3 text-right font-medium">الصورة</th>
                 <th className="px-4 py-3 text-right font-medium">الاسم</th>
+                <th className="px-4 py-3 text-right font-medium">النوع</th>
                 <th className="px-4 py-3 text-right font-medium">السعر</th>
                 <th className="px-4 py-3 text-right font-medium">المخزون</th>
                 <th className="px-4 py-3 text-right font-medium">تنبيه</th>
@@ -175,50 +177,71 @@ export default function AdminProductsPage() {
             </thead>
             <tbody>
               {products.map((product) => (
-                <tr key={product.id} className="border-t hover:bg-muted/50">
-                  <td className="px-4 py-3">
-                    <input type="checkbox" checked={selectedIds.includes(product.id)} onChange={() => toggleSelected(product.id)} />
-                  </td>
-                  <td className="px-4 py-3">
-                    {product.images[0] ? (
-                      <img src={product.images[0]} alt="" className="w-10 h-10 rounded object-cover" />
-                    ) : (
-                      <div className="w-10 h-10 rounded bg-muted" />
-                    )}
-                  </td>
-                  <td className="px-4 py-3 font-medium">{product.name_ar}</td>
-                  <td className="px-4 py-3">{product.price.toLocaleString()} د.ج</td>
-                  <td className="px-4 py-3">{product.stock_quantity}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${(product.low_stock_threshold || 3) >= product.stock_quantity && product.stock_quantity > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'}`}>
-                      {product.low_stock_threshold || 3}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                        product.is_published
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {product.is_published ? 'منشور' : 'مسودة'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="ghost" asChild>
-                        <Link href={`/admin/products/${product.id}/edit`}>تعديل</Link>
-                      </Button>
-                      <Button size="sm" variant="outline" disabled={savingId === product.id} onClick={() => togglePublish(product)}>
-                        {product.is_published ? 'إخفاء' : 'إظهار'}
-                      </Button>
-                      <Button size="sm" variant="destructive" disabled={savingId === product.id} onClick={() => deleteProduct(product.id)}>
-                        حذف
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
+                (() => {
+                  const typeLabel = getProductTypeLabel(product.product_type)
+                  const typeTone = getProductTypeTone(product.product_type)
+                  const metaText = product.product_type === 'physical_variant'
+                    ? `${product.variants?.length || 0} متغير`
+                    : product.product_type === 'digital_account'
+                      ? `${product.available_digital_units || 0} عنصر رقمي`
+                      : 'مخزون مباشر'
+
+                  return (
+                    <tr key={product.id} className="border-t hover:bg-muted/50">
+                      <td className="px-4 py-3">
+                        <input type="checkbox" checked={selectedIds.includes(product.id)} onChange={() => toggleSelected(product.id)} />
+                      </td>
+                      <td className="px-4 py-3">
+                        {product.images[0] ? (
+                          <img src={product.images[0]} alt="" className="h-10 w-10 rounded object-cover" />
+                        ) : (
+                          <div className="h-10 w-10 rounded bg-muted" />
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="font-medium">{product.name_ar}</p>
+                        <p className="text-xs text-muted-foreground">{product.name_en}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${typeTone}`}>
+                          {typeLabel}
+                        </span>
+                        <p className="mt-1 text-xs text-muted-foreground">{metaText}</p>
+                      </td>
+                      <td className="px-4 py-3">{product.price.toLocaleString()} د.ج</td>
+                      <td className="px-4 py-3">{product.stock_quantity}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${(product.low_stock_threshold || 3) >= product.stock_quantity && product.stock_quantity > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'}`}>
+                          {product.low_stock_threshold || 3}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                            product.is_published
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {product.is_published ? 'منشور' : 'مسودة'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-2">
+                          <Button size="sm" variant="ghost" asChild>
+                            <Link href={`/admin/products/${product.id}/edit`}>تعديل</Link>
+                          </Button>
+                          <Button size="sm" variant="outline" disabled={savingId === product.id} onClick={() => togglePublish(product)}>
+                            {product.is_published ? 'إخفاء' : 'إظهار'}
+                          </Button>
+                          <Button size="sm" variant="destructive" disabled={savingId === product.id} onClick={() => deleteProduct(product.id)}>
+                            حذف
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })()
               ))}
             </tbody>
           </table>

@@ -13,6 +13,8 @@ import { useUIStore } from '@/stores/ui-store'
 import { getDeliveryFee, wilayas } from '@/lib/algeria'
 import { getVipDeliveryFee } from '@/lib/pricing/vip'
 import type { PaymentMethod } from '@/types/order'
+import { Badge } from '@/components/ui/badge'
+import { getCartFulfillment } from '@/types/cart'
 
 const defaultPaymentMethods = { baridimob: true, cod: true, binance: false }
 
@@ -34,6 +36,9 @@ export default function CheckoutPage() {
     notes: '',
     paymentMethod: 'cod' as PaymentMethod,
   })
+  const fulfillment = getCartFulfillment(items)
+  const isMixedCart = fulfillment.isMixed
+  const isDigitalOnly = fulfillment.isDigitalOnly
 
   const paymentMethods = settings?.payment_methods || defaultPaymentMethods
   const standardDeliveryFee = useMemo(() => getDeliveryFee(settings?.delivery_fees, formData.wilaya, 500), [settings, formData.wilaya])
@@ -74,12 +79,26 @@ export default function CheckoutPage() {
         summary: 'ملخص الطلب',
         subtotal: 'المجموع الفرعي',
         delivery: 'التوصيل',
+        serviceFee: 'رسوم المعالجة',
         total: 'الإجمالي',
         instructions: 'تعليمات الدفع',
         instructionsBody: 'بعد إنشاء الطلب سيتم توجيهك إلى صفحة متابعة الطلب. إذا اخترت BaridiMob أو Binance يمكنك هناك رفع صورة الإثبات وإدخال رقم العملية أو التحويل. أما الدفع عند الاستلام فلا يحتاج أي إثبات.',
         orderFailed: 'فشل إنشاء الطلب',
         retry: 'حدث خطأ. يرجى المحاولة مرة أخرى.',
+        mixedTitle: 'السلة المختلطة غير مدعومة حالياً',
+        mixedBody: 'يجب فصل المنتجات الرقمية عن المنتجات المادية في طلبين مختلفين حتى يطابق مسار الإتمام طريقة التسليم.',
+        digitalTitle: 'طلب رقمي فقط',
+        digitalBody: 'لن تحتاج إلى شحن فعلي لهذا الطلب. استخدم الحقول أدناه لإدخال بيانات التواصل أو الحساب المطلوبة لتسليم المنتج الرقمي.',
+        region: 'المنطقة / الولاية *',
+        city: 'المدينة / المنطقة الفرعية *',
+        deliveryDetails: 'بيانات التسليم الرقمي *',
+        deliveryDetailsHint: 'مثال: البريد الإلكتروني المستلم أو اسم الحساب أو المعرّف المطلوب للتسليم.',
+        contactDetails: 'يتم استخدام هذه البيانات لتسليم المنتج الرقمي أو التواصل معك بشأنه.',
         currency: 'د.ج',
+        type: 'النوع',
+        variant: 'النسخة',
+        digital: 'رقمي',
+        physical: 'مادي',
       }
     : {
         title: 'Checkout',
@@ -111,12 +130,26 @@ export default function CheckoutPage() {
         summary: 'Order summary',
         subtotal: 'Subtotal',
         delivery: 'Delivery',
+        serviceFee: 'Handling',
         total: 'Total',
         instructions: 'Payment instructions',
         instructionsBody: 'After the order is created you will be sent to the order tracking page. If you choose BaridiMob or Binance, you can upload payment proof and enter the transaction reference there. Cash on delivery does not require proof.',
         orderFailed: 'Failed to create order',
         retry: 'Something went wrong. Please try again.',
+        mixedTitle: 'Mixed carts are not supported yet',
+        mixedBody: 'Split digital and physical items into separate orders so the checkout flow can match the fulfillment method.',
+        digitalTitle: 'Digital-only order',
+        digitalBody: 'No physical shipping is needed for this order. Use the fields below for the contact or account details required to deliver the digital product.',
+        region: 'Region / wilaya *',
+        city: 'City / area *',
+        deliveryDetails: 'Digital delivery details *',
+        deliveryDetailsHint: 'Example: recipient email, account name, or the ID needed for delivery.',
+        contactDetails: 'These details are used to deliver the digital item or contact you about it.',
         currency: 'DZD',
+        type: 'Type',
+        variant: 'Variant',
+        digital: 'Digital',
+        physical: 'Physical',
       }
 
   useEffect(() => {
@@ -161,6 +194,7 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isMixedCart) return
     setLoading(true)
 
     try {
@@ -171,7 +205,7 @@ export default function CheckoutPage() {
           ...formData,
           customerEmail: formData.customerEmail.trim() || null,
           notes: formData.notes.trim() || null,
-          items: items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+          items: items.map((item) => ({ productId: item.productId, quantity: item.quantity, variantId: item.variantId || null })),
         }),
       })
 
@@ -242,6 +276,21 @@ export default function CheckoutPage() {
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <form onSubmit={handleSubmit} className="surface-card flex flex-col gap-4 rounded-[32px] p-5 md:p-6">
+          {isMixedCart ? (
+            <div className="rounded-[24px] border border-destructive/25 bg-destructive/5 px-4 py-4 text-sm leading-7 text-foreground">
+              <p className="font-bold text-destructive">{copy.mixedTitle}</p>
+              <p className="mt-2 text-muted-foreground">{copy.mixedBody}</p>
+            </div>
+          ) : null}
+
+          {isDigitalOnly ? (
+            <div className="rounded-[24px] border border-primary/20 bg-primary/5 px-4 py-4 text-sm leading-7 text-foreground">
+              <p className="font-bold text-primary">{copy.digitalTitle}</p>
+              <p className="mt-2 text-muted-foreground">{copy.digitalBody}</p>
+              <p className="mt-2 text-xs text-muted-foreground">{copy.contactDetails}</p>
+            </div>
+          ) : null}
+
           {user.is_vip ? (
             <div className="rounded-[24px] border border-brand-gold/40 bg-brand-gold/10 px-4 py-4 text-sm leading-7 text-foreground">
               {copy.vipPerks}
@@ -264,7 +313,7 @@ export default function CheckoutPage() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="wilaya">{copy.wilaya}</Label>
+            <Label htmlFor="wilaya">{isDigitalOnly ? copy.region : copy.wilaya}</Label>
             <select id="wilaya" required className="flex min-h-[48px] w-full rounded-2xl border border-white/80 bg-white/80 px-3 py-2 text-sm" value={formData.wilaya} onChange={(e) => setFormData({ ...formData, wilaya: e.target.value })}>
               <option value="">{copy.chooseWilaya}</option>
               {wilayas.map((w) => (
@@ -274,13 +323,14 @@ export default function CheckoutPage() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="commune">{copy.commune}</Label>
+            <Label htmlFor="commune">{isDigitalOnly ? copy.city : copy.commune}</Label>
             <Input id="commune" required value={formData.commune} onChange={(e) => setFormData({ ...formData, commune: e.target.value })} className="min-h-[48px] rounded-2xl border-white/80 bg-white/80" />
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="address">{copy.address}</Label>
+            <Label htmlFor="address">{isDigitalOnly ? copy.deliveryDetails : copy.address}</Label>
             <textarea id="address" required rows={3} className="flex w-full rounded-[20px] border border-white/80 bg-white/80 px-3 py-3 text-sm" value={formData.deliveryAddress} onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })} />
+            {isDigitalOnly ? <p className="text-xs text-muted-foreground">{copy.deliveryDetailsHint}</p> : null}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -333,7 +383,7 @@ export default function CheckoutPage() {
             ) : null}
           </div>
 
-          <Button type="submit" className="min-h-[52px] w-full rounded-full bg-gradient-to-r from-primary to-brand-gold text-base font-bold text-primary-foreground shadow-glow" disabled={loading}>
+          <Button type="submit" className="min-h-[52px] w-full rounded-full bg-gradient-to-r from-primary to-brand-gold text-base font-bold text-primary-foreground shadow-glow" disabled={loading || isMixedCart}>
             {loading ? copy.submitting : copy.submit}
           </Button>
         </form>
@@ -345,9 +395,21 @@ export default function CheckoutPage() {
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               {items.map((item) => (
-                <div key={item.productId} className="flex justify-between text-sm">
-                  <span>{item.name} × {item.quantity}</span>
-                  <span>{(item.price * item.quantity).toLocaleString()} {copy.currency}</span>
+                <div key={item.cartItemId} className="space-y-2 text-sm">
+                  <div className="flex justify-between gap-4">
+                    <span>{item.name} × {item.quantity}</span>
+                    <span>{(item.price * item.quantity).toLocaleString()} {copy.currency}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="secondary" className="rounded-full">
+                      {copy.type}: {item.productType === 'digital' ? copy.digital : copy.physical}
+                    </Badge>
+                    {item.variantLabel ? (
+                      <Badge variant="outline" className="rounded-full">
+                        {copy.variant}: {item.variantLabel}
+                      </Badge>
+                    ) : null}
+                  </div>
                 </div>
               ))}
               <div className="space-y-2 border-t pt-4">
@@ -356,7 +418,7 @@ export default function CheckoutPage() {
                   <span>{subtotal().toLocaleString()} {copy.currency}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>{copy.delivery}</span>
+                  <span>{isDigitalOnly ? copy.serviceFee : copy.delivery}</span>
                   <span>{deliveryFee.toLocaleString()} {copy.currency}</span>
                 </div>
                 {vipDiscount > 0 ? (
@@ -378,7 +440,9 @@ export default function CheckoutPage() {
               <CardTitle>{copy.instructions}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm leading-8 text-muted-foreground">{copy.instructionsBody}</p>
+              <p className="text-sm leading-8 text-muted-foreground">
+                {isDigitalOnly ? `${copy.digitalBody} ${copy.instructionsBody}` : copy.instructionsBody}
+              </p>
               {formData.paymentMethod === 'baridimob' ? (
                 <div className="mt-4 rounded-2xl border border-border bg-white px-4 py-4">
                   <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground">RIP</p>

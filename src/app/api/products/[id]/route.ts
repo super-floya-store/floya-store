@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/session'
 import { productUpdateSchema } from '@/lib/validations/product'
+import { getAvailableDigitalUnitCount, getProductVariants, recalculateProductAggregates, syncProductChildren } from '@/lib/products/inventory'
 
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -29,7 +30,20 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
       )
     }
 
-    return NextResponse.json({ success: true, data })
+    const variants = await getProductVariants(data.id)
+    const availableDigitalUnits = data.product_type === 'digital_account' ? await getAvailableDigitalUnitCount(data.id) : 0
+
+    let digitalInventoryUnits: any[] | undefined
+    if (includeUnpublished && data.product_type === 'digital_account') {
+      const { data: units } = await supabaseServer
+        .from('digital_inventory_units')
+        .select('*')
+        .eq('product_id', data.id)
+        .order('created_at', { ascending: true })
+      digitalInventoryUnits = units || []
+    }
+
+    return NextResponse.json({ success: true, data: { ...data, variants, available_digital_units: availableDigitalUnits, digital_inventory_units: digitalInventoryUnits } })
   } catch {
     return NextResponse.json(
       { success: false, error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
@@ -51,9 +65,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       )
     }
 
+    const { variants: submittedVariants, digital_inventory_units: submittedDigitalInventoryUnits, ...productPayload } = result.data
+
     const { data, error } = await supabaseServer
       .from('products')
-      .update(result.data)
+      .update(productPayload)
       .eq('id', params.id)
       .select()
       .single()
@@ -65,7 +81,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       )
     }
 
-    return NextResponse.json({ success: true, data })
+    await syncProductChildren(params.id, result.data)
+    await recalculateProductAggregates(params.id, result.data)
+    const variants = await getProductVariants(params.id)
+    const availableDigitalUnits = data.product_type === 'digital_account' ? await getAvailableDigitalUnitCount(params.id) : 0
+
+    return NextResponse.json({ success: true, data: { ...data, variants, available_digital_units: availableDigitalUnits } })
   } catch {
     return NextResponse.json(
       { success: false, error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },

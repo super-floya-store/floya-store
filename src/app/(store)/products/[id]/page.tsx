@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -18,6 +18,7 @@ import { useUIStore } from '@/stores/ui-store'
 import { Heart, Zap } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { getVipDiscountedPrice } from '@/lib/pricing/vip'
+import { getProductType, getProductVariantChoices } from '@/components/store/product-metadata'
 
 export default function ProductDetailPage() {
   const params = useParams()
@@ -27,6 +28,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
   const addItem = useCartStore((s) => s.addItem)
   const addRecentlyViewed = useRecentlyViewedStore((s) => s.add)
   const toggleWishlist = useWishlistStore((s) => s.toggle)
@@ -45,10 +47,17 @@ export default function ProductDetailPage() {
         colors: 'الألوان',
         delivery: 'التوصيل',
         deliveryBody: 'يشحن عادة خلال 24-72 ساعة حسب الولاية.',
+        digitalDelivery: 'التسليم الرقمي',
+        digitalDeliveryBody: 'يتم التسليم رقمياً بعد تأكيد الطلب ومراجعة الدفع عند الحاجة.',
         addToCart: 'أضف للسلة',
         buyNow: 'شراء الآن',
         wishlist: 'المفضلة',
         mobileAddToCart: 'أضف للسلة',
+        variants: 'النسخ المتاحة',
+        chooseVariant: 'اختر النسخة المناسبة قبل الإضافة إلى السلة.',
+        selectedVariant: 'النسخة المحددة',
+        selectVariantCta: 'حدد نسخة أولاً',
+        digital: 'منتج رقمي',
         currency: 'د.ج',
       }
     : {
@@ -64,10 +73,17 @@ export default function ProductDetailPage() {
         colors: 'Colors',
         delivery: 'Delivery',
         deliveryBody: 'Usually ships within 24-72 hours depending on the wilaya.',
+        digitalDelivery: 'Digital delivery',
+        digitalDeliveryBody: 'Delivered digitally after order confirmation and payment review when needed.',
         addToCart: 'Add to cart',
         buyNow: 'Buy now',
         wishlist: 'Wishlist',
         mobileAddToCart: 'Add to cart',
+        variants: 'Available variants',
+        chooseVariant: 'Choose the correct variant before adding this item to the cart.',
+        selectedVariant: 'Selected variant',
+        selectVariantCta: 'Select a variant first',
+        digital: 'Digital product',
         currency: 'DZD',
       }
 
@@ -92,6 +108,21 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (product) addRecentlyViewed(product.id)
   }, [product, addRecentlyViewed])
+
+  const variantChoices = useMemo(() => (product ? getProductVariantChoices(product) : []), [product])
+
+  useEffect(() => {
+    if (!variantChoices.length) {
+      setSelectedVariantId(null)
+      return
+    }
+
+    const preferredVariant = variantChoices.find((variant) => variant.isDefault && variant.stockQuantity !== 0)
+      || variantChoices.find((variant) => variant.stockQuantity !== 0)
+      || variantChoices[0]
+
+    setSelectedVariantId(preferredVariant.id)
+  }, [variantChoices])
 
   if (loading) {
     return (
@@ -126,19 +157,27 @@ export default function ProductDetailPage() {
   const basePrice = hasPromo ? product.promo_price! : product.price
   const vipPrice = getVipDiscountedPrice(basePrice, !!user?.is_vip)
   const hasVipPrice = !!user?.is_vip && vipPrice < basePrice
-  const isOutOfStock = product.stock_quantity === 0
+  const productType = getProductType(product)
   const productName = locale === 'ar' ? product.name_ar : product.name_en
   const productDescription = locale === 'ar' ? product.description_ar : (product.description_en || product.description_ar)
   const categoryName = product.category ? (locale === 'ar' ? product.category.name_ar : product.category.name_en) : null
+  const selectedVariant = variantChoices.find((variant) => variant.id === selectedVariantId) || null
+  const hasVariants = variantChoices.length > 0
+  const availableStock = selectedVariant?.stockQuantity ?? product.stock_quantity
+  const isOutOfStock = availableStock === 0
+  const canPurchase = !isOutOfStock && (!hasVariants || Boolean(selectedVariant))
 
   const handleAddToCart = () => {
-    if (isOutOfStock) return
+    if (!canPurchase) return
     addItem({
       productId: product.id,
       name: productName,
       price: vipPrice,
       image: primaryImage,
       quantity,
+      productType,
+      variantId: selectedVariant?.id || null,
+      variantLabel: selectedVariant?.label || null,
     })
   }
 
@@ -216,9 +255,56 @@ export default function ProductDetailPage() {
 
           <div className="flex items-center gap-2 text-sm md:text-base">
             <span className={`text-sm font-medium ${isOutOfStock ? 'text-destructive' : 'text-green-600'}`}>
-              {isOutOfStock ? copy.outOfStock : `${copy.available} (${product.stock_quantity} ${copy.pieces})`}
+              {isOutOfStock ? copy.outOfStock : `${copy.available} (${availableStock} ${copy.pieces})`}
             </span>
           </div>
+
+          {productType === 'digital' ? (
+            <div className="rounded-[24px] border border-primary/20 bg-primary/5 px-4 py-4 text-sm leading-7 text-foreground">
+              <Badge className="mb-3 rounded-full bg-secondary text-secondary-foreground">{copy.digital}</Badge>
+              <p>{copy.digitalDeliveryBody}</p>
+            </div>
+          ) : null}
+
+          {hasVariants ? (
+            <div className="surface-card rounded-[30px] px-5 py-5">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-secondary">{copy.variants}</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">{copy.chooseVariant}</p>
+                </div>
+                {selectedVariant ? (
+                  <Badge variant="secondary" className="w-fit rounded-full px-4 py-1.5 text-sm shadow-soft">
+                    {copy.selectedVariant}: {selectedVariant.label}
+                  </Badge>
+                ) : null}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                {variantChoices.map((variant) => {
+                  const unavailable = variant.stockQuantity === 0
+                  const active = selectedVariant?.id === variant.id
+
+                  return (
+                    <button
+                      type="button"
+                      key={variant.id}
+                      onClick={() => setSelectedVariantId(variant.id)}
+                      disabled={unavailable}
+                      className={`rounded-full border px-4 py-3 text-sm font-semibold transition ${
+                        active
+                          ? 'border-primary bg-primary text-primary-foreground shadow-soft'
+                          : unavailable
+                            ? 'cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60'
+                            : 'border-border bg-white/80 text-foreground hover:border-primary/40'
+                      }`}
+                    >
+                      {variant.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null}
 
           {productDescription && (
             <div className="surface-card rounded-[30px] px-5 py-5">
@@ -236,8 +322,8 @@ export default function ProductDetailPage() {
                   </div>
                 </div>
                 <div className="rounded-2xl bg-white/75 p-4">
-                  <p className="text-xs text-muted-foreground">{copy.delivery}</p>
-                  <p className="mt-2 font-bold text-foreground">{copy.deliveryBody}</p>
+                  <p className="text-xs text-muted-foreground">{productType === 'digital' ? copy.digitalDelivery : copy.delivery}</p>
+                  <p className="mt-2 font-bold text-foreground">{productType === 'digital' ? copy.digitalDeliveryBody : copy.deliveryBody}</p>
                 </div>
               </div>
             </div>
@@ -248,25 +334,25 @@ export default function ProductDetailPage() {
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full transition hover:bg-accent"
-                disabled={isOutOfStock}
+                disabled={!canPurchase}
               >
                 <Minus className="h-4 w-4" />
               </button>
               <span className="w-12 text-center font-medium">{quantity}</span>
               <button
-                onClick={() => setQuantity(Math.min(product.stock_quantity || 99, quantity + 1))}
+                onClick={() => setQuantity(Math.min(availableStock || 99, quantity + 1))}
                 className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full transition hover:bg-accent"
-                disabled={isOutOfStock}
+                disabled={!canPurchase}
               >
                 <Plus className="h-4 w-4" />
               </button>
             </div>
 
-            <Button size="lg" className="glow-pulse min-h-[52px] flex-1 rounded-full bg-gradient-to-r from-primary to-brand-gold text-base font-bold text-primary-foreground shadow-glow transition duration-300 hover:-translate-y-0.5" disabled={isOutOfStock} onClick={handleAddToCart}>
+            <Button size="lg" className="glow-pulse min-h-[52px] flex-1 rounded-full bg-gradient-to-r from-primary to-brand-gold text-base font-bold text-primary-foreground shadow-glow transition duration-300 hover:-translate-y-0.5" disabled={!canPurchase} onClick={handleAddToCart}>
               <ShoppingCart className="h-5 w-5 ml-2" />
-              {isOutOfStock ? copy.outOfStock : copy.addToCart}
+              {isOutOfStock ? copy.outOfStock : !selectedVariant && hasVariants ? copy.selectVariantCta : copy.addToCart}
             </Button>
-            <Button size="lg" variant="outline" className="min-h-[52px] rounded-full" disabled={isOutOfStock} onClick={handleBuyNow}>
+            <Button size="lg" variant="outline" className="min-h-[52px] rounded-full" disabled={!canPurchase} onClick={handleBuyNow}>
               <Zap className="h-5 w-5 ml-2" />
               {copy.buyNow}
             </Button>
@@ -278,9 +364,9 @@ export default function ProductDetailPage() {
       </div>
 
       <div className="fixed inset-x-4 bottom-4 z-40 md:hidden">
-        <Button size="lg" className="min-h-[54px] w-full rounded-full bg-gradient-to-r from-secondary to-brand-ink text-base font-bold text-secondary-foreground shadow-heavy" disabled={isOutOfStock} onClick={handleAddToCart}>
+        <Button size="lg" className="min-h-[54px] w-full rounded-full bg-gradient-to-r from-secondary to-brand-ink text-base font-bold text-secondary-foreground shadow-heavy" disabled={!canPurchase} onClick={handleAddToCart}>
           <ShoppingCart className="h-5 w-5 ml-2" />
-          {isOutOfStock ? copy.outOfStock : copy.mobileAddToCart}
+          {isOutOfStock ? copy.outOfStock : !selectedVariant && hasVariants ? copy.selectVariantCta : copy.mobileAddToCart}
         </Button>
       </div>
 

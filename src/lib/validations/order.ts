@@ -26,6 +26,7 @@ export const orderSchema = z.object({
     .array(
       z.object({
         productId: z.string().uuid(),
+        variantId: z.string().uuid().optional().nullable(),
         quantity: z.number().int().min(1).max(99),
       })
     )

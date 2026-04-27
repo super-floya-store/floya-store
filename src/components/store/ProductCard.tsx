@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation'
 import { useUIStore } from '@/stores/ui-store'
 import { useAuth } from '@/hooks/useAuth'
 import { getVipDiscountedPrice } from '@/lib/pricing/vip'
+import { getProductType, getProductVariantChoices } from '@/components/store/product-metadata'
 
 interface ProductCardProps {
   product: Product
@@ -35,6 +36,9 @@ export function ProductCard({ product }: ProductCardProps) {
   const isNew = Date.now() - new Date(product.created_at).getTime() < 1000 * 60 * 60 * 24 * 21
   const isLowStock = product.stock_quantity > 0 && product.stock_quantity <= 3
   const productName = locale === 'ar' ? product.name_ar : product.name_en
+  const productType = getProductType(product)
+  const variantChoices = getProductVariantChoices(product)
+  const hasVariants = variantChoices.length > 0
   const currency = 'DZD'
   const copy = locale === 'ar'
     ? {
@@ -45,6 +49,9 @@ export function ProductCard({ product }: ProductCardProps) {
         add: 'أضف',
         soldOutShort: 'نفذ',
         buyNow: 'شراء الآن',
+        chooseVariant: 'اختر النسخة',
+        optionsCount: 'خيارات',
+        digital: 'رقمي',
       }
     : {
         new: 'New',
@@ -54,21 +61,37 @@ export function ProductCard({ product }: ProductCardProps) {
         add: 'Add',
         soldOutShort: 'Sold out',
         buyNow: 'Buy now',
+        chooseVariant: 'Choose variant',
+        optionsCount: 'options',
+        digital: 'Digital',
       }
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    if (hasVariants) {
+      router.push(`/products/${product.id}`)
+      return
+    }
     if (isOutOfStock) return
     addItem({
       productId: product.id,
       name: productName,
       price: vipPrice,
       image: primaryImage,
+      productType,
+      variantId: null,
+      variantLabel: null,
     })
   }
 
   const handleBuyNow = (e: React.MouseEvent) => {
+    if (hasVariants) {
+      e.preventDefault()
+      e.stopPropagation()
+      router.push(`/products/${product.id}`)
+      return
+    }
     handleAddToCart(e)
     router.push('/checkout')
   }
@@ -98,6 +121,11 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
           {isNew && <Badge className="absolute left-3 top-3 rounded-full bg-secondary text-secondary-foreground">{copy.new}</Badge>}
           {isLowStock && <Badge className="absolute left-3 top-12 rounded-full bg-amber-500 text-white">{copy.lowStock}</Badge>}
+          {productType === 'digital' && (
+            <Badge className="absolute bottom-3 right-3 rounded-full border-0 bg-secondary text-secondary-foreground">
+              {copy.digital}
+            </Badge>
+          )}
           {isOutOfStock && (
             <>
               <div className="absolute inset-0 bg-secondary/50 backdrop-blur-[2px]" />
@@ -123,6 +151,11 @@ export function ProductCard({ product }: ProductCardProps) {
             {productName}
           </h3>
         </Link>
+        {hasVariants ? (
+          <p className="text-xs font-medium text-muted-foreground">
+            {variantChoices.length} {copy.optionsCount}
+          </p>
+        ) : null}
 
         <div className="flex items-end gap-2">
           {hasVipPrice ? (
@@ -148,7 +181,7 @@ export function ProductCard({ product }: ProductCardProps) {
             onClick={handleAddToCart}
           >
             <ShoppingCart className="h-4 w-4 ml-2" />
-            {isOutOfStock ? copy.soldOutShort : copy.add}
+            {isOutOfStock ? copy.soldOutShort : hasVariants ? copy.chooseVariant : copy.add}
           </Button>
           <Button size="sm" variant="outline" className="min-h-[44px] rounded-full" disabled={isOutOfStock} onClick={handleBuyNow}>
             <Zap className="h-4 w-4 ml-2" />

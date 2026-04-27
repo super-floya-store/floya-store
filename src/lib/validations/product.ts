@@ -1,5 +1,28 @@
 import { z } from 'zod'
 
+const productVariantSchema = z.object({
+  id: z.string().uuid().optional(),
+  sku: z.string().max(120).optional().nullable(),
+  size: z.string().max(50).optional().nullable(),
+  color: z.string().max(80).optional().nullable(),
+  name_ar: z.string().max(200).optional().nullable(),
+  name_en: z.string().max(200).optional().nullable(),
+  price_override: z.number().nonnegative().optional().nullable(),
+  promo_price_override: z.number().nonnegative().optional().nullable(),
+  stock_quantity: z.number().int().min(0).default(0),
+  low_stock_threshold: z.number().int().min(0).max(999).default(3),
+  is_active: z.boolean().default(true),
+  sort_order: z.number().int().min(0).default(0),
+})
+
+const digitalInventoryUnitSchema = z.object({
+  id: z.string().uuid().optional(),
+  variant_id: z.string().uuid().optional().nullable(),
+  title: z.string().max(200).optional().nullable(),
+  payload: z.string().min(1, 'بيانات التسليم مطلوبة'),
+  status: z.enum(['available', 'reserved', 'delivered', 'revoked']).optional(),
+})
+
 export const productSchema = z.object({
   name_ar: z
     .string()
@@ -11,6 +34,7 @@ export const productSchema = z.object({
     .max(200, 'الاسم الإنجليزي يجب أن لا يتجاوز 200 حرف'),
   description_ar: z.string().max(2000, 'الوصف العربي يجب أن لا يتجاوز 2000 حرف').optional().nullable(),
   description_en: z.string().max(2000, 'الوصف الإنجليزي يجب أن لا يتجاوز 2000 حرف').optional().nullable(),
+  product_type: z.enum(['physical_simple', 'physical_variant', 'digital_account']).default('physical_simple'),
   price: z
     .number()
     .positive('السعر يجب أن يكون موجباً')
@@ -31,6 +55,8 @@ export const productSchema = z.object({
   seo_description: z.string().max(160).optional().nullable(),
   supplier_id: z.string().uuid().optional().nullable(),
   low_stock_threshold: z.number().int().min(0).max(999).default(3),
+  variants: z.array(productVariantSchema).default([]),
+  digital_inventory_units: z.array(digitalInventoryUnitSchema).default([]),
 })
 
 export const productUpdateSchema = productSchema.partial()

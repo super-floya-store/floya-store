@@ -19,9 +19,22 @@ export async function GET() {
     const { data: items } = orderIds.length
       ? await supabaseServer.from('order_items').select('*').in('order_id', orderIds)
       : { data: [] as any[] }
+    const orderItemIds = (items || []).map((item) => item.id)
+    const { data: digitalUnits } = orderItemIds.length
+      ? await supabaseServer.from('digital_inventory_units').select('id, order_item_id, title, payload').in('order_item_id', orderItemIds).eq('status', 'delivered')
+      : { data: [] as any[] }
 
     const itemsByOrderId = new Map<string, any[]>()
+    const unitsByOrderItemId = new Map<string, any[]>()
+
+    for (const unit of digitalUnits || []) {
+      const current = unitsByOrderItemId.get(unit.order_item_id) || []
+      current.push(unit)
+      unitsByOrderItemId.set(unit.order_item_id, current)
+    }
+
     for (const item of items || []) {
+      item.delivered_units = unitsByOrderItemId.get(item.id) || []
       const current = itemsByOrderId.get(item.order_id) || []
       current.push(item)
       itemsByOrderId.set(item.order_id, current)

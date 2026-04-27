@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/session'
 import { orderStatusSchema } from '@/lib/validations/order'
+import { recalculateProductAggregates } from '@/lib/products/inventory'
 
 async function incrementProductStock(productId: string, amount: number) {
   const { data: product, error: productError } = await supabaseServer
@@ -22,6 +23,26 @@ async function incrementProductStock(productId: string, amount: number) {
   if (updateError) {
     throw new Error(updateError.message)
   }
+}
+
+async function incrementVariantStock(variantId: string, amount: number) {
+  const { data: variant, error } = await supabaseServer
+    .from('product_variants')
+    .select('stock_quantity, product_id')
+    .eq('id', variantId)
+    .single()
+
+  if (error || !variant) {
+    throw new Error('Failed to load product variant stock')
+  }
+
+  const { error: updateError } = await supabaseServer
+    .from('product_variants')
+    .update({ stock_quantity: variant.stock_quantity + amount })
+    .eq('id', variantId)
+
+  if (updateError) throw new Error(updateError.message)
+  await recalculateProductAggregates(variant.product_id)
 }
 
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
@@ -123,6 +144,29 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       if (paymentStatus === 'refunded') {
         updates.refund_status = 'refunded'
       }
+
+      if (paymentStatus === 'paid') {
+        const { data: orderItems } = await supabaseServer.from('order_items').select('*').eq('order_id', params.id)
+        const digitalItems = (orderItems || []).filter((item) => item.product_type === 'digital_account')
+        if (digitalItems.length > 0) {
+          const orderItemIds = digitalItems.map((item) => item.id)
+          await supabaseServer
+            .from('digital_inventory_units')
+            .update({ status: 'delivered', delivered_at: new Date().toISOString() })
+            .in('order_item_id', orderItemIds)
+
+          await supabaseServer
+            .from('order_items')
+            .update({ fulfillment_status: 'delivered' })
+            .in('id', orderItemIds)
+
+          const hasOnlyDigital = (orderItems || []).every((item) => item.product_type === 'digital_account')
+          if (hasOnlyDigital) {
+            updates.status = 'delivered'
+            updates.delivered_at = new Date().toISOString()
+          }
+        }
+      }
     }
 
     if (typeof estimatedDeliveryDays !== 'undefined') {
@@ -168,7 +212,20 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       const { data: orderItems } = await supabaseServer.from('order_items').select('*').eq('order_id', params.id)
       if (orderItems) {
         for (const item of orderItems) {
-          await incrementProductStock(item.product_id, item.quantity)
+          if (item.product_type === 'physical_variant' && item.variant_id) {
+            await incrementVariantStock(item.variant_id, item.quantity)
+          } else if (item.product_type === 'physical_simple') {
+            await incrementProductStock(item.product_id, item.quantity)
+          } else if (item.product_type === 'digital_account') {
+            const { data: units } = await supabaseServer.from('digital_inventory_units').select('id, product_id').eq('order_item_id', item.id)
+            if (units && units.length > 0) {
+              await supabaseServer
+                .from('digital_inventory_units')
+                .update({ status: 'available', order_item_id: null, reserved_at: null, delivered_at: null })
+                .in('id', units.map((unit) => unit.id))
+              await recalculateProductAggregates(item.product_id)
+            }
+          }
         }
       }
     }

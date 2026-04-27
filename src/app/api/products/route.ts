@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/session'
-import { productSchema, productUpdateSchema } from '@/lib/validations/product'
+import { productSchema } from '@/lib/validations/product'
+import { getAvailableDigitalUnitCount, getProductVariants, syncProductChildren } from '@/lib/products/inventory'
 
 export async function GET(request: NextRequest) {
   try {
@@ -112,9 +113,22 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const rows = await Promise.all((data || []).map(async (product) => {
+      const variants = await getProductVariants(product.id)
+      const availableDigitalUnits = product.product_type === 'digital_account'
+        ? await getAvailableDigitalUnitCount(product.id)
+        : 0
+
+      return {
+        ...product,
+        variants,
+        available_digital_units: availableDigitalUnits,
+      }
+    }))
+
     return NextResponse.json({
       success: true,
-      data,
+      data: rows,
       pagination: {
         page,
         limit,
@@ -146,9 +160,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const { variants: submittedVariants, digital_inventory_units: submittedDigitalInventoryUnits, ...productPayload } = result.data
+
     const { data, error } = await supabaseServer
       .from('products')
-      .insert(result.data)
+      .insert({
+        ...productPayload,
+        product_type: productPayload.product_type,
+      })
       .select()
       .single()
 
@@ -159,7 +178,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ success: true, data }, { status: 201 })
+    await syncProductChildren(data.id, result.data)
+
+    const variants = await getProductVariants(data.id)
+    const availableDigitalUnits = data.product_type === 'digital_account' ? await getAvailableDigitalUnitCount(data.id) : 0
+
+    return NextResponse.json({ success: true, data: { ...data, variants, available_digital_units: availableDigitalUnits } }, { status: 201 })
   } catch (error) {
     console.error('Create product error:', error)
     return NextResponse.json(

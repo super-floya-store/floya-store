@@ -4,13 +4,17 @@ import { ShoppingCart, Plus, Minus, X } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
 import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import Image from 'next/image'
 import Link from 'next/link'
+import { getCartFulfillment } from '@/types/cart'
 
 export function CartDrawer() {
   const { items, removeItem, updateQuantity, subtotal, clearCart, hasHydrated } = useCartStore()
   const { cartDrawerOpen, closeCartDrawer, locale } = useUIStore()
   const total = subtotal()
+  const fulfillment = getCartFulfillment(items)
+  const fee = fulfillment.isDigitalOnly ? 0 : 500
   const copy = locale === 'ar'
     ? {
         title: 'سلة التسوق',
@@ -27,6 +31,11 @@ export function CartDrawer() {
         increase: 'زيادة',
         remove: 'حذف',
         bag: 'YOUR BAG',
+        variant: 'النسخة',
+        digital: 'رقمي',
+        physical: 'مادي',
+        service: 'رسوم المعالجة',
+        mixed: 'افصل المنتجات الرقمية عن المادية قبل إتمام الطلب.',
         currency: 'د.ج',
       }
     : {
@@ -44,6 +53,11 @@ export function CartDrawer() {
         increase: 'Increase quantity',
         remove: 'Remove item',
         bag: 'YOUR BAG',
+        variant: 'Variant',
+        digital: 'Digital',
+        physical: 'Physical',
+        service: 'Handling',
+        mixed: 'Separate digital and physical items before checkout.',
         currency: 'DZD',
       }
 
@@ -80,8 +94,13 @@ export function CartDrawer() {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
+              {fulfillment.isMixed ? (
+                <div className="rounded-[22px] border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-muted-foreground">
+                  {copy.mixed}
+                </div>
+              ) : null}
               {items.map((item) => (
-                <div key={item.productId} className="surface-card flex gap-3 rounded-[26px] p-3">
+                <div key={item.cartItemId} className="surface-card flex gap-3 rounded-[26px] p-3">
                   <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-[20px] bg-muted">
                     {item.image ? (
                       <Image src={item.image} alt={item.name} fill className="object-cover" />
@@ -93,10 +112,20 @@ export function CartDrawer() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="truncate text-sm font-bold text-secondary">{item.name}</h3>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Badge variant="secondary" className="rounded-full">
+                        {item.productType === 'digital' ? copy.digital : copy.physical}
+                      </Badge>
+                      {item.variantLabel ? (
+                        <Badge variant="outline" className="rounded-full">
+                          {copy.variant}: {item.variantLabel}
+                        </Badge>
+                      ) : null}
+                    </div>
                     <p className="mt-1 text-sm font-bold text-primary">{item.price.toLocaleString()} {copy.currency}</p>
                     <div className="mt-3 flex items-center gap-2">
                       <button
-                        onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                        onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
                         className="inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-full bg-secondary/5 transition hover:bg-secondary hover:text-secondary-foreground"
                         aria-label={copy.decrease}
                       >
@@ -104,14 +133,14 @@ export function CartDrawer() {
                       </button>
                       <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
                       <button
-                        onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
                         className="inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-full bg-secondary/5 transition hover:bg-secondary hover:text-secondary-foreground"
                         aria-label={copy.increase}
                       >
                         <Plus className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => removeItem(item.productId)}
+                        onClick={() => removeItem(item.cartItemId)}
                         className="ml-auto inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-full text-destructive transition hover:bg-destructive/10"
                         aria-label={copy.remove}
                       >
@@ -133,16 +162,22 @@ export function CartDrawer() {
                 <span className="font-bold">{total.toLocaleString()} {copy.currency}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>{copy.delivery}</span>
-                <span className="font-bold">500 {copy.currency}</span>
+                <span>{fulfillment.isDigitalOnly ? copy.service : copy.delivery}</span>
+                <span className="font-bold">{fee.toLocaleString()} {copy.currency}</span>
               </div>
               <div className="flex justify-between border-t pt-2 text-lg font-bold">
                 <span>{copy.total}</span>
-                <span>{(total + 500).toLocaleString()} {copy.currency}</span>
+                <span>{(total + fee).toLocaleString()} {copy.currency}</span>
               </div>
-              <Button className="min-h-[48px] w-full rounded-full bg-gradient-to-r from-primary to-brand-gold text-primary-foreground shadow-glow" asChild onClick={closeCartDrawer}>
-                <Link href="/checkout">{copy.checkout}</Link>
-              </Button>
+              {fulfillment.isMixed ? (
+                <Button className="min-h-[48px] w-full rounded-full bg-gradient-to-r from-primary to-brand-gold text-primary-foreground shadow-glow" disabled>
+                  {copy.checkout}
+                </Button>
+              ) : (
+                <Button className="min-h-[48px] w-full rounded-full bg-gradient-to-r from-primary to-brand-gold text-primary-foreground shadow-glow" asChild onClick={closeCartDrawer}>
+                  <Link href="/checkout">{copy.checkout}</Link>
+                </Button>
+              )}
               <Button variant="outline" className="min-h-[48px] w-full rounded-full" onClick={clearCart}>
                 {copy.clear}
               </Button>

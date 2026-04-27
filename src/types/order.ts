@@ -1,3 +1,5 @@
+import type { ProductType } from './product'
+
 export type OrderStatus = 'pending' | 'submitted' | 'payment_submitted' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'
 export type PaymentMethod = 'baridimob' | 'cod' | 'binance'
 export type PaymentStatus = 'pending' | 'submitted' | 'paid' | 'rejected' | 'failed' | 'refunded'
@@ -46,6 +48,12 @@ export interface OrderItem {
   id: string
   order_id: string
   product_id: string
+  variant_id: string | null
+  variant_size: string | null
+  variant_color: string | null
+  variant_label: string | null
+  product_type: ProductType
+  fulfillment_status: 'pending' | 'reserved' | 'delivered' | 'released'
   product_name_ar: string
   product_name_en: string
   product_image: string | null
@@ -53,6 +61,7 @@ export interface OrderItem {
   unit_price: number
   total_price: number
   created_at: string
+  delivered_units?: { id: string; title: string | null; payload: string }[]
 }
 
 export interface OrderWithItems extends Order {

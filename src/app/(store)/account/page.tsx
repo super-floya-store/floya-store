@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/useAuth'
 import { useUIStore } from '@/stores/ui-store'
 import type { OrderWithItems } from '@/types/order'
+import { normalizeProductType } from '@/types/cart'
 
 export default function AccountPage() {
   const { user, loading, logout, isAdmin } = useAuth()
@@ -43,6 +44,12 @@ export default function AccountPage() {
         order: 'الطلب',
         payment: 'الدفع',
         refund: 'الاسترجاع',
+        variant: 'النسخة',
+        digital: 'رقمي',
+        physical: 'مادي',
+        delivered: 'تم التسليم',
+        reserved: 'محجوز',
+        access: 'بيانات التسليم',
       }
     : {
         title: 'Account',
@@ -69,6 +76,12 @@ export default function AccountPage() {
         order: 'Order',
         payment: 'Payment',
         refund: 'Refund',
+        variant: 'Variant',
+        digital: 'Digital',
+        physical: 'Physical',
+        delivered: 'Delivered',
+        reserved: 'Reserved',
+        access: 'Delivery details',
       }
 
   useEffect(() => {
@@ -175,6 +188,39 @@ export default function AccountPage() {
                             <Badge variant="outline">{copy.refund}: {order.refund_status}</Badge>
                             {order.priority_fulfillment ? <Badge className="bg-secondary text-secondary-foreground">VIP</Badge> : null}
                           </div>
+                          {order.items.length > 0 ? (
+                            <div className="space-y-2 pt-1 text-sm text-muted-foreground">
+                              {order.items.slice(0, 3).map((item) => (
+                                <div key={item.id} className="rounded-2xl border border-border/70 bg-white/70 px-3 py-3">
+                                  <p className="font-medium text-foreground">
+                                    {(locale === 'ar' ? item.product_name_ar : item.product_name_en) || item.product_name_ar} x {item.quantity}
+                                  </p>
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    <Badge variant="secondary">
+                                      {normalizeProductType(item.product_type) === 'digital' ? copy.digital : copy.physical}
+                                    </Badge>
+                                    {item.variant_label ? <Badge variant="outline">{copy.variant}: {item.variant_label}</Badge> : null}
+                                    {item.fulfillment_status ? (
+                                      <Badge variant="outline">
+                                        {item.fulfillment_status === 'delivered' ? copy.delivered : item.fulfillment_status === 'reserved' ? copy.reserved : item.fulfillment_status}
+                                      </Badge>
+                                    ) : null}
+                                  </div>
+                                  {item.delivered_units?.length ? (
+                                    <div className="mt-3 space-y-2 rounded-2xl border border-primary/20 bg-primary/5 px-3 py-3">
+                                      <p className="text-xs font-semibold text-foreground">{copy.access}</p>
+                                      {item.delivered_units.map((unit) => (
+                                        <div key={unit.id} className="rounded-xl bg-white px-3 py-3 text-xs leading-6 text-foreground">
+                                          {unit.title ? <p className="mb-1 font-semibold">{unit.title}</p> : null}
+                                          <pre className="overflow-x-auto whitespace-pre-wrap break-words font-sans">{unit.payload}</pre>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
                         </div>
                         <div className="flex flex-col items-start gap-3 md:items-end">
                           <p className="text-lg font-bold">{copy.total}: {Number(order.total).toLocaleString()} {locale === 'ar' ? 'د.ج' : 'DZD'}</p>
