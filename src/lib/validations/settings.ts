@@ -20,6 +20,7 @@ export const settingsSchema = z.object({
   free_delivery_threshold: z.string(),
   currency: z.string(),
   logo_url: z.string(),
+  favicon_url: z.string().optional(),
   hero_images: z.array(z.string()),
   baridimob_rip: z.string().optional(),
   binance_wallet_address: z.string().optional(),

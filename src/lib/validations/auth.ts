@@ -16,12 +16,34 @@ export const signupSchema = z.object({
     .min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل')
     .regex(/[A-Z]/, 'يجب أن تحتوي على حرف كبير')
     .regex(/[a-z]/, 'يجب أن تحتوي على حرف صغير')
-    .regex(/[0-9]/, 'يجب أن تحتوي على رقم'),
+    .regex(/[0-9]/, 'يجب أن تحتوي على رقم')
+    .regex(/[!@#$%^&*]/, 'يجب أن تحتوي على رمز خاص'),
   confirmPassword: z.string().min(1, 'تأكيد كلمة المرور مطلوب'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'كلمات المرور غير متطابقة',
   path: ['confirmPassword'],
 })
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('البريد الإلكتروني غير صالح'),
+})
+
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1, 'رمز إعادة التعيين مفقود'),
+    password: z
+      .string()
+      .min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل')
+      .regex(/[A-Z]/, 'يجب أن تحتوي على حرف كبير')
+      .regex(/[a-z]/, 'يجب أن تحتوي على حرف صغير')
+      .regex(/[0-9]/, 'يجب أن تحتوي على رقم')
+      .regex(/[!@#$%^&*]/, 'يجب أن تحتوي على رمز خاص'),
+    confirmPassword: z.string().min(1, 'تأكيد كلمة المرور مطلوب'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'كلمات المرور غير متطابقة',
+    path: ['confirmPassword'],
+  })
 
 export const changePasswordSchema = z
   .object({
@@ -43,3 +65,5 @@ export const changePasswordSchema = z
 export type LoginInput = z.infer<typeof loginSchema>
 export type SignupInput = z.infer<typeof signupSchema>
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>

@@ -3,8 +3,6 @@ import { supabaseServer } from '@/lib/supabase/server'
 import { requireAdmin, requireAuth } from '@/lib/auth/session'
 import { orderSchema, orderStatusSchema } from '@/lib/validations/order'
 import { getStoreSettings } from '@/lib/settings/store-settings'
-import { buildOrderConfirmationEmail } from '@/lib/email/templates'
-import { sendResendEmail } from '@/lib/email/resend'
 import { getDeliveryFee } from '@/lib/algeria'
 import { getVipDeliveryFee, getVipDiscountedPrice } from '@/lib/pricing/vip'
 
@@ -230,25 +228,6 @@ export async function POST(request: NextRequest) {
     for (const item of items) {
       await decrementProductStock(item.productId, item.quantity)
     }
-
-    if (resolvedEmail) {
-      if (settings.order_email_enabled !== false) {
-        const orderWithItems = { ...order, items: orderItemsWithOrderId }
-        const email = buildOrderConfirmationEmail(orderWithItems as any, settings)
-        const fromName = settings.email_sender_name || settings.store_name?.en || settings.store_name?.ar || 'Store'
-        const fromAddress = settings.email_sender_address || 'onboarding@resend.dev'
-
-        await sendResendEmail({
-          from: `${fromName} <${fromAddress}>`,
-          to: resolvedEmail,
-          subject: email.subject,
-          html: email.html,
-        }).catch((emailError) => {
-          console.error('Order confirmation email error:', emailError)
-        })
-      }
-    }
-
     return NextResponse.json({
       success: true,
       data: {

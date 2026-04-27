@@ -8,6 +8,7 @@ export interface StoreSettingsMap {
   store_email?: string
   store_address?: { ar?: string; en?: string }
   logo_url?: string
+  favicon_url?: string
   hero_images?: string[]
   social_links?: Record<string, string>
   admin_notification_email?: string

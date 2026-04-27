@@ -9,6 +9,7 @@ export interface Settings {
   free_delivery_threshold: string
   currency: string
   logo_url: string
+  favicon_url?: string
   hero_images: string[]
   baridimob_rip?: string
   binance_wallet_address?: string

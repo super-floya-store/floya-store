@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/session'
 import { orderStatusSchema } from '@/lib/validations/order'
-import { getStoreSettings } from '@/lib/settings/store-settings'
-import { buildOrderStatusEmail } from '@/lib/email/templates'
-import { sendResendEmail } from '@/lib/email/resend'
 
 async function incrementProductStock(productId: string, amount: number) {
   const { data: product, error: productError } = await supabaseServer
@@ -184,26 +181,6 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         { status: 500 }
       )
     }
-
-    if (data.customer_email) {
-      const { data: items } = await supabaseServer.from('order_items').select('*').eq('order_id', params.id)
-      const settings = await getStoreSettings()
-      if (settings.order_email_enabled !== false) {
-        const email = buildOrderStatusEmail({ ...data, items: items || [] } as any, settings)
-        const fromName = settings.email_sender_name || settings.store_name?.en || settings.store_name?.ar || 'Store'
-        const fromAddress = settings.email_sender_address || 'onboarding@resend.dev'
-
-        await sendResendEmail({
-          from: `${fromName} <${fromAddress}>`,
-          to: data.customer_email,
-          subject: email.subject,
-          html: email.html,
-        }).catch((emailError) => {
-          console.error('Order status email error:', emailError)
-        })
-      }
-    }
-
     return NextResponse.json({ success: true, data })
   } catch {
     return NextResponse.json(

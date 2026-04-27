@@ -15,6 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const description = settings.store_description?.ar || settings.store_description?.en || 'متجر إلكتروني'
   const appUrl = env.NEXT_PUBLIC_APP_URL.startsWith('http') ? env.NEXT_PUBLIC_APP_URL : `https://${env.NEXT_PUBLIC_APP_URL}`
   const logoUrl = settings.logo_url || undefined
+  const faviconUrl = settings.favicon_url || settings.logo_url || '/branding/floya-favicon.svg'
 
   return {
     title: `${titleEn} - ${titleAr}`,
@@ -25,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       images: logoUrl ? [logoUrl] : ['/images/og-image.png'],
     },
-    icons: logoUrl ? { icon: logoUrl, shortcut: logoUrl, apple: logoUrl } : undefined,
+    icons: { icon: faviconUrl, shortcut: faviconUrl, apple: faviconUrl },
   }
 }
 

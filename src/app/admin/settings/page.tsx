@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useUIStore } from '@/stores/ui-store'
 
 type AdminSettingsForm = {
   store_name_ar: string
@@ -18,6 +19,7 @@ type AdminSettingsForm = {
   store_address_ar: string
   delivery_fees: string
   logo_url: string
+  favicon_url: string
   hero_images: string
   baridimob_rip: string
   binance_wallet_address: string
@@ -29,10 +31,6 @@ type AdminSettingsForm = {
   admin_notification_email: string
   email_sender_name: string
   email_sender_address: string
-  order_confirmation_subject: string
-  order_confirmation_html: string
-  order_status_subject: string
-  order_status_html: string
 }
 
 const defaultSettings: AdminSettingsForm = {
@@ -45,6 +43,7 @@ const defaultSettings: AdminSettingsForm = {
   store_address_ar: '',
   delivery_fees: '',
   logo_url: '',
+  favicon_url: '',
   hero_images: '',
   baridimob_rip: '00799999004419717033',
   binance_wallet_address: '',
@@ -56,29 +55,97 @@ const defaultSettings: AdminSettingsForm = {
   admin_notification_email: 'contact@floya.dz',
   email_sender_name: 'Floya Store',
   email_sender_address: 'onboarding@resend.dev',
-  order_confirmation_subject: 'تأكيد طلبك {{order_number}}',
-  order_confirmation_html: '<div dir="rtl"><h2>شكراً لك {{customer_name}}</h2><p>تم استلام طلبك {{order_number}}</p></div>',
-  order_status_subject: 'تحديث حالة الطلب {{order_number}}',
-  order_status_html: '<div dir="rtl"><p>تم تحديث حالة طلبك {{order_number}} إلى {{order_status}}</p></div>',
 }
 
 export default function AdminSettingsPage() {
+  const locale = useUIStore((state) => state.locale)
   const [settings, setSettings] = useState<AdminSettingsForm>(defaultSettings)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
+  const copy = locale === 'ar'
+    ? {
+        title: 'إعدادات المتجر',
+        subtitle: 'تحديث الاسم، الهوية البصرية، معلومات التواصل، ومرسل رسائل الاسترجاع.',
+        storeInfo: 'معلومات المتجر',
+        storeNameAr: 'اسم المتجر (عربي)',
+        storeNameEn: 'اسم المتجر (إنجليزي)',
+        storePhone: 'هاتف التواصل',
+        storeDescriptionAr: 'وصف المتجر',
+        storeWhatsapp: 'واتساب',
+        storeEmail: 'البريد الإلكتروني',
+        storeAddressAr: 'العنوان',
+        deliveryFees: 'رسوم التوصيل حسب الولاية',
+        branding: 'الهوية البصرية',
+        logoUrl: 'رابط الشعار',
+        faviconUrl: 'رابط أيقونة التبويب',
+        logoHelp: 'يفضل شعار مربع واضح. المقاس المقترح 512×512.',
+        faviconHelp: 'يفضل أيقونة صغيرة مربعة. المقاس المقترح 32×32 أو 64×64.',
+        currentPreview: 'المعاينة الحالية',
+        heroImages: 'صور الواجهة',
+        heroHelp: 'ضع رابط صورة في كل سطر.',
+        payments: 'الدفع',
+        baridimobRip: 'RIP باريدي موب',
+        binanceWallet: 'عنوان محفظة Binance / USDT',
+        paymentMethods: 'طرق الدفع المتاحة',
+        cashOnDelivery: 'الدفع عند الاستلام',
+        notifications: 'الإشعارات والبريد',
+        adminNotificationEmail: 'بريد الإدارة للإشعارات',
+        emailSenderName: 'اسم المرسل',
+        emailSenderAddress: 'بريد المرسل',
+        resetOnlyNotice: 'رسائل البريد للعملاء مخصصة الآن لاسترجاع كلمة المرور فقط. رسائل تأكيد الطلب وتحديث الحالة متوقفة.',
+        save: 'حفظ الإعدادات',
+        saving: 'جاري الحفظ...',
+        saved: 'تم حفظ الإعدادات بنجاح',
+        invalidResponse: 'استجابة غير صالحة من الخادم',
+        deliveryJsonError: 'رسوم التوصيل يجب أن تكون JSON صحيحاً',
+      }
+    : {
+        title: 'Store settings',
+        subtitle: 'Update the store name, visual branding, contact details, and password-reset sender identity.',
+        storeInfo: 'Store information',
+        storeNameAr: 'Store name (Arabic)',
+        storeNameEn: 'Store name (English)',
+        storePhone: 'Contact phone',
+        storeDescriptionAr: 'Store description',
+        storeWhatsapp: 'WhatsApp',
+        storeEmail: 'Email',
+        storeAddressAr: 'Address',
+        deliveryFees: 'Delivery fees by wilaya',
+        branding: 'Branding',
+        logoUrl: 'Logo URL',
+        faviconUrl: 'Tab icon URL',
+        logoHelp: 'Use a clear square logo. Recommended size: 512x512.',
+        faviconHelp: 'Use a small square icon. Recommended size: 32x32 or 64x64.',
+        currentPreview: 'Current preview',
+        heroImages: 'Hero images',
+        heroHelp: 'Add one image URL per line.',
+        payments: 'Payments',
+        baridimobRip: 'BaridiMob RIP',
+        binanceWallet: 'Binance / USDT wallet address',
+        paymentMethods: 'Available payment methods',
+        cashOnDelivery: 'Cash on delivery',
+        notifications: 'Notifications and email',
+        adminNotificationEmail: 'Admin notification email',
+        emailSenderName: 'Sender name',
+        emailSenderAddress: 'Sender email',
+        resetOnlyNotice: 'Customer email is now reserved for password resets only. Order confirmation and status emails are disabled.',
+        save: 'Save settings',
+        saving: 'Saving...',
+        saved: 'Settings saved successfully',
+        invalidResponse: 'Invalid server response',
+        deliveryJsonError: 'Delivery fees must be valid JSON',
+      }
+
   const parseApiResponse = async (res: Response) => {
     const text = await res.text()
-    if (!text.trim()) {
-      return null
-    }
-
+    if (!text.trim()) return null
     try {
       return JSON.parse(text)
     } catch {
-      throw new Error(`استجابة غير صالحة من الخادم (${res.status})`)
+      throw new Error(`${copy.invalidResponse} (${res.status})`)
     }
   }
 
@@ -88,7 +155,7 @@ export default function AdminSettingsPage() {
       const parsed = JSON.parse(value)
       return typeof parsed === 'object' && parsed && !Array.isArray(parsed) ? parsed : {}
     } catch {
-      throw new Error('رسوم التوصيل يجب أن تكون JSON صحيحاً')
+      throw new Error(copy.deliveryJsonError)
     }
   }
 
@@ -99,7 +166,7 @@ export default function AdminSettingsPage() {
         const data = await res.json()
 
         if (!data.success) {
-          throw new Error(data.error?.message || 'تعذر تحميل الإعدادات')
+          throw new Error(data.error?.message || 'Failed to load settings')
         }
 
         setSettings({
@@ -112,6 +179,7 @@ export default function AdminSettingsPage() {
           store_address_ar: data.data?.store_address?.ar || defaultSettings.store_address_ar,
           delivery_fees: data.data?.delivery_fees ? JSON.stringify(data.data.delivery_fees, null, 2) : defaultSettings.delivery_fees,
           logo_url: data.data?.logo_url || defaultSettings.logo_url,
+          favicon_url: data.data?.favicon_url || defaultSettings.favicon_url,
           hero_images: Array.isArray(data.data?.hero_images) ? data.data.hero_images.join('\n') : defaultSettings.hero_images,
           baridimob_rip: data.data?.baridimob_rip || defaultSettings.baridimob_rip,
           binance_wallet_address: data.data?.binance_wallet_address || defaultSettings.binance_wallet_address,
@@ -119,13 +187,9 @@ export default function AdminSettingsPage() {
           admin_notification_email: data.data?.admin_notification_email || data.data?.store_email || defaultSettings.admin_notification_email,
           email_sender_name: data.data?.email_sender_name || defaultSettings.email_sender_name,
           email_sender_address: data.data?.email_sender_address || defaultSettings.email_sender_address,
-          order_confirmation_subject: data.data?.email_templates?.order_confirmation?.subject || defaultSettings.order_confirmation_subject,
-          order_confirmation_html: data.data?.email_templates?.order_confirmation?.html || defaultSettings.order_confirmation_html,
-          order_status_subject: data.data?.email_templates?.order_status_update?.subject || defaultSettings.order_status_subject,
-          order_status_html: data.data?.email_templates?.order_status_update?.html || defaultSettings.order_status_html,
         })
       } catch (fetchError) {
-        setError(fetchError instanceof Error ? fetchError.message : 'تعذر تحميل الإعدادات')
+        setError(fetchError instanceof Error ? fetchError.message : 'Failed to load settings')
       } finally {
         setLoading(false)
       }
@@ -143,23 +207,15 @@ export default function AdminSettingsPage() {
     try {
       const parsedDeliveryFees = parseDeliveryFees(settings.delivery_fees)
       const payload = {
-        store_name: {
-          ar: settings.store_name_ar,
-          en: settings.store_name_en,
-        },
-        store_description: {
-          ar: settings.store_description_ar,
-          en: '',
-        },
+        store_name: { ar: settings.store_name_ar, en: settings.store_name_en },
+        store_description: { ar: settings.store_description_ar, en: '' },
         store_phone: settings.store_phone,
         store_whatsapp: settings.store_whatsapp,
         store_email: settings.store_email,
-        store_address: {
-          ar: settings.store_address_ar,
-          en: '',
-        },
+        store_address: { ar: settings.store_address_ar, en: '' },
         delivery_fees: parsedDeliveryFees,
         logo_url: settings.logo_url,
+        favicon_url: settings.favicon_url,
         hero_images: settings.hero_images.split('\n').map((item) => item.trim()).filter(Boolean),
         baridimob_rip: settings.baridimob_rip,
         binance_wallet_address: settings.binance_wallet_address,
@@ -167,17 +223,7 @@ export default function AdminSettingsPage() {
         admin_notification_email: settings.admin_notification_email,
         email_sender_name: settings.email_sender_name,
         email_sender_address: settings.email_sender_address,
-        order_email_enabled: true,
-        email_templates: {
-          order_confirmation: {
-            subject: settings.order_confirmation_subject,
-            html: settings.order_confirmation_html,
-          },
-          order_status_update: {
-            subject: settings.order_status_subject,
-            html: settings.order_status_html,
-          },
-        },
+        order_email_enabled: false,
       }
 
       const res = await fetch('/api/settings', {
@@ -187,9 +233,8 @@ export default function AdminSettingsPage() {
       })
 
       const data = await parseApiResponse(res)
-
       if (!res.ok || !data?.success) {
-        throw new Error(data?.error?.message || `تعذر حفظ الإعدادات (${res.status})`)
+        throw new Error(data?.error?.message || `Failed to save settings (${res.status})`)
       }
 
       setSettings((current) => ({
@@ -197,11 +242,12 @@ export default function AdminSettingsPage() {
         store_name_ar: data.data?.store_name?.ar || current.store_name_ar,
         store_name_en: data.data?.store_name?.en || current.store_name_en,
         logo_url: data.data?.logo_url || current.logo_url,
+        favicon_url: data.data?.favicon_url || current.favicon_url,
       }))
       window.dispatchEvent(new CustomEvent('store-branding-updated', { detail: data.data }))
-      setMessage('تم حفظ الإعدادات بنجاح')
+      setMessage(copy.saved)
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'تعذر حفظ الإعدادات')
+      setError(saveError instanceof Error ? saveError.message : 'Failed to save settings')
     } finally {
       setSaving(false)
     }
@@ -210,7 +256,7 @@ export default function AdminSettingsPage() {
   if (loading) {
     return (
       <div className="space-y-6 max-w-2xl">
-        <h1 className="text-3xl font-bold">إعدادات المتجر</h1>
+        <h1 className="text-3xl font-bold">{copy.title}</h1>
         <Skeleton className="h-80 w-full" />
       </div>
     )
@@ -219,62 +265,108 @@ export default function AdminSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">إعدادات المتجر</h1>
-        <p className="text-sm text-muted-foreground mt-1">تحديث اسم المتجر وبيانات التواصل المستخدمة في الواجهة.</p>
+        <h1 className="text-3xl font-bold">{copy.title}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{copy.subtitle}</p>
       </div>
 
       <form onSubmit={handleSave} className="max-w-2xl space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>معلومات المتجر</CardTitle>
+            <CardTitle>{copy.storeInfo}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="store-name-ar">اسم المتجر (عربي)</Label>
+              <Label htmlFor="store-name-ar">{copy.storeNameAr}</Label>
               <Input id="store-name-ar" value={settings.store_name_ar} onChange={(e) => setSettings({ ...settings, store_name_ar: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="store-name-en">اسم المتجر (إنجليزي)</Label>
+              <Label htmlFor="store-name-en">{copy.storeNameEn}</Label>
               <Input id="store-name-en" value={settings.store_name_en} onChange={(e) => setSettings({ ...settings, store_name_en: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="store-phone">هاتف التواصل</Label>
+              <Label htmlFor="store-phone">{copy.storePhone}</Label>
               <Input id="store-phone" value={settings.store_phone} onChange={(e) => setSettings({ ...settings, store_phone: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="store-description-ar">وصف المتجر</Label>
+              <Label htmlFor="store-description-ar">{copy.storeDescriptionAr}</Label>
               <textarea id="store-description-ar" value={settings.store_description_ar} onChange={(e) => setSettings({ ...settings, store_description_ar: e.target.value })} className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="store-whatsapp">واتساب</Label>
+              <Label htmlFor="store-whatsapp">{copy.storeWhatsapp}</Label>
               <Input id="store-whatsapp" value={settings.store_whatsapp} onChange={(e) => setSettings({ ...settings, store_whatsapp: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="store-email">البريد الإلكتروني</Label>
+              <Label htmlFor="store-email">{copy.storeEmail}</Label>
               <Input id="store-email" type="email" value={settings.store_email} onChange={(e) => setSettings({ ...settings, store_email: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="store-address-ar">العنوان</Label>
+              <Label htmlFor="store-address-ar">{copy.storeAddressAr}</Label>
               <Input id="store-address-ar" value={settings.store_address_ar} onChange={(e) => setSettings({ ...settings, store_address_ar: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="delivery-fees">رسوم التوصيل حسب الولاية</Label>
+              <Label htmlFor="delivery-fees">{copy.deliveryFees}</Label>
               <textarea id="delivery-fees" value={settings.delivery_fees} onChange={(e) => setSettings({ ...settings, delivery_fees: e.target.value })} className="min-h-[160px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder='{"الجزائر": 500, "وهران": 700}' />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{copy.branding}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="baridimob-rip">RIP باريدي موب</Label>
+              <Label htmlFor="logo-url">{copy.logoUrl}</Label>
+              <Input id="logo-url" value={settings.logo_url} onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })} />
+              <p className="text-xs text-muted-foreground">{copy.logoHelp}</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="favicon-url">{copy.faviconUrl}</Label>
+              <Input id="favicon-url" value={settings.favicon_url} onChange={(e) => setSettings({ ...settings, favicon_url: e.target.value })} />
+              <p className="text-xs text-muted-foreground">{copy.faviconHelp}</p>
+            </div>
+            {settings.logo_url || settings.favicon_url ? (
+              <div className="flex flex-wrap items-center gap-6 rounded-md border border-input p-3">
+                {settings.logo_url ? (
+                  <div className="flex items-center gap-3">
+                    <Image src={settings.logo_url} alt="Logo preview" width={48} height={48} className="rounded-md object-cover" />
+                    <span className="text-sm text-muted-foreground">{copy.currentPreview}</span>
+                  </div>
+                ) : null}
+                {settings.favicon_url ? (
+                  <div className="flex items-center gap-3">
+                    <Image src={settings.favicon_url} alt="Favicon preview" width={24} height={24} className="rounded-md object-cover" />
+                    <span className="text-sm text-muted-foreground">Favicon</span>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+            <div className="space-y-2">
+              <Label htmlFor="hero-images">{copy.heroImages}</Label>
+              <textarea id="hero-images" value={settings.hero_images} onChange={(e) => setSettings({ ...settings, hero_images: e.target.value })} className="min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder={copy.heroHelp} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{copy.payments}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="baridimob-rip">{copy.baridimobRip}</Label>
               <Input id="baridimob-rip" value={settings.baridimob_rip} onChange={(e) => setSettings({ ...settings, baridimob_rip: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="binance-wallet-address">عنوان محفظة Binance / USDT</Label>
+              <Label htmlFor="binance-wallet-address">{copy.binanceWallet}</Label>
               <Input id="binance-wallet-address" value={settings.binance_wallet_address} onChange={(e) => setSettings({ ...settings, binance_wallet_address: e.target.value })} />
             </div>
             <div className="space-y-3">
-              <Label>طرق الدفع المتاحة</Label>
+              <Label>{copy.paymentMethods}</Label>
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
                   { key: 'baridimob', label: 'BaridiMob' },
-                  { key: 'cod', label: 'الدفع عند الاستلام' },
+                  { key: 'cod', label: copy.cashOnDelivery },
                   { key: 'binance', label: 'Binance / USDT' },
                 ].map((item) => (
                   <label key={item.key} className="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm">
@@ -294,64 +386,36 @@ export default function AdminSettingsPage() {
                 ))}
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="logo-url">رابط الشعار</Label>
-              <Input id="logo-url" value={settings.logo_url} onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })} />
-              <p className="text-xs text-muted-foreground">سيتم استخدام هذا الرابط للشعار والهوية الظاهرة في الواجهة وتبويب المتصفح.</p>
-              {settings.logo_url ? (
-                <div className="flex items-center gap-3 rounded-md border border-input p-3">
-                  <Image src={settings.logo_url} alt="Logo preview" width={40} height={40} className="rounded-md object-cover" />
-                  <span className="text-sm text-muted-foreground">معاينة الشعار الحالي</span>
-                </div>
-              ) : null}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="hero-images">صور الواجهة</Label>
-              <textarea id="hero-images" value={settings.hero_images} onChange={(e) => setSettings({ ...settings, hero_images: e.target.value })} className="min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="رابط صورة في كل سطر" />
-            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>إعدادات الإشعارات والبريد</CardTitle>
+            <CardTitle>{copy.notifications}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-7 text-amber-900">
+              {copy.resetOnlyNotice}
+            </p>
             <div className="space-y-2">
-              <Label htmlFor="admin-notification-email">بريد الإدارة للإشعارات</Label>
+              <Label htmlFor="admin-notification-email">{copy.adminNotificationEmail}</Label>
               <Input id="admin-notification-email" type="email" value={settings.admin_notification_email} onChange={(e) => setSettings({ ...settings, admin_notification_email: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email-sender-name">اسم المرسل</Label>
+              <Label htmlFor="email-sender-name">{copy.emailSenderName}</Label>
               <Input id="email-sender-name" value={settings.email_sender_name} onChange={(e) => setSettings({ ...settings, email_sender_name: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email-sender-address">بريد المرسل</Label>
+              <Label htmlFor="email-sender-address">{copy.emailSenderAddress}</Label>
               <Input id="email-sender-address" value={settings.email_sender_address} onChange={(e) => setSettings({ ...settings, email_sender_address: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="order-confirmation-subject">عنوان رسالة تأكيد الطلب</Label>
-              <Input id="order-confirmation-subject" value={settings.order_confirmation_subject} onChange={(e) => setSettings({ ...settings, order_confirmation_subject: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="order-confirmation-html">قالب رسالة تأكيد الطلب</Label>
-              <textarea id="order-confirmation-html" value={settings.order_confirmation_html} onChange={(e) => setSettings({ ...settings, order_confirmation_html: e.target.value })} className="min-h-[140px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="order-status-subject">عنوان رسالة تحديث الحالة</Label>
-              <Input id="order-status-subject" value={settings.order_status_subject} onChange={(e) => setSettings({ ...settings, order_status_subject: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="order-status-html">قالب رسالة تحديث الحالة</Label>
-              <textarea id="order-status-html" value={settings.order_status_html} onChange={(e) => setSettings({ ...settings, order_status_html: e.target.value })} className="min-h-[140px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
             </div>
           </CardContent>
         </Card>
 
         <div className="flex items-center gap-4">
-          <Button type="submit" disabled={saving}>{saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}</Button>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          {message && <p className="text-sm text-green-600">{message}</p>}
+          <Button type="submit" disabled={saving}>{saving ? copy.saving : copy.save}</Button>
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {message ? <p className="text-sm text-green-600">{message}</p> : null}
         </div>
       </form>
     </div>

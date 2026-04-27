@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     if (!result.success) {
       return NextResponse.json(
-        { success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid input' } },
+        { success: false, error: { code: 'VALIDATION_ERROR', message: result.error.issues[0]?.message || 'Invalid input' } },
         { status: 400 }
       )
     }

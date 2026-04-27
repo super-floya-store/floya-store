@@ -44,12 +44,13 @@ export function AuthPanel({ initialMode }: AuthPanelProps) {
         signupButton: 'إنشاء الحساب',
         switchToLogin: 'عندي حساب بالفعل',
         switchToSignup: 'أريد إنشاء حساب',
+        forgotPassword: 'نسيت كلمة المرور؟',
         homeLink: 'العودة إلى المتجر',
         loadingLogin: 'جارٍ تسجيل الدخول...',
         loadingSignup: 'جارٍ إنشاء الحساب...',
         loginError: 'فشل تسجيل الدخول',
         signupError: 'تعذر إنشاء الحساب',
-        noReset: 'حالياً لا يوجد استرجاع تلقائي لكلمة المرور. إذا نسيتها تواصل مع الدعم.',
+        resetInfo: 'يمكنك استخدام رابط "نسيت كلمة المرور؟" لإعادة التعيين عبر البريد الإلكتروني.',
       }
     : {
         loginTitle: 'Sign in',
@@ -63,12 +64,13 @@ export function AuthPanel({ initialMode }: AuthPanelProps) {
         signupButton: 'Create account',
         switchToLogin: 'I already have an account',
         switchToSignup: 'Create a new account',
+        forgotPassword: 'Forgot password?',
         homeLink: 'Back to store',
         loadingLogin: 'Signing in...',
         loadingSignup: 'Creating account...',
         loginError: 'Sign-in failed',
         signupError: 'Could not create account',
-        noReset: 'There is no automatic password reset yet. Contact support if you lose access.',
+        resetInfo: 'You can use the "Forgot password?" link to reset your password by email.',
       }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,6 +92,10 @@ export function AuthPanel({ initialMode }: AuthPanelProps) {
 
     setLoading(false)
   }
+
+  const eyeClass = locale === 'ar'
+    ? 'absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground'
+    : 'absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground'
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary via-secondary to-primary/20 p-4 flex items-center justify-center">
@@ -174,8 +180,8 @@ export function AuthPanel({ initialMode }: AuthPanelProps) {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label={showPassword ? 'إخفاء' : 'إظهار'}
+                  className={eyeClass}
+                  aria-label={showPassword ? (locale === 'ar' ? 'إخفاء كلمة المرور' : 'Hide password') : (locale === 'ar' ? 'إظهار كلمة المرور' : 'Show password')}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -201,7 +207,7 @@ export function AuthPanel({ initialMode }: AuthPanelProps) {
             </Button>
 
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-7 text-amber-900">
-              {copy.noReset}
+              {copy.resetInfo}
             </div>
           </form>
 
@@ -213,9 +219,16 @@ export function AuthPanel({ initialMode }: AuthPanelProps) {
             >
               {mode === 'login' ? copy.switchToSignup : copy.switchToLogin}
             </button>
-            <Link href="/" className="text-muted-foreground hover:text-foreground hover:underline">
-              {copy.homeLink}
-            </Link>
+            <div className="flex items-center gap-4">
+              {mode === 'login' ? (
+                <Link href="/forgot-password" className="text-primary hover:underline">
+                  {copy.forgotPassword}
+                </Link>
+              ) : null}
+              <Link href="/" className="text-muted-foreground hover:text-foreground hover:underline">
+                {copy.homeLink}
+              </Link>
+            </div>
           </div>
         </CardContent>
       </Card>
