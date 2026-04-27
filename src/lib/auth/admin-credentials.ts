@@ -3,6 +3,7 @@ import { supabaseServer } from '@/lib/supabase/server'
 
 export const DEFAULT_ADMIN_EMAIL = 'elwehch123@gmail.com'
 export const DEFAULT_ADMIN_PASSWORD = 'ADMINSTORE2@26!'
+export const DEFAULT_ADMIN_USERNAME = 'storeadmin'
 
 export async function ensureDefaultAdminUser() {
   const normalizedEmail = DEFAULT_ADMIN_EMAIL.toLowerCase()
@@ -20,6 +21,7 @@ export async function ensureDefaultAdminUser() {
   const { data } = await supabaseServer
     .from('users')
     .insert({
+      username: DEFAULT_ADMIN_USERNAME,
       email: normalizedEmail,
       full_name: 'Store Admin',
       password_hash: passwordHash,
