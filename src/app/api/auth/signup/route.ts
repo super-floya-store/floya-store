@@ -3,6 +3,7 @@ import { hashPassword } from '@/lib/auth/password'
 import { generateAccessToken, generateRefreshToken } from '@/lib/auth/jwt'
 import { supabaseServer } from '@/lib/supabase/server'
 import { signupSchema } from '@/lib/validations/auth'
+import { DEFAULT_ADMIN_EMAIL, ensureDefaultAdminUser } from '@/lib/auth/admin-credentials'
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,18 +17,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const username = result.data.username.trim()
+    const fullName = result.data.fullName.trim()
+    const email = result.data.email.trim().toLowerCase()
     const passwordHash = await hashPassword(result.data.password)
+
+    await ensureDefaultAdminUser()
+
+    if (email === DEFAULT_ADMIN_EMAIL) {
+      return NextResponse.json(
+        { success: false, error: { code: 'EMAIL_RESERVED', message: 'هذا البريد مخصص للدعم والإدارة' } },
+        { status: 409 }
+      )
+    }
 
     const { data: existingUser } = await supabaseServer
       .from('users')
       .select('id')
-      .ilike('username', username)
+      .eq('email', email)
       .maybeSingle()
 
     if (existingUser) {
       return NextResponse.json(
-        { success: false, error: { code: 'USERNAME_TAKEN', message: 'اسم المستخدم مستخدم بالفعل' } },
+        { success: false, error: { code: 'EMAIL_TAKEN', message: 'البريد الإلكتروني مستخدم بالفعل' } },
         { status: 409 }
       )
     }
@@ -35,9 +46,11 @@ export async function POST(request: NextRequest) {
     const { data: user, error } = await supabaseServer
       .from('users')
       .insert({
-        username,
+        email,
+        full_name: fullName,
         password_hash: passwordHash,
-        role: 'viewer',
+        role: 'customer',
+        is_vip: false,
         is_active: true,
         failed_login_attempts: 0,
         locked_until: null,
@@ -52,17 +65,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const accessToken = generateAccessToken(user.id, user.username, user.role)
-    const refreshToken = generateRefreshToken(user.id, user.username, user.role)
+    const accessToken = generateAccessToken(user.id, user.email, user.role)
+    const refreshToken = generateRefreshToken(user.id, user.email, user.role)
 
     const response = NextResponse.json({
       success: true,
       data: {
         user: {
           id: user.id,
-          username: user.username,
+          email: user.email,
           role: user.role,
           fullName: user.full_name,
+          isVip: user.is_vip,
         },
         accessToken,
       },

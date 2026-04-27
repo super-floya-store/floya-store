@@ -7,15 +7,18 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useAuth } from '@/hooks/useAuth'
 import { useCartStore } from '@/stores/cart-store'
 import { useUIStore } from '@/stores/ui-store'
 import { getDeliveryFee, wilayas } from '@/lib/algeria'
+import { getVipDeliveryFee } from '@/lib/pricing/vip'
 import type { PaymentMethod } from '@/types/order'
 
 const defaultPaymentMethods = { baridimob: true, cod: true, binance: false }
 
 export default function CheckoutPage() {
   const { items, subtotal, clearCart, hasHydrated } = useCartStore()
+  const { user, loading: authLoading } = useAuth()
   const locale = useUIStore((state) => state.locale)
   const router = useRouter()
   const [settings, setSettings] = useState<any>(null)
@@ -33,7 +36,9 @@ export default function CheckoutPage() {
   })
 
   const paymentMethods = settings?.payment_methods || defaultPaymentMethods
-  const deliveryFee = useMemo(() => getDeliveryFee(settings?.delivery_fees, formData.wilaya, 500), [settings, formData.wilaya])
+  const standardDeliveryFee = useMemo(() => getDeliveryFee(settings?.delivery_fees, formData.wilaya, 500), [settings, formData.wilaya])
+  const deliveryFee = useMemo(() => getVipDeliveryFee(standardDeliveryFee, !!user?.is_vip), [standardDeliveryFee, user?.is_vip])
+  const vipDiscount = useMemo(() => (!!user?.is_vip ? standardDeliveryFee - deliveryFee : 0), [deliveryFee, standardDeliveryFee, user?.is_vip])
   const total = subtotal() + deliveryFee
   const ripValue = settings?.baridimob_rip || '00799999004419717033'
   const binanceAddress = settings?.binance_wallet_address || ''
@@ -53,6 +58,8 @@ export default function CheckoutPage() {
         commune: 'البلدية *',
         address: 'عنوان التوصيل *',
         notes: 'ملاحظات',
+        authRequired: 'يجب تسجيل الدخول أو إنشاء حساب قبل إتمام الطلب.',
+        vipPerks: 'مزايا VIP مطبقة على هذا الطلب: خصم خاص وأولوية تجهيز وتوصيل مجاني.',
         paymentMethods: 'طريقة الدفع',
         paymentOptions: {
           cod: { label: 'الدفع عند الاستلام', body: 'ادفع للمندوب عند استلام الطلب. لا تحتاج إلى رفع إثبات دفع.' },
@@ -88,6 +95,8 @@ export default function CheckoutPage() {
         commune: 'Commune *',
         address: 'Delivery address *',
         notes: 'Notes',
+        authRequired: 'You need to sign in or create an account before completing a purchase.',
+        vipPerks: 'VIP perks are active on this order: special pricing, priority handling, and free delivery.',
         paymentMethods: 'Payment method',
         paymentOptions: {
           cod: { label: 'Cash on delivery', body: 'Pay the courier when your order arrives. No payment proof is needed.' },
@@ -111,6 +120,12 @@ export default function CheckoutPage() {
       }
 
   useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/login?next=/checkout')
+    }
+  }, [authLoading, router, user])
+
+  useEffect(() => {
     fetch('/api/settings')
       .then((res) => res.json())
       .then((data) => {
@@ -123,6 +138,16 @@ export default function CheckoutPage() {
       })
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (user) {
+      setFormData((current) => ({
+        ...current,
+        customerName: current.customerName || user.full_name || '',
+        customerEmail: current.customerEmail || user.email || '',
+      }))
+    }
+  }, [user])
 
   const handleCopy = async (value: string, type: 'baridi' | 'binance') => {
     try {
@@ -165,11 +190,27 @@ export default function CheckoutPage() {
     }
   }
 
-  if (!hasHydrated) {
+  if (!hasHydrated || authLoading) {
     return (
       <div className="container mx-auto max-w-5xl px-4 py-8 md:px-6">
         <h1 className="section-title mb-8">{copy.title}</h1>
         <p className="text-muted-foreground">{copy.loadingOrder}</p>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="container mx-auto max-w-2xl px-4 py-10 md:px-6">
+        <Card className="surface-card rounded-[32px]">
+          <CardContent className="space-y-5 p-8 text-center">
+            <h1 className="text-2xl font-bold">{copy.title}</h1>
+            <p className="text-sm leading-7 text-muted-foreground">{copy.authRequired}</p>
+            <Button asChild className="rounded-full">
+              <a href="/login?next=/checkout">Login / Sign up</a>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -201,6 +242,12 @@ export default function CheckoutPage() {
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <form onSubmit={handleSubmit} className="surface-card flex flex-col gap-4 rounded-[32px] p-5 md:p-6">
+          {user.is_vip ? (
+            <div className="rounded-[24px] border border-brand-gold/40 bg-brand-gold/10 px-4 py-4 text-sm leading-7 text-foreground">
+              {copy.vipPerks}
+            </div>
+          ) : null}
+
           <div className="flex flex-col gap-2">
             <Label htmlFor="name">{copy.name}</Label>
             <Input id="name" required value={formData.customerName} onChange={(e) => setFormData({ ...formData, customerName: e.target.value })} className="min-h-[48px] rounded-2xl border-white/80 bg-white/80" />
@@ -312,6 +359,12 @@ export default function CheckoutPage() {
                   <span>{copy.delivery}</span>
                   <span>{deliveryFee.toLocaleString()} {copy.currency}</span>
                 </div>
+                {vipDiscount > 0 ? (
+                  <div className="flex justify-between text-sm text-primary">
+                    <span>VIP</span>
+                    <span>-{vipDiscount.toLocaleString()} {copy.currency}</span>
+                  </div>
+                ) : null}
                 <div className="flex justify-between text-lg font-bold">
                   <span>{copy.total}</span>
                   <span>{total.toLocaleString()} {copy.currency}</span>

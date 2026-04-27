@@ -4,24 +4,24 @@ import type { UserRole } from '@/types/user'
 
 export interface TokenPayload {
   userId: string
-  username: string
+  email: string
   role: UserRole
   type: 'access' | 'refresh'
   iat: number
   exp: number
 }
 
-export function generateAccessToken(userId: string, username: string, role: UserRole): string {
+export function generateAccessToken(userId: string, email: string, role: UserRole): string {
   return jwt.sign(
-    { userId, username, role, type: 'access' },
+    { userId, email, role, type: 'access' },
     env.JWT_SECRET,
     { expiresIn: env.JWT_ACCESS_EXPIRY as any }
   )
 }
 
-export function generateRefreshToken(userId: string, username: string, role: UserRole): string {
+export function generateRefreshToken(userId: string, email: string, role: UserRole): string {
   return jwt.sign(
-    { userId, username, role, type: 'refresh' },
+    { userId, email, role, type: 'refresh' },
     env.JWT_SECRET,
     { expiresIn: env.JWT_REFRESH_EXPIRY as any }
   )

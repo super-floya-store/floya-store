@@ -1,6 +1,8 @@
 export interface CustomerProfile {
   id: string
+  user_id: string | null
   phone: string
+  email: string | null
   full_name: string | null
   notes: string | null
   is_blacklisted: boolean

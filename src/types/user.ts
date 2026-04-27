@@ -1,11 +1,11 @@
-export type UserRole = 'super_admin' | 'admin' | 'viewer'
+export type UserRole = 'admin' | 'customer'
 
 export interface User {
   id: string
-  username: string
-  email: string | null
+  email: string
   full_name: string | null
   role: UserRole
+  is_vip: boolean
   is_active: boolean
   last_login_at: string | null
   password_changed_at: string | null
@@ -21,7 +21,7 @@ export interface AuthTokens {
 }
 
 export interface LoginCredentials {
-  username: string
+  email: string
   password: string
 }
 

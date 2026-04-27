@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, Sparkles } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
@@ -19,9 +19,11 @@ interface AuthPanelProps {
 
 export function AuthPanel({ initialMode }: AuthPanelProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const locale = useUIStore((state) => state.locale)
   const [mode, setMode] = useState<Mode>(initialMode)
-  const [username, setUsername] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -30,11 +32,12 @@ export function AuthPanel({ initialMode }: AuthPanelProps) {
   const { login, signup } = useAuth()
 
   const copy = locale === 'ar'
-    ? {
+      ? {
         loginTitle: 'دخول الحساب',
         signupTitle: 'إنشاء حساب',
         subtitle: 'ادخل بحسابك أو أنشئ حساباً جديداً لإتمام الطلبات ومتابعة حالتها بسهولة.',
-        username: 'اسم المستخدم',
+        fullName: 'الاسم الكامل',
+        email: 'البريد الإلكتروني',
         password: 'كلمة المرور',
         confirmPassword: 'تأكيد كلمة المرور',
         loginButton: 'دخول الحساب',
@@ -46,12 +49,14 @@ export function AuthPanel({ initialMode }: AuthPanelProps) {
         loadingSignup: 'جارٍ إنشاء الحساب...',
         loginError: 'فشل تسجيل الدخول',
         signupError: 'تعذر إنشاء الحساب',
+        noReset: 'حالياً لا يوجد استرجاع تلقائي لكلمة المرور. إذا نسيتها تواصل مع الدعم.',
       }
     : {
         loginTitle: 'Sign in',
         signupTitle: 'Create account',
         subtitle: 'Sign in or create a new account to follow orders easily.',
-        username: 'Username',
+        fullName: 'Full name',
+        email: 'Email',
         password: 'Password',
         confirmPassword: 'Confirm password',
         loginButton: 'Sign in',
@@ -59,6 +64,11 @@ export function AuthPanel({ initialMode }: AuthPanelProps) {
         switchToLogin: 'I already have an account',
         switchToSignup: 'Create a new account',
         homeLink: 'Back to store',
+        loadingLogin: 'Signing in...',
+        loadingSignup: 'Creating account...',
+        loginError: 'Sign-in failed',
+        signupError: 'Could not create account',
+        noReset: 'There is no automatic password reset yet. Contact support if you lose access.',
       }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,12 +76,14 @@ export function AuthPanel({ initialMode }: AuthPanelProps) {
     setLoading(true)
     setError('')
 
+    const next = searchParams.get('next')
     const result = mode === 'login'
-      ? await login(username, password)
-      : await signup(username, password, confirmPassword)
+      ? await login(email, password)
+      : await signup(fullName, email, password, confirmPassword)
 
     if (result.success) {
-      router.replace('/')
+      const destination = next || (result.data?.user?.role === 'admin' ? '/admin' : '/account')
+      router.replace(destination)
     } else {
       setError(result.error?.message || (mode === 'login' ? copy.loginError : copy.signupError))
     }
@@ -123,14 +135,28 @@ export function AuthPanel({ initialMode }: AuthPanelProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
+            {mode === 'signup' && (
+              <div className="space-y-2">
+                <Label htmlFor="full-name">{copy.fullName}</Label>
+                <Input
+                  id="full-name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  autoComplete="name"
+                />
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="username">{copy.username}</Label>
+              <Label htmlFor="email">{copy.email}</Label>
               <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                autoComplete="username"
+                autoComplete="email"
               />
             </div>
 
@@ -173,6 +199,10 @@ export function AuthPanel({ initialMode }: AuthPanelProps) {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (mode === 'login' ? copy.loadingLogin : copy.loadingSignup) : mode === 'login' ? copy.loginButton : copy.signupButton}
             </Button>
+
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-7 text-amber-900">
+              {copy.noReset}
+            </div>
           </form>
 
           <div className="mt-4 flex items-center justify-between text-sm">

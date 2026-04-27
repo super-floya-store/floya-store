@@ -19,6 +19,11 @@ export async function PUT(request: NextRequest, { params }: { params: { phone: s
       .single()
 
     if (error) throw error
+
+    if (typeof result.data.is_vip === 'boolean' && data.user_id) {
+      await supabaseServer.from('users').update({ is_vip: result.data.is_vip }).eq('id', data.user_id)
+    }
+
     return NextResponse.json({ success: true, data })
   } catch (error) {
     return NextResponse.json({ success: false, error: { code: 'INTERNAL_ERROR', message: error instanceof Error ? error.message : 'Internal server error' } }, { status: 500 })

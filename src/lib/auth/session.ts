@@ -43,7 +43,7 @@ export async function requireAuth(): Promise<{ user: User; token: string }> {
 export async function requireAdmin(): Promise<{ user: User; token: string }> {
   const session = await requireAuth()
 
-  if (!['admin', 'super_admin'].includes(session.user.role)) {
+  if (session.user.role !== 'admin') {
     throw new Error('Forbidden')
   }
 

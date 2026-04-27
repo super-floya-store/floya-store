@@ -3,6 +3,7 @@ import { comparePassword } from '@/lib/auth/password'
 import { generateAccessToken, generateRefreshToken } from '@/lib/auth/jwt'
 import { supabaseServer } from '@/lib/supabase/server'
 import { loginSchema } from '@/lib/validations/auth'
+import { ensureDefaultAdminUser } from '@/lib/auth/admin-credentials'
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,13 +17,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const username = result.data.username.trim()
+    const email = result.data.email.trim().toLowerCase()
     const password = result.data.password
+
+    await ensureDefaultAdminUser()
 
     const { data: user, error } = await supabaseServer
       .from('users')
       .select('*')
-      .ilike('username', username)
+      .eq('email', email)
       .single()
 
     if (error || !user) {
@@ -68,8 +71,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const accessToken = generateAccessToken(user.id, user.username, user.role)
-    const refreshToken = generateRefreshToken(user.id, user.username, user.role)
+    const accessToken = generateAccessToken(user.id, user.email, user.role)
+    const refreshToken = generateRefreshToken(user.id, user.email, user.role)
 
     await supabaseServer
       .from('users')
@@ -85,9 +88,10 @@ export async function POST(request: NextRequest) {
       data: {
         user: {
           id: user.id,
-          username: user.username,
+          email: user.email,
           role: user.role,
           fullName: user.full_name,
+          isVip: user.is_vip,
         },
         accessToken,
       },

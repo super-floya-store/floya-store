@@ -20,7 +20,7 @@ export default function AdminLayout({
   useEffect(() => {
     if (!loading && !user) {
       router.replace('/login')
-    } else if (!loading && user && !['admin', 'super_admin'].includes(user.role)) {
+    } else if (!loading && user && user.role !== 'admin') {
       router.replace('/')
     }
   }, [user, loading, router])
@@ -36,7 +36,7 @@ export default function AdminLayout({
   if (!user) return null
 
   return (
-    <div className={`min-h-screen bg-muted/30 lg:flex ${locale === 'ar' ? 'lg:flex-row' : 'lg:flex-row-reverse'}`}>
+    <div dir={locale === 'ar' ? 'rtl' : 'ltr'} className={`min-h-screen bg-muted/30 lg:flex ${locale === 'ar' ? 'lg:flex-row' : 'lg:flex-row'}`}>
       {sidebarOpen ? <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} /> : null}
       <div className="flex min-w-0 flex-1 flex-col">
         <AdminHeader sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((value) => !value)} />

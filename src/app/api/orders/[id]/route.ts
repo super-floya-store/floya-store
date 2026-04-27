@@ -115,11 +115,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       if (paymentStatus === 'paid' && existingOrder.status === 'pending') {
         updates.status = 'confirmed'
         updates.confirmed_at = new Date().toISOString()
+        updates.receipt_issued_at = existingOrder.receipt_issued_at || new Date().toISOString()
         updates.estimated_delivery_days = existingOrder.estimated_delivery_days ?? estimatedDeliveryDays ?? 3
         updates.estimated_delivery_date = existingOrder.estimated_delivery_date ?? estimatedDeliveryDate ?? null
       }
       if (paymentStatus === 'rejected' && existingOrder.status === 'confirmed') {
         updates.status = 'pending'
+        updates.refund_status = 'rejected'
+      }
+      if (paymentStatus === 'refunded') {
+        updates.refund_status = 'refunded'
       }
     }
 
@@ -146,6 +151,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     if (status === 'confirmed') {
       updates.confirmed_at = new Date().toISOString()
+      updates.receipt_issued_at = existingOrder.receipt_issued_at || new Date().toISOString()
+    }
+
+    if (status === 'refunded') {
+      updates.refund_status = 'refunded'
     }
 
     if (status === 'cancelled') {

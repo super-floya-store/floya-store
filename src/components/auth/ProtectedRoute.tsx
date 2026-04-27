@@ -17,7 +17,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: { children: R
     return null
   }
 
-  if (requireAdmin && !['admin', 'super_admin'].includes(user.role)) {
+  if (requireAdmin && user.role !== 'admin') {
     redirect('/')
     return null
   }

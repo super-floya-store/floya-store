@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const accessToken = generateAccessToken(user.id, user.username, user.role)
-    const newRefreshToken = generateRefreshToken(user.id, user.username, user.role)
+    const accessToken = generateAccessToken(user.id, user.email, user.role)
+    const newRefreshToken = generateRefreshToken(user.id, user.email, user.role)
 
     const response = NextResponse.json({
       success: true,
@@ -45,9 +45,10 @@ export async function POST(request: NextRequest) {
         accessToken,
         user: {
           id: user.id,
-          username: user.username,
+          email: user.email,
           role: user.role,
           fullName: user.full_name,
+          isVip: user.is_vip,
         },
       },
     })

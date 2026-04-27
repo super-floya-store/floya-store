@@ -16,10 +16,10 @@ export async function GET() {
       success: true,
       data: {
         id: session.user.id,
-        username: session.user.username,
+        email: session.user.email,
         role: session.user.role,
         fullName: session.user.full_name,
-        email: session.user.email,
+        isVip: session.user.is_vip,
       },
     })
   } catch {

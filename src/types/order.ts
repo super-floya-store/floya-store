@@ -1,9 +1,11 @@
 export type OrderStatus = 'pending' | 'submitted' | 'payment_submitted' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'
 export type PaymentMethod = 'baridimob' | 'cod' | 'binance'
 export type PaymentStatus = 'pending' | 'submitted' | 'paid' | 'rejected' | 'failed' | 'refunded'
+export type RefundStatus = 'none' | 'requested' | 'approved' | 'rejected' | 'refunded'
 
 export interface Order {
   id: string
+  user_id: string | null
   order_number: string
   customer_name: string
   customer_phone: string
@@ -20,6 +22,10 @@ export interface Order {
   payment_submitted_at: string | null
   payment_reviewed_at: string | null
   payment_review_notes: string | null
+  refund_status: RefundStatus
+  vip_discount_amount: number
+  priority_fulfillment: boolean
+  receipt_issued_at: string | null
   estimated_delivery_days: number | null
   estimated_delivery_date: string | null
   follow_up_message: string | null

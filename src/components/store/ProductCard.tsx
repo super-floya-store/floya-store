@@ -11,12 +11,15 @@ import { getFallbackProductImage } from '@/lib/storefront-images'
 import { useWishlistStore } from '@/stores/wishlist-store'
 import { useRouter } from 'next/navigation'
 import { useUIStore } from '@/stores/ui-store'
+import { useAuth } from '@/hooks/useAuth'
+import { getVipDiscountedPrice } from '@/lib/pricing/vip'
 
 interface ProductCardProps {
   product: Product
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { user } = useAuth()
   const locale = useUIStore((state) => state.locale)
   const addItem = useCartStore((s) => s.addItem)
   const toggleWishlist = useWishlistStore((s) => s.toggle)
@@ -24,6 +27,9 @@ export function ProductCard({ product }: ProductCardProps) {
   const router = useRouter()
   const primaryImage = product.images[product.primary_image_index] || product.images[0] || getFallbackProductImage(product.name_ar.length)
   const hasPromo = product.promo_price && product.promo_price < product.price
+  const basePrice = hasPromo ? product.promo_price! : product.price
+  const vipPrice = getVipDiscountedPrice(basePrice, !!user?.is_vip)
+  const hasVipPrice = !!user?.is_vip && vipPrice < basePrice
   const discount = hasPromo ? Math.round(((product.price - product.promo_price!) / product.price) * 100) : 0
   const isOutOfStock = product.stock_quantity === 0
   const isNew = Date.now() - new Date(product.created_at).getTime() < 1000 * 60 * 60 * 24 * 21
@@ -57,7 +63,7 @@ export function ProductCard({ product }: ProductCardProps) {
     addItem({
       productId: product.id,
       name: productName,
-      price: hasPromo ? product.promo_price! : product.price,
+      price: vipPrice,
       image: primaryImage,
     })
   }
@@ -119,7 +125,12 @@ export function ProductCard({ product }: ProductCardProps) {
         </Link>
 
         <div className="flex items-end gap-2">
-          {hasPromo ? (
+          {hasVipPrice ? (
+            <>
+              <span className="text-lg font-bold text-primary md:text-xl">{vipPrice.toLocaleString()} {currency}</span>
+              <span className="text-muted-foreground text-sm line-through">{basePrice.toLocaleString()} {currency}</span>
+            </>
+          ) : hasPromo ? (
             <>
               <span className="text-lg font-bold text-primary md:text-xl">{product.promo_price!.toLocaleString()} {currency}</span>
               <span className="text-muted-foreground text-sm line-through">{product.price.toLocaleString()} {currency}</span>

@@ -16,9 +16,12 @@ import { useRecentlyViewedStore } from '@/stores/recently-viewed-store'
 import { useWishlistStore } from '@/stores/wishlist-store'
 import { useUIStore } from '@/stores/ui-store'
 import { Heart, Zap } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import { getVipDiscountedPrice } from '@/lib/pricing/vip'
 
 export default function ProductDetailPage() {
   const params = useParams()
+  const { user } = useAuth()
   const locale = useUIStore((state) => state.locale)
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
@@ -120,6 +123,9 @@ export default function ProductDetailPage() {
   const galleryImages = product.images.length > 0 ? product.images : [getFallbackProductImage(0)]
   const primaryImage = galleryImages[selectedImageIndex] || galleryImages[product.primary_image_index] || galleryImages[0]
   const hasPromo = product.promo_price && product.promo_price < product.price
+  const basePrice = hasPromo ? product.promo_price! : product.price
+  const vipPrice = getVipDiscountedPrice(basePrice, !!user?.is_vip)
+  const hasVipPrice = !!user?.is_vip && vipPrice < basePrice
   const isOutOfStock = product.stock_quantity === 0
   const productName = locale === 'ar' ? product.name_ar : product.name_en
   const productDescription = locale === 'ar' ? product.description_ar : (product.description_en || product.description_ar)
@@ -130,7 +136,7 @@ export default function ProductDetailPage() {
     addItem({
       productId: product.id,
       name: productName,
-      price: hasPromo ? product.promo_price! : product.price,
+      price: vipPrice,
       image: primaryImage,
       quantity,
     })
@@ -193,7 +199,12 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="surface-card flex flex-wrap items-center gap-3 rounded-[30px] px-5 py-5">
-            {hasPromo ? (
+            {hasVipPrice ? (
+              <>
+                <span className="text-3xl font-bold text-primary md:text-4xl">{vipPrice.toLocaleString()} {copy.currency}</span>
+                <span className="text-lg text-muted-foreground line-through md:text-2xl">{basePrice.toLocaleString()} {copy.currency}</span>
+              </>
+            ) : hasPromo ? (
               <>
                 <span className="text-3xl font-bold text-primary md:text-4xl">{product.promo_price!.toLocaleString()} {copy.currency}</span>
                 <span className="text-lg text-muted-foreground line-through md:text-2xl">{product.price.toLocaleString()} {copy.currency}</span>

@@ -1,22 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase/server'
-import { requireAdmin } from '@/lib/auth/session'
+import { requireAdmin, requireAuth } from '@/lib/auth/session'
 import { orderSchema, orderStatusSchema } from '@/lib/validations/order'
 import { getStoreSettings } from '@/lib/settings/store-settings'
 import { buildOrderConfirmationEmail } from '@/lib/email/templates'
 import { sendResendEmail } from '@/lib/email/resend'
 import { getDeliveryFee } from '@/lib/algeria'
+import { getVipDeliveryFee, getVipDiscountedPrice } from '@/lib/pricing/vip'
 
-async function upsertCustomerProfile(customerName: string, customerPhone: string) {
-  const { data: existing } = await supabaseServer.from('customer_profiles').select('*').eq('phone', customerPhone).maybeSingle()
+async function upsertCustomerProfile(userId: string, customerName: string, customerPhone: string, customerEmail: string | null) {
+  const { data: existing } = await supabaseServer
+    .from('customer_profiles')
+    .select('*')
+    .or(`user_id.eq.${userId},phone.eq.${customerPhone}`)
+    .maybeSingle()
   const nextFraudFlags = existing ? existing.fraud_flags + (existing.is_blacklisted ? 1 : 0) : 0
 
-  await supabaseServer.from('customer_profiles').upsert({
+  const payload = {
+    user_id: userId,
     phone: customerPhone,
     full_name: customerName,
+    email: customerEmail,
     last_order_at: new Date().toISOString(),
     fraud_flags: nextFraudFlags,
-  }, { onConflict: 'phone' })
+  }
+
+  if (existing) {
+    await supabaseServer.from('customer_profiles').update(payload).eq('id', existing.id)
+  } else {
+    await supabaseServer.from('customer_profiles').insert(payload)
+  }
 
   return existing
 }
@@ -108,6 +121,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await requireAuth()
     const body = await request.json()
     const result = orderSchema.safeParse(body)
 
@@ -119,7 +133,8 @@ export async function POST(request: NextRequest) {
     }
 
     const { customerName, customerPhone, customerEmail, wilaya, commune, deliveryAddress, notes, paymentMethod, items } = result.data
-    const customerProfile = await upsertCustomerProfile(customerName, customerPhone)
+    const resolvedEmail = session.user.email || customerEmail || null
+    const customerProfile = await upsertCustomerProfile(session.user.id, customerName, customerPhone, resolvedEmail)
 
     if (customerProfile?.is_blacklisted) {
       return NextResponse.json(
@@ -129,6 +144,7 @@ export async function POST(request: NextRequest) {
     }
 
     let subtotal = 0
+    let standardSubtotal = 0
     const orderItems = []
 
     for (const item of items) {
@@ -146,7 +162,9 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      const unitPrice = product.promo_price || product.price
+      const baseUnitPrice = product.promo_price || product.price
+      standardSubtotal += baseUnitPrice * item.quantity
+      const unitPrice = getVipDiscountedPrice(baseUnitPrice, session.user.is_vip)
       const totalPrice = unitPrice * item.quantity
       subtotal += totalPrice
 
@@ -162,15 +180,18 @@ export async function POST(request: NextRequest) {
     }
 
     const settings = await getStoreSettings()
-    const deliveryFee = getDeliveryFee(settings.delivery_fees, wilaya, 500)
+    const standardDeliveryFee = getDeliveryFee(settings.delivery_fees, wilaya, 500)
+    const deliveryFee = getVipDeliveryFee(standardDeliveryFee, session.user.is_vip)
+    const vipDiscountAmount = session.user.is_vip ? standardSubtotal + standardDeliveryFee - (subtotal + deliveryFee) : 0
     const total = subtotal + deliveryFee
 
     const { data: order, error: orderError } = await supabaseServer
       .from('orders')
       .insert({
+        user_id: session.user.id,
         customer_name: customerName,
         customer_phone: customerPhone,
-        customer_email: customerEmail,
+        customer_email: resolvedEmail,
         wilaya,
         commune,
         delivery_address: deliveryAddress,
@@ -178,8 +199,11 @@ export async function POST(request: NextRequest) {
         payment_method: paymentMethod,
         subtotal,
         delivery_fee: deliveryFee,
+        vip_discount_amount: Math.max(0, vipDiscountAmount),
+        priority_fulfillment: session.user.is_vip,
         total,
         payment_status: 'pending',
+        refund_status: 'none',
       })
       .select()
       .single()
@@ -207,7 +231,7 @@ export async function POST(request: NextRequest) {
       await decrementProductStock(item.productId, item.quantity)
     }
 
-    if (customerEmail) {
+    if (resolvedEmail) {
       if (settings.order_email_enabled !== false) {
         const orderWithItems = { ...order, items: orderItemsWithOrderId }
         const email = buildOrderConfirmationEmail(orderWithItems as any, settings)
@@ -216,7 +240,7 @@ export async function POST(request: NextRequest) {
 
         await sendResendEmail({
           from: `${fromName} <${fromAddress}>`,
-          to: customerEmail,
+          to: resolvedEmail,
           subject: email.subject,
           html: email.html,
         }).catch((emailError) => {

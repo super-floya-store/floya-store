@@ -64,7 +64,7 @@ export function AdminHeader({ sidebarOpen, onToggleSidebar }: AdminHeaderProps) 
           {copy.preview}
         </Link>
         <span className="text-sm text-muted-foreground">
-          {user?.full_name || user?.username}
+          {user?.full_name || user?.email}
         </span>
       </div>
     </header>

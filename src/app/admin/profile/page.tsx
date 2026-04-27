@@ -49,12 +49,12 @@ export default function AdminProfilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>معلومات المستخدم</CardTitle>
+        <CardTitle>معلومات المستخدم</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          <p><span className="font-medium">اسم المستخدم:</span> {user?.username}</p>
+          <p><span className="font-medium">البريد:</span> {user?.email}</p>
           <p><span className="font-medium">الاسم الكامل:</span> {user?.full_name || '-'}</p>
-          <p><span className="font-medium">البريد:</span> {user?.email || '-'}</p>
+          <p><span className="font-medium">VIP:</span> {user?.is_vip ? 'Yes' : 'No'}</p>
           <p><span className="font-medium">الدور:</span> {user?.role}</p>
         </CardContent>
       </Card>
