@@ -47,7 +47,7 @@ async function incrementVariantStock(variantId: string, amount: number) {
 
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    await requireAdmin()
+    await requireAdmin(_request)
 
     const { data: order, error } = await supabaseServer
       .from('orders')
@@ -81,7 +81,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    await requireAdmin()
+    await requireAdmin(request)
     const body = await request.json()
     const result = orderStatusSchema.safeParse(body)
 
@@ -147,7 +147,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
       if (paymentStatus === 'paid') {
         const { data: orderItems } = await supabaseServer.from('order_items').select('*').eq('order_id', params.id)
-        const digitalItems = (orderItems || []).filter((item) => item.product_type === 'digital_account')
+        const digitalItems = (orderItems || []).filter((item) => item.product_type === 'digital_account' || item.product_type === 'digital_text')
         if (digitalItems.length > 0) {
           const orderItemIds = digitalItems.map((item) => item.id)
           await supabaseServer
@@ -160,7 +160,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             .update({ fulfillment_status: 'delivered' })
             .in('id', orderItemIds)
 
-          const hasOnlyDigital = (orderItems || []).every((item) => item.product_type === 'digital_account')
+          const hasOnlyDigital = (orderItems || []).every((item) => item.product_type === 'digital_account' || item.product_type === 'digital_text')
           if (hasOnlyDigital) {
             updates.status = 'delivered'
             updates.delivered_at = new Date().toISOString()
@@ -216,7 +216,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             await incrementVariantStock(item.variant_id, item.quantity)
           } else if (item.product_type === 'physical_simple') {
             await incrementProductStock(item.product_id, item.quantity)
-          } else if (item.product_type === 'digital_account') {
+          } else if (item.product_type === 'digital_account' || item.product_type === 'digital_text') {
             const { data: units } = await supabaseServer.from('digital_inventory_units').select('id, product_id').eq('order_item_id', item.id)
             if (units && units.length > 0) {
               await supabaseServer

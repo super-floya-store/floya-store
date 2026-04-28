@@ -105,7 +105,7 @@ export default function NewProductPage() {
             is_active: variant.is_active ?? true,
             sort_order: variant.sort_order ?? index,
           })),
-          digital_inventory_units: parseDigitalInventoryText(productUiConfig.digitalInventoryText),
+          digital_inventory_units: parseDigitalInventoryText(productUiConfig.digitalInventoryText, productUiConfig.productType),
         }),
       })
 

@@ -1,5 +1,6 @@
 import { supabaseServer } from '@/lib/supabase/server'
 import type { ProductInput, ProductUpdateInput } from '@/lib/validations/product'
+import type { ProductType } from '@/types/product'
 
 type VariantInput = NonNullable<ProductInput['variants']>[number]
 type DigitalUnitInput = NonNullable<ProductInput['digital_inventory_units']>[number]
@@ -8,6 +9,10 @@ function getBasePrice(payload: ProductInput | ProductUpdateInput, variant?: Vari
   const price = variant?.price_override ?? payload.price ?? 0
   const promo = variant?.promo_price_override ?? payload.promo_price ?? null
   return { price, promo }
+}
+
+function isDigitalInventoryProductType(productType?: ProductType | null) {
+  return productType === 'digital_account' || productType === 'digital_text'
 }
 
 export async function syncProductChildren(productId: string, payload: ProductInput | ProductUpdateInput) {
@@ -19,7 +24,7 @@ export async function syncProductChildren(productId: string, payload: ProductInp
 
   const productType = payload.product_type || currentProduct?.product_type || 'physical_simple'
   const shouldSyncVariants = Array.isArray(payload.variants) || payload.product_type === 'physical_variant' || currentProduct?.product_type === 'physical_variant'
-  const shouldSyncDigitalUnits = Array.isArray(payload.digital_inventory_units) || payload.product_type === 'digital_account' || currentProduct?.product_type === 'digital_account'
+  const shouldSyncDigitalUnits = Array.isArray(payload.digital_inventory_units) || isDigitalInventoryProductType(payload.product_type) || isDigitalInventoryProductType(currentProduct?.product_type)
 
   if (shouldSyncVariants && productType === 'physical_variant' && Array.isArray(payload.variants)) {
     const variants = (payload.variants || []).map((variant, index) => ({
@@ -47,7 +52,7 @@ export async function syncProductChildren(productId: string, payload: ProductInp
     await supabaseServer.from('product_variants').delete().eq('product_id', productId)
   }
 
-  if (shouldSyncDigitalUnits && productType === 'digital_account' && Array.isArray(payload.digital_inventory_units)) {
+  if (shouldSyncDigitalUnits && isDigitalInventoryProductType(productType) && Array.isArray(payload.digital_inventory_units)) {
     const units = (payload.digital_inventory_units || []).map((unit) => ({
       id: unit.id,
       product_id: productId,
@@ -62,7 +67,7 @@ export async function syncProductChildren(productId: string, payload: ProductInp
       const { error } = await supabaseServer.from('digital_inventory_units').insert(units)
       if (error) throw error
     }
-  } else if (shouldSyncDigitalUnits && productType !== 'digital_account') {
+  } else if (shouldSyncDigitalUnits && !isDigitalInventoryProductType(productType)) {
     await supabaseServer.from('digital_inventory_units').delete().eq('product_id', productId).is('order_item_id', null)
   }
 
@@ -117,7 +122,7 @@ export async function recalculateProductAggregates(productId: string, payload?: 
     return
   }
 
-  if (product.product_type === 'digital_account') {
+  if (isDigitalInventoryProductType(product.product_type)) {
     const { count } = await supabaseServer
       .from('digital_inventory_units')
       .select('*', { count: 'exact', head: true })

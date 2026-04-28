@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       .select('*, category:categories(*)', { count: 'exact' })
 
     if (includeUnpublished) {
-      await requireAdmin()
+      await requireAdmin(request)
     } else {
       query = query.eq('is_published', true)
     }
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
 
     const rows = await Promise.all((data || []).map(async (product) => {
       const variants = await getProductVariants(product.id)
-      const availableDigitalUnits = product.product_type === 'digital_account'
+      const availableDigitalUnits = product.product_type === 'digital_account' || product.product_type === 'digital_text'
         ? await getAvailableDigitalUnitCount(product.id)
         : 0
 
@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin()
+    await requireAdmin(request)
     const body = await request.json()
     const result = productSchema.safeParse(body)
 
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
     await syncProductChildren(data.id, result.data)
 
     const variants = await getProductVariants(data.id)
-    const availableDigitalUnits = data.product_type === 'digital_account' ? await getAvailableDigitalUnitCount(data.id) : 0
+    const availableDigitalUnits = data.product_type === 'digital_account' || data.product_type === 'digital_text' ? await getAvailableDigitalUnitCount(data.id) : 0
 
     return NextResponse.json({ success: true, data: { ...data, variants, available_digital_units: availableDigitalUnits } }, { status: 201 })
   } catch (error) {

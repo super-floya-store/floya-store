@@ -1,6 +1,6 @@
 import type { Category } from './category'
 
-export type ProductType = 'physical_simple' | 'physical_variant' | 'digital_account'
+export type ProductType = 'physical_simple' | 'physical_variant' | 'digital_account' | 'digital_text'
 
 export interface ProductVariant {
   id: string

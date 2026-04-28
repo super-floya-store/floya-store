@@ -6,7 +6,7 @@ import { env } from '@/config/env'
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin()
+    await requireAdmin(request)
     const formData = await request.formData()
     const file = formData.get('file') as File
     const purpose = String(formData.get('purpose') || 'product')

@@ -37,7 +37,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    await requireAdmin()
+    await requireAdmin(request)
     const body = await request.json()
     const result = categoryUpdateSchema.safeParse(body)
 
@@ -82,7 +82,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    await requireAdmin()
+    await requireAdmin(_request)
 
     const { data: products } = await supabaseServer
       .from('products')
@@ -91,13 +91,24 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
       .limit(1)
 
     if (products && products.length > 0) {
-      return NextResponse.json(
-        { success: false, error: { code: 'CONFLICT', message: 'Cannot delete category with products' } },
-        { status: 409 }
-      )
+      const { data, error } = await supabaseServer
+        .from('categories')
+        .update({ is_active: false })
+        .eq('id', params.id)
+        .select()
+        .single()
+
+      if (error) {
+        return NextResponse.json(
+          { success: false, error: { code: 'DATABASE_ERROR', message: error.message } },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({ success: true, data, message: 'Category hidden (has existing products)', softDeleted: true })
     }
 
-    const { error } = await supabaseServer.from('categories').delete().eq('id', params.id)
+    const { data, error } = await supabaseServer.from('categories').delete().eq('id', params.id).select().single()
 
     if (error) {
       return NextResponse.json(
@@ -106,7 +117,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
       )
     }
 
-    return NextResponse.json({ success: true, message: 'Category deleted' })
+    return NextResponse.json({ success: true, data, message: 'Category deleted' })
   } catch (error) {
     console.error('Delete category error:', error)
     return NextResponse.json(

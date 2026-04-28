@@ -9,7 +9,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     const includeUnpublished = _request.nextUrl.searchParams.get('includeUnpublished') === 'true'
 
     if (includeUnpublished) {
-      await requireAdmin()
+      await requireAdmin(_request)
     }
 
     let query = supabaseServer
@@ -31,10 +31,10 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     }
 
     const variants = await getProductVariants(data.id)
-    const availableDigitalUnits = data.product_type === 'digital_account' ? await getAvailableDigitalUnitCount(data.id) : 0
+    const availableDigitalUnits = data.product_type === 'digital_account' || data.product_type === 'digital_text' ? await getAvailableDigitalUnitCount(data.id) : 0
 
     let digitalInventoryUnits: any[] | undefined
-    if (includeUnpublished && data.product_type === 'digital_account') {
+    if (includeUnpublished && (data.product_type === 'digital_account' || data.product_type === 'digital_text')) {
       const { data: units } = await supabaseServer
         .from('digital_inventory_units')
         .select('*')
@@ -54,7 +54,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    await requireAdmin()
+    await requireAdmin(request)
     const body = await request.json()
     const result = productUpdateSchema.safeParse(body)
 
@@ -84,7 +84,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     await syncProductChildren(params.id, result.data)
     await recalculateProductAggregates(params.id, result.data)
     const variants = await getProductVariants(params.id)
-    const availableDigitalUnits = data.product_type === 'digital_account' ? await getAvailableDigitalUnitCount(params.id) : 0
+    const availableDigitalUnits = data.product_type === 'digital_account' || data.product_type === 'digital_text' ? await getAvailableDigitalUnitCount(params.id) : 0
 
     return NextResponse.json({ success: true, data: { ...data, variants, available_digital_units: availableDigitalUnits } })
   } catch {
@@ -97,7 +97,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    await requireAdmin()
+    await requireAdmin(_request)
 
     const { data: orderItems } = await supabaseServer
       .from('order_items')
@@ -118,7 +118,13 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
         )
       }
 
-      return NextResponse.json({ success: true, message: 'Product unpublished (has existing orders)' })
+      const { data } = await supabaseServer
+        .from('products')
+        .select('*')
+        .eq('id', params.id)
+        .single()
+
+      return NextResponse.json({ success: true, data, message: 'Product unpublished (has existing orders)', softDeleted: true })
     }
 
     const { error: digitalUnitsError } = await supabaseServer

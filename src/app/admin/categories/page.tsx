@@ -14,6 +14,24 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, '')
 }
 
+function getAccessToken() {
+  if (typeof document === 'undefined') return ''
+  const tokenEntry = document.cookie
+    .split('; ')
+    .find((item) => item.startsWith('access_token='))
+
+  return tokenEntry ? decodeURIComponent(tokenEntry.split('=').slice(1).join('=')) : ''
+}
+
+function getAuthHeaders(includeJson = false) {
+  const token = getAccessToken()
+
+  return {
+    ...(includeJson ? { 'Content-Type': 'application/json' } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
@@ -31,10 +49,28 @@ export default function AdminCategoriesPage() {
   const [success, setSuccess] = useState('')
   const [savingId, setSavingId] = useState<string | null>(null)
 
+  const appendGalleryUrls = (urls: string[]) => {
+    setNewCategory((current) => {
+      const existing = current.gallery_images
+        .split('\n')
+        .map((item) => item.trim())
+        .filter(Boolean)
+
+      return {
+        ...current,
+        image_url: current.image_url || urls[0] || '',
+        gallery_images: [...existing, ...urls].join('\n'),
+      }
+    })
+  }
+
   useEffect(() => {
     async function fetchCategories() {
       try {
-        const res = await fetch('/api/categories?includeInactive=true')
+        const res = await fetch('/api/categories?includeInactive=true', {
+          credentials: 'include',
+          headers: getAuthHeaders(),
+        })
         const data = await res.json()
         if (data.success) {
           setCategories(data.data)
@@ -59,7 +95,8 @@ export default function AdminCategoriesPage() {
     try {
       const res = await fetch('/api/categories', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: getAuthHeaders(true),
         body: JSON.stringify({
           ...newCategory,
           slug: newCategory.slug || slugify(newCategory.name_en),
@@ -92,11 +129,46 @@ export default function AdminCategoriesPage() {
       const body = new FormData()
       body.append('file', file)
       body.append('purpose', 'category')
-      const res = await fetch('/api/upload', { method: 'POST', body })
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        credentials: 'include',
+        headers: getAuthHeaders(),
+        body,
+      })
       const data = await res.json()
       if (data.success) {
         setNewCategory((current) => ({ ...current, image_url: data.data.url }))
       }
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleGalleryUpload = async (files: FileList | File[]) => {
+    setUploading(true)
+    setError('')
+    try {
+      const uploadedUrls: string[] = []
+      for (const file of Array.from(files)) {
+        const body = new FormData()
+        body.append('file', file)
+        body.append('purpose', 'category')
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          credentials: 'include',
+          headers: getAuthHeaders(),
+          body,
+        })
+        const data = await res.json()
+        if (!data.success) {
+          throw new Error(data.error?.message || 'تعذر رفع الصور الإضافية')
+        }
+        uploadedUrls.push(data.data.url)
+      }
+
+      appendGalleryUrls(uploadedUrls)
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : 'تعذر رفع الصور الإضافية')
     } finally {
       setUploading(false)
     }
@@ -108,7 +180,8 @@ export default function AdminCategoriesPage() {
     try {
       const res = await fetch(`/api/categories/${category.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: getAuthHeaders(true),
         body: JSON.stringify({ is_active: !category.is_active }),
       })
       const data = await res.json()
@@ -129,10 +202,19 @@ export default function AdminCategoriesPage() {
     setSavingId(categoryId)
     setError('')
     try {
-      const res = await fetch(`/api/categories/${categoryId}`, { method: 'DELETE' })
+      const res = await fetch(`/api/categories/${categoryId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: getAuthHeaders(),
+      })
       const data = await res.json()
       if (data.success) {
-        setCategories((current) => current.filter((item) => item.id !== categoryId))
+        if (data.softDeleted && data.data) {
+          setCategories((current) => current.map((item) => (item.id === categoryId ? data.data : item)))
+          setSuccess('تم إخفاء الفئة لأنها تحتوي على منتجات')
+        } else {
+          setCategories((current) => current.filter((item) => item.id !== categoryId))
+        }
       } else {
         setError(data.error?.message || 'تعذر حذف الفئة')
       }
@@ -167,8 +249,9 @@ export default function AdminCategoriesPage() {
             id="category-slug"
             value={newCategory.slug}
             onChange={(e) => setNewCategory({ ...newCategory, slug: slugify(e.target.value) })}
-            placeholder="auto-generated-slug"
+            placeholder="store-category-slug"
           />
+          <p className="text-xs text-muted-foreground">يُنشأ تلقائياً من الاسم الإنجليزي ويمكنك تعديله.</p>
         </div>
         <div className="space-y-2 md:col-span-3">
           <label htmlFor="category-image-url" className="text-sm font-medium">صورة الغلاف</label>
@@ -185,6 +268,7 @@ export default function AdminCategoriesPage() {
         <div className="space-y-2 md:col-span-3">
           <label htmlFor="category-gallery-images" className="text-sm font-medium">صور إضافية للفئة</label>
           <textarea id="category-gallery-images" value={newCategory.gallery_images} onChange={(e) => setNewCategory({ ...newCategory, gallery_images: e.target.value })} placeholder="رابط صورة في كل سطر" className="min-h-[110px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+          <Input id="category-gallery-upload" type="file" accept="image/*" multiple disabled={uploading} onChange={(e) => { if (e.target.files?.length) handleGalleryUpload(e.target.files) }} />
         </div>
         <div className="md:col-span-3 flex items-center gap-4">
           <Button type="submit" disabled={submitting}>{submitting ? 'جاري الإضافة...' : 'إضافة فئة'}</Button>

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     let query = supabaseServer.from('categories').select('*').order('sort_order', { ascending: true })
 
     if (includeInactive) {
-      await requireAdmin()
+      await requireAdmin(request)
     } else {
       query = query.eq('is_active', true)
     }
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin()
+    await requireAdmin(request)
     const body = await request.json()
     const result = categorySchema.safeParse(body)
 

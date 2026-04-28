@@ -25,6 +25,8 @@ export interface AdminProductUiConfig {
   digitalInventoryText: string
 }
 
+const DIGITAL_TEXT_BLOCK_SEPARATOR = '\n\n---\n\n'
+
 export const DEFAULT_PRODUCT_UI_CONFIG: AdminProductUiConfig = {
   productType: 'physical_simple',
   variants: [],
@@ -55,15 +57,22 @@ export function hydrateProductUiConfig(product?: Product | null): AdminProductUi
     digitalInventoryText: (product.digital_inventory_units || [])
       .filter((unit) => unit.status === 'available' && typeof unit.payload === 'string' && unit.payload.trim())
       .map((unit) => unit.payload!.trim())
-      .join('\n'),
+      .join(product.product_type === 'digital_text' ? DIGITAL_TEXT_BLOCK_SEPARATOR : '\n'),
   }
 }
 
-export function parseDigitalInventoryText(input: string) {
-  return input
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
+export function parseDigitalInventoryText(input: string, productType: AdminProductType) {
+  const blocks = productType === 'digital_text'
+    ? input
+      .split(/\r?\n\s*---\s*\r?\n|(?:\r?\n){2,}/)
+      .map((block) => block.trim())
+      .filter(Boolean)
+    : input
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+
+  return blocks
     .map((payload) => ({
       title: null,
       payload,
@@ -76,8 +85,8 @@ export function getDerivedStockQuantity(productType: AdminProductType, manualSto
     return config.variants.reduce((total, variant) => total + Math.max(0, variant.stock_quantity || 0), 0)
   }
 
-  if (productType === 'digital_account') {
-    return parseDigitalInventoryText(config.digitalInventoryText).length
+  if (productType === 'digital_account' || productType === 'digital_text') {
+    return parseDigitalInventoryText(config.digitalInventoryText, productType).length
   }
 
   return Math.max(0, parseInt(String(manualStockQuantity || '0'), 10) || 0)
@@ -89,6 +98,8 @@ export function getProductTypeLabel(productType: AdminProductType) {
       return 'ملابس بمقاسات وألوان'
     case 'digital_account':
       return 'تسليم رقمي'
+    case 'digital_text':
+      return 'نصوص / أكواد متعددة الأسطر'
     default:
       return 'منتج عادي'
   }
@@ -100,6 +111,8 @@ export function getProductTypeTone(productType: AdminProductType) {
       return 'bg-blue-100 text-blue-800'
     case 'digital_account':
       return 'bg-violet-100 text-violet-800'
+    case 'digital_text':
+      return 'bg-fuchsia-100 text-fuchsia-800'
     default:
       return 'bg-slate-100 text-slate-700'
   }

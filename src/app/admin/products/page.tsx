@@ -113,7 +113,12 @@ export default function AdminProductsPage() {
       const res = await fetch(`/api/products/${productId}`, { method: 'DELETE' })
       const data = await res.json()
       if (data.success) {
-        setProducts((current) => current.filter((item) => item.id !== productId))
+        if (data.softDeleted && data.data) {
+          setProducts((current) => current.map((item) => (item.id === productId ? { ...item, ...data.data } : item)))
+          alert('تم إخفاء المنتج لأنه مرتبط بطلبات سابقة')
+        } else {
+          setProducts((current) => current.filter((item) => item.id !== productId))
+        }
       } else {
         alert(data.error?.message || 'تعذر حذف المنتج')
       }
@@ -182,7 +187,7 @@ export default function AdminProductsPage() {
                   const typeTone = getProductTypeTone(product.product_type)
                   const metaText = product.product_type === 'physical_variant'
                     ? `${product.variants?.length || 0} متغير`
-                    : product.product_type === 'digital_account'
+                    : product.product_type === 'digital_account' || product.product_type === 'digital_text'
                       ? `${product.available_digital_units || 0} عنصر رقمي`
                       : 'مخزون مباشر'
 

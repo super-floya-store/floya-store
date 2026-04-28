@@ -119,7 +119,7 @@ async function reserveDigitalInventory(productId: string, variantId: string | nu
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin()
+    await requireAdmin(request)
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
         variant = variantData
       }
 
-      if (product.product_type === 'digital_account' && paymentMethod === 'cod') {
+      if ((product.product_type === 'digital_account' || product.product_type === 'digital_text') && paymentMethod === 'cod') {
         return NextResponse.json(
           { success: false, error: { code: 'PAYMENT_METHOD_NOT_ALLOWED', message: 'Digital account products require prepaid payment' } },
           { status: 400 }
@@ -262,7 +262,7 @@ export async function POST(request: NextRequest) {
       const totalPrice = unitPrice * item.quantity
       subtotal += totalPrice
 
-      if (product.product_type === 'digital_account') {
+      if (product.product_type === 'digital_account' || product.product_type === 'digital_text') {
         const reservedUnits = await reserveDigitalInventory(product.id, item.variantId || null, item.quantity)
         reservedDigitalUnitsByItemKey.set(`${product.id}:${item.variantId || 'none'}`, reservedUnits)
       }
@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
         variant_color: variant?.color || null,
         variant_label: variant ? [variant.size, variant.color].filter(Boolean).join(' / ') || variant.name_en || variant.name_ar || null : null,
         product_type: product.product_type || 'physical_simple',
-        fulfillment_status: product.product_type === 'digital_account' ? 'reserved' : 'pending',
+        fulfillment_status: product.product_type === 'digital_account' || product.product_type === 'digital_text' ? 'reserved' : 'pending',
         product_name_ar: product.name_ar,
         product_name_en: product.name_en,
         product_image: product.images[product.primary_image_index] || null,
@@ -293,7 +293,7 @@ export async function POST(request: NextRequest) {
     }
 
     const cartType = Array.from(productTypes)[0] || 'physical_simple'
-    const standardDeliveryFee = cartType === 'digital_account' ? 0 : getDeliveryFee(settings.delivery_fees, wilaya, 500)
+    const standardDeliveryFee = cartType === 'digital_account' || cartType === 'digital_text' ? 0 : getDeliveryFee(settings.delivery_fees, wilaya, 500)
     const deliveryFee = getVipDeliveryFee(standardDeliveryFee, session.user.is_vip)
     const vipDiscountAmount = session.user.is_vip ? standardSubtotal + standardDeliveryFee - (subtotal + deliveryFee) : 0
     const total = subtotal + deliveryFee
@@ -317,7 +317,7 @@ export async function POST(request: NextRequest) {
         total,
         payment_status: 'pending',
         refund_status: 'none',
-        status: cartType === 'digital_account' ? 'submitted' : 'pending',
+        status: cartType === 'digital_account' || cartType === 'digital_text' ? 'submitted' : 'pending',
       })
       .select()
       .single()
@@ -359,7 +359,7 @@ export async function POST(request: NextRequest) {
         await decrementVariantStock(item.variantId, item.quantity)
       } else if (matchingProductType === 'physical_simple') {
         await decrementProductStock(item.productId, item.quantity)
-      } else if (matchingProductType === 'digital_account' && matchingOrderItem) {
+      } else if ((matchingProductType === 'digital_account' || matchingProductType === 'digital_text') && matchingOrderItem) {
         const reservedUnits = reservedDigitalUnitsByItemKey.get(`${item.productId}:${item.variantId || 'none'}`) || []
         await supabaseServer
           .from('digital_inventory_units')

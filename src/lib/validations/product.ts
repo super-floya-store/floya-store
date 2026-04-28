@@ -34,7 +34,7 @@ export const productSchema = z.object({
     .max(200, 'الاسم الإنجليزي يجب أن لا يتجاوز 200 حرف'),
   description_ar: z.string().max(2000, 'الوصف العربي يجب أن لا يتجاوز 2000 حرف').optional().nullable(),
   description_en: z.string().max(2000, 'الوصف الإنجليزي يجب أن لا يتجاوز 2000 حرف').optional().nullable(),
-  product_type: z.enum(['physical_simple', 'physical_variant', 'digital_account']).default('physical_simple'),
+  product_type: z.enum(['physical_simple', 'physical_variant', 'digital_account', 'digital_text']).default('physical_simple'),
   price: z
     .number()
     .positive('السعر يجب أن يكون موجباً')

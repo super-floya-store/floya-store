@@ -57,7 +57,8 @@ export function ProductInventoryFields({
         >
           <option value="physical_simple">منتج عادي</option>
           <option value="physical_variant">ملابس مع متغيرات مقاس/لون</option>
-          <option value="digital_account">حساب رقمي / تسليم نصي</option>
+          <option value="digital_account">حساب رقمي</option>
+          <option value="digital_text">نصوص / أكواد متعددة الأسطر</option>
         </select>
       </div>
 
@@ -137,17 +138,23 @@ export function ProductInventoryFields({
         </div>
       )}
 
-      {productType === 'digital_account' && (
+      {(productType === 'digital_account' || productType === 'digital_text') && (
         <div className="space-y-3 rounded-lg border border-dashed p-4">
           <div>
             <p className="text-sm font-medium">المخزون الرقمي</p>
-            <p className="text-xs text-muted-foreground">ألصق كل حساب أو كود أو بيانات تسليم في سطر منفصل. سيتم حساب المخزون تلقائياً.</p>
+            <p className="text-xs text-muted-foreground">
+              {productType === 'digital_text'
+                ? 'ألصق كل نص أو كود أو بيانات تسليم ككتلة كاملة. افصل بين كل عملية تسليم وأخرى بسطر فارغ أو بسطر يحتوي على --- فقط.'
+                : 'ألصق كل حساب أو كود أو بيانات تسليم في سطر منفصل. سيتم حساب المخزون تلقائياً.'}
+            </p>
           </div>
           <textarea
             value={digitalInventoryText}
             onChange={(e) => onDigitalInventoryTextChange(e.target.value)}
             className="min-h-[180px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            placeholder={'email:pass\nlogin|password|note\nhttps://delivery-link.example/item/123'}
+            placeholder={productType === 'digital_text'
+              ? 'Netflix account 1\nEmail: demo@example.com\nPassword: pass123\nProfile PIN: 4455\n\n---\n\nCanva invite\nOpen this link:\nhttps://example.com/invite/123'
+              : 'email:pass\nlogin|password|note\nhttps://delivery-link.example/item/123'}
           />
           <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-2">
@@ -163,7 +170,7 @@ export function ProductInventoryFields({
         </div>
       )}
 
-      {productType !== 'digital_account' && storageWarning && <p className="text-xs text-amber-700">{storageWarning}</p>}
+      {productType !== 'digital_account' && productType !== 'digital_text' && storageWarning && <p className="text-xs text-amber-700">{storageWarning}</p>}
     </div>
   )
 }
