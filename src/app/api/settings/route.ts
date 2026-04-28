@@ -31,7 +31,7 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
-    await requireAdmin()
+    await requireAdmin(request)
     const body = await request.json()
     const entries = Object.entries(body).map(([key, value]) => ({ key, value }))
 

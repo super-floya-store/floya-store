@@ -163,6 +163,15 @@ export default function AdminSettingsPage() {
     }
   }
 
+  const getAccessToken = () => {
+    if (typeof document === 'undefined') return ''
+    const tokenEntry = document.cookie
+      .split('; ')
+      .find((item) => item.startsWith('access_token='))
+
+    return tokenEntry ? decodeURIComponent(tokenEntry.split('=').slice(1).join('=')) : ''
+  }
+
   useEffect(() => {
     async function fetchSettings() {
       try {
@@ -233,7 +242,11 @@ export default function AdminSettingsPage() {
 
       const res = await fetch('/api/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
+        },
         body: JSON.stringify(payload),
       })
 

@@ -3,10 +3,14 @@ import { verifyToken } from './jwt'
 import { supabaseServer } from '@/lib/supabase/server'
 import type { User } from '@/types/user'
 
-export async function getSession(): Promise<{ user: User | null; token: string | null }> {
+function getBearerToken(request?: Request) {
+  return request?.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim() || null
+}
+
+export async function getSession(request?: Request): Promise<{ user: User | null; token: string | null }> {
   try {
     const cookieStore = cookies()
-    const token = cookieStore.get('access_token')?.value
+    const token = getBearerToken(request) || cookieStore.get('access_token')?.value
 
     if (!token) {
       return { user: null, token: null }
@@ -30,8 +34,8 @@ export async function getSession(): Promise<{ user: User | null; token: string |
   }
 }
 
-export async function requireAuth(): Promise<{ user: User; token: string }> {
-  const session = await getSession()
+export async function requireAuth(request?: Request): Promise<{ user: User; token: string }> {
+  const session = await getSession(request)
 
   if (!session.user || !session.token) {
     throw new Error('Unauthorized')
@@ -40,8 +44,8 @@ export async function requireAuth(): Promise<{ user: User; token: string }> {
   return { user: session.user, token: session.token }
 }
 
-export async function requireAdmin(): Promise<{ user: User; token: string }> {
-  const session = await requireAuth()
+export async function requireAdmin(request?: Request): Promise<{ user: User; token: string }> {
+  const session = await requireAuth(request)
 
   if (session.user.role !== 'admin') {
     throw new Error('Forbidden')
