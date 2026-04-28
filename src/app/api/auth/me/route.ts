@@ -12,6 +12,13 @@ export async function GET() {
       )
     }
 
+    if (session.user.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Admin access only' } },
+        { status: 403 }
+      )
+    }
+
     return NextResponse.json({
       success: true,
       data: {

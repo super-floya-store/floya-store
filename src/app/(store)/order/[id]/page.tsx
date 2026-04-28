@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { CheckCircle, Upload, Copy, Check } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -57,6 +58,7 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
         etaFallback: 'سيتم تحديده بعد قبول الدفع',
         contactSeller: 'مراسلة البائع',
         continueShopping: 'متابعة التسوق',
+        openReceipt: 'فتح الإيصال',
         proofSuccess: 'تم رفع إثبات الدفع بنجاح.',
         proofFailure: 'تعذر رفع الإثبات.',
         payNowBody: 'ارفع الآن إثبات الدفع عبر',
@@ -103,6 +105,7 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
         etaFallback: 'It will be set after payment is accepted',
         contactSeller: 'Contact seller',
         continueShopping: 'Continue shopping',
+        openReceipt: 'Open receipt',
         proofSuccess: 'Payment proof uploaded successfully.',
         proofFailure: 'Unable to upload payment proof.',
         payNowBody: 'Upload your payment proof now via',
@@ -264,6 +267,17 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
                           </Badge>
                           {item.variant_label ? <Badge variant="outline">{copy.variant}: {item.variant_label}</Badge> : null}
                         </div>
+                        {item.delivered_units?.length ? (
+                          <div className="mt-4 space-y-2 rounded-[18px] border border-primary/20 bg-primary/5 px-3 py-3 text-left">
+                            <p className="text-xs font-semibold text-foreground">{locale === 'ar' ? 'بيانات التسليم' : 'Delivery details'}</p>
+                            {item.delivered_units.map((unit: any) => (
+                              <div key={unit.id} className="rounded-xl bg-white px-3 py-3 text-xs leading-6 text-foreground">
+                                {unit.title ? <p className="mb-1 font-semibold">{unit.title}</p> : null}
+                                <pre className="overflow-x-auto whitespace-pre-wrap break-words font-sans">{unit.payload}</pre>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
                       </div>
                     ))}
                   </div>
@@ -351,6 +365,11 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
                     ))}
                   </div>
                   <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                    {order.receipt_issued_at ? (
+                      <Button asChild variant="outline" className="min-h-[48px] rounded-full px-5">
+                        <Link href={`/account/receipts/${params.id}`}>{copy.openReceipt}</Link>
+                      </Button>
+                    ) : null}
                     <Button asChild className="min-h-[48px] rounded-full px-5">
                       <a href="/contact">{copy.contactSeller}</a>
                     </Button>

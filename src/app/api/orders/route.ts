@@ -1,25 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase/server'
-import { requireAdmin, requireAuth } from '@/lib/auth/session'
+import { requireAdmin } from '@/lib/auth/session'
 import { orderSchema, orderStatusSchema } from '@/lib/validations/order'
 import { getStoreSettings } from '@/lib/settings/store-settings'
 import { getDeliveryFee } from '@/lib/algeria'
 import { getVipDeliveryFee, getVipDiscountedPrice } from '@/lib/pricing/vip'
 import { recalculateProductAggregates } from '@/lib/products/inventory'
 
-async function upsertCustomerProfile(userId: string, customerName: string, customerPhone: string, customerEmail: string | null) {
+async function upsertCustomerProfile(customerName: string, customerPhone: string, customerEmail: string | null) {
   const { data: existing } = await supabaseServer
     .from('customer_profiles')
     .select('*')
-    .or(`user_id.eq.${userId},phone.eq.${customerPhone}`)
+    .or(customerEmail ? `phone.eq.${customerPhone},email.eq.${customerEmail}` : `phone.eq.${customerPhone}`)
     .maybeSingle()
   const nextFraudFlags = existing ? existing.fraud_flags + (existing.is_blacklisted ? 1 : 0) : 0
 
   const payload = {
-    user_id: userId,
+    user_id: existing?.user_id || null,
     phone: customerPhone,
     full_name: customerName,
     email: customerEmail,
+    is_vip: existing?.is_vip || false,
     last_order_at: new Date().toISOString(),
     fraud_flags: nextFraudFlags,
   }
@@ -177,7 +178,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await requireAuth()
     const body = await request.json()
     const result = orderSchema.safeParse(body)
 
@@ -189,8 +189,8 @@ export async function POST(request: NextRequest) {
     }
 
     const { customerName, customerPhone, customerEmail, wilaya, commune, deliveryAddress, notes, paymentMethod, items } = result.data
-    const resolvedEmail = session.user.email || customerEmail || null
-    const customerProfile = await upsertCustomerProfile(session.user.id, customerName, customerPhone, resolvedEmail)
+    const resolvedEmail = customerEmail || null
+    const customerProfile = await upsertCustomerProfile(customerName, customerPhone, resolvedEmail)
 
     if (customerProfile?.is_blacklisted) {
       return NextResponse.json(
@@ -198,6 +198,8 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       )
     }
+
+    const isVipCustomer = !!customerProfile?.is_vip
 
     let subtotal = 0
     let standardSubtotal = 0
@@ -258,7 +260,7 @@ export async function POST(request: NextRequest) {
       const baseUnitPrice = variant?.price_override ?? product.promo_price ?? product.price
       standardSubtotal += baseUnitPrice * item.quantity
       const promoReference = variant?.promo_price_override ?? product.promo_price
-      const unitPrice = getVipDiscountedPrice(promoReference || baseUnitPrice, session.user.is_vip)
+      const unitPrice = getVipDiscountedPrice(promoReference || baseUnitPrice, isVipCustomer)
       const totalPrice = unitPrice * item.quantity
       subtotal += totalPrice
 
@@ -294,14 +296,14 @@ export async function POST(request: NextRequest) {
 
     const cartType = Array.from(productTypes)[0] || 'physical_simple'
     const standardDeliveryFee = cartType === 'digital_account' || cartType === 'digital_text' ? 0 : getDeliveryFee(settings.delivery_fees, wilaya, 500)
-    const deliveryFee = getVipDeliveryFee(standardDeliveryFee, session.user.is_vip)
-    const vipDiscountAmount = session.user.is_vip ? standardSubtotal + standardDeliveryFee - (subtotal + deliveryFee) : 0
+    const deliveryFee = getVipDeliveryFee(standardDeliveryFee, isVipCustomer)
+    const vipDiscountAmount = isVipCustomer ? standardSubtotal + standardDeliveryFee - (subtotal + deliveryFee) : 0
     const total = subtotal + deliveryFee
 
     const { data: order, error: orderError } = await supabaseServer
       .from('orders')
       .insert({
-        user_id: session.user.id,
+        user_id: customerProfile?.user_id || null,
         customer_name: customerName,
         customer_phone: customerPhone,
         customer_email: resolvedEmail,
@@ -313,7 +315,7 @@ export async function POST(request: NextRequest) {
         subtotal,
         delivery_fee: deliveryFee,
         vip_discount_amount: Math.max(0, vipDiscountAmount),
-        priority_fulfillment: session.user.is_vip,
+        priority_fulfillment: isVipCustomer,
         total,
         payment_status: 'pending',
         refund_status: 'none',

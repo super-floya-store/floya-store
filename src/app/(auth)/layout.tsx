@@ -14,7 +14,7 @@ export default function AuthLayout({
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace(user.role === 'admin' ? '/admin' : '/account')
+      router.replace('/admin')
     }
   }, [user, loading, router])
 

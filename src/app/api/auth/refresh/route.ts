@@ -36,6 +36,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (user.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: { code: 'FORBIDDEN', message: 'Admin access only' } },
+        { status: 403 }
+      )
+    }
+
     const accessToken = generateAccessToken(user.id, user.email, user.role)
     const newRefreshToken = generateRefreshToken(user.id, user.email, user.role)
 

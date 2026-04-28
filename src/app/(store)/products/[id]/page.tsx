@@ -16,14 +16,11 @@ import { useRecentlyViewedStore } from '@/stores/recently-viewed-store'
 import { useWishlistStore } from '@/stores/wishlist-store'
 import { useUIStore } from '@/stores/ui-store'
 import { Heart, Zap } from 'lucide-react'
-import { useAuth } from '@/hooks/useAuth'
-import { getVipDiscountedPrice } from '@/lib/pricing/vip'
 import { getProductType, getProductVariantChoices } from '@/components/store/product-metadata'
 import { formatPrice } from '@/lib/utils/format'
 
 export default function ProductDetailPage() {
   const params = useParams()
-  const { user } = useAuth()
   const locale = useUIStore((state) => state.locale)
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
@@ -158,8 +155,6 @@ export default function ProductDetailPage() {
   const primaryImage = galleryImages[selectedImageIndex] || galleryImages[product.primary_image_index] || galleryImages[0]
   const hasPromo = product.promo_price && product.promo_price < product.price
   const basePrice = hasPromo ? product.promo_price! : product.price
-  const vipPrice = getVipDiscountedPrice(basePrice, !!user?.is_vip)
-  const hasVipPrice = !!user?.is_vip && vipPrice < basePrice
   const productType = getProductType(product)
   const productName = locale === 'ar' ? product.name_ar : product.name_en
   const productDescription = locale === 'ar' ? product.description_ar : (product.description_en || product.description_ar)
@@ -179,7 +174,7 @@ export default function ProductDetailPage() {
     addItem({
       productId: product.id,
       name: productName,
-      price: vipPrice,
+      price: basePrice,
       image: primaryImage,
       quantity,
       productType,
@@ -261,12 +256,7 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="surface-card flex flex-wrap items-center gap-3 rounded-[30px] px-5 py-5">
-            {hasVipPrice ? (
-              <>
-                <span className="text-3xl font-bold text-primary md:text-4xl"><bdi>{formatPrice(vipPrice, 'DZD', locale)}</bdi></span>
-                <span className="text-lg text-muted-foreground line-through md:text-2xl"><bdi>{formatPrice(basePrice, 'DZD', locale)}</bdi></span>
-              </>
-            ) : hasPromo ? (
+            {hasPromo ? (
               <>
                 <span className="text-3xl font-bold text-primary md:text-4xl"><bdi>{formatPrice(product.promo_price!, 'DZD', locale)}</bdi></span>
                 <span className="text-lg text-muted-foreground line-through md:text-2xl"><bdi>{formatPrice(product.price, 'DZD', locale)}</bdi></span>

@@ -13,7 +13,7 @@ export default function ReceiptPage({ params }: { params: { orderNumber: string 
   const [order, setOrder] = useState<OrderWithItems | null>(null)
 
   useEffect(() => {
-    fetch(`/api/account/orders/${params.orderNumber}`)
+    fetch(`/api/orders/track/${params.orderNumber}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
@@ -26,7 +26,7 @@ export default function ReceiptPage({ params }: { params: { orderNumber: string 
     ? {
         title: 'إيصال الطلب',
         print: 'تنزيل PDF / طباعة',
-        back: 'العودة إلى الحساب',
+        back: 'العودة إلى المتابعة',
         customer: 'العميل',
         payment: 'الدفع',
         total: 'الإجمالي',
@@ -37,7 +37,7 @@ export default function ReceiptPage({ params }: { params: { orderNumber: string 
     : {
         title: 'Order receipt',
         print: 'Download PDF / Print',
-        back: 'Back to account',
+        back: 'Back to tracking',
         customer: 'Customer',
         payment: 'Payment',
         total: 'Total',

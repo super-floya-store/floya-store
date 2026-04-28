@@ -7,11 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useAuth } from '@/hooks/useAuth'
 import { useCartStore } from '@/stores/cart-store'
 import { useUIStore } from '@/stores/ui-store'
 import { getDeliveryFee, wilayas } from '@/lib/algeria'
-import { getVipDeliveryFee } from '@/lib/pricing/vip'
+import { getVipDiscountedPrice } from '@/lib/pricing/vip'
 import type { PaymentMethod } from '@/types/order'
 import { Badge } from '@/components/ui/badge'
 import { getCartFulfillment } from '@/types/cart'
@@ -21,12 +20,12 @@ const defaultPaymentMethods = { baridimob: true, cod: true, binance: false }
 
 export default function CheckoutPage() {
   const { items, subtotal, clearCart, hasHydrated } = useCartStore()
-  const { user, loading: authLoading } = useAuth()
   const locale = useUIStore((state) => state.locale)
   const router = useRouter()
   const [settings, setSettings] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [copiedValue, setCopiedValue] = useState<'baridi' | 'binance' | null>(null)
+  const [customerFlags, setCustomerFlags] = useState({ isVip: false, isBlacklisted: false })
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
@@ -40,12 +39,18 @@ export default function CheckoutPage() {
   const fulfillment = getCartFulfillment(items)
   const isMixedCart = fulfillment.isMixed
   const isDigitalOnly = fulfillment.isDigitalOnly
+  const isVipPreview = customerFlags.isVip
 
   const paymentMethods = settings?.payment_methods || defaultPaymentMethods
+  const baseSubtotal = subtotal()
+  const effectiveSubtotal = useMemo(
+    () => items.reduce((sum, item) => sum + (isVipPreview ? getVipDiscountedPrice(item.price, true) : item.price) * item.quantity, 0),
+    [isVipPreview, items]
+  )
   const standardDeliveryFee = useMemo(() => getDeliveryFee(settings?.delivery_fees, formData.wilaya, 500), [settings, formData.wilaya])
-  const deliveryFee = useMemo(() => getVipDeliveryFee(standardDeliveryFee, !!user?.is_vip), [standardDeliveryFee, user?.is_vip])
-  const vipDiscount = useMemo(() => (!!user?.is_vip ? standardDeliveryFee - deliveryFee : 0), [deliveryFee, standardDeliveryFee, user?.is_vip])
-  const total = subtotal() + deliveryFee
+  const deliveryFee = useMemo(() => (isVipPreview && !isDigitalOnly ? 0 : standardDeliveryFee), [isVipPreview, isDigitalOnly, standardDeliveryFee])
+  const vipDiscount = useMemo(() => (isVipPreview ? baseSubtotal + standardDeliveryFee - (effectiveSubtotal + deliveryFee) : 0), [baseSubtotal, deliveryFee, effectiveSubtotal, isVipPreview, standardDeliveryFee])
+  const total = effectiveSubtotal + deliveryFee
   const ripValue = settings?.baridimob_rip || '00799999004419717033'
   const binanceAddress = settings?.binance_wallet_address || ''
 
@@ -64,7 +69,7 @@ export default function CheckoutPage() {
         commune: 'البلدية *',
         address: 'عنوان التوصيل *',
         notes: 'ملاحظات',
-        authRequired: 'يجب تسجيل الدخول أو إنشاء حساب قبل إتمام الطلب.',
+        guestCheckout: 'يمكنك إتمام الطلب بدون حساب. تسجيل الدخول متاح للإدارة فقط.',
         vipPerks: 'مزايا VIP مطبقة على هذا الطلب: خصم خاص وأولوية تجهيز وتوصيل مجاني.',
         paymentMethods: 'طريقة الدفع',
         paymentOptions: {
@@ -114,7 +119,7 @@ export default function CheckoutPage() {
         commune: 'Commune *',
         address: 'Delivery address *',
         notes: 'Notes',
-        authRequired: 'You need to sign in or create an account before completing a purchase.',
+        guestCheckout: 'You can complete this order without an account. Login is reserved for the admin only.',
         vipPerks: 'VIP perks are active on this order: special pricing, priority handling, and free delivery.',
         paymentMethods: 'Payment method',
         paymentOptions: {
@@ -152,12 +157,6 @@ export default function CheckoutPage() {
       }
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace('/login?next=/checkout')
-    }
-  }, [authLoading, router, user])
-
-  useEffect(() => {
     fetch('/api/settings')
       .then((res) => res.json())
       .then((data) => {
@@ -172,14 +171,26 @@ export default function CheckoutPage() {
   }, [])
 
   useEffect(() => {
-    if (user) {
-      setFormData((current) => ({
-        ...current,
-        customerName: current.customerName || user.full_name || '',
-        customerEmail: current.customerEmail || user.email || '',
-      }))
+    const phone = formData.customerPhone.trim()
+    if (!/^0[5-7][0-9]{8}$/.test(phone)) {
+      setCustomerFlags({ isVip: false, isBlacklisted: false })
+      return
     }
-  }, [user])
+
+    fetch(`/api/customer-status?phone=${encodeURIComponent(phone)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setCustomerFlags({
+            isVip: !!data.data?.isVip,
+            isBlacklisted: !!data.data?.isBlacklisted,
+          })
+        }
+      })
+      .catch(() => {
+        setCustomerFlags({ isVip: false, isBlacklisted: false })
+      })
+  }, [formData.customerPhone])
 
   const handleCopy = async (value: string, type: 'baridi' | 'binance') => {
     try {
@@ -223,27 +234,11 @@ export default function CheckoutPage() {
     }
   }
 
-  if (!hasHydrated || authLoading) {
+  if (!hasHydrated) {
     return (
       <div className="container mx-auto max-w-5xl px-4 py-8 md:px-6">
         <h1 className="section-title mb-8">{copy.title}</h1>
         <p className="text-muted-foreground">{copy.loadingOrder}</p>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return (
-      <div className="container mx-auto max-w-2xl px-4 py-10 md:px-6">
-        <Card className="surface-card rounded-[32px]">
-          <CardContent className="space-y-5 p-8 text-center">
-            <h1 className="text-2xl font-bold">{copy.title}</h1>
-            <p className="text-sm leading-7 text-muted-foreground">{copy.authRequired}</p>
-            <Button asChild className="rounded-full">
-              <a href="/login?next=/checkout">Login / Sign up</a>
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     )
   }
@@ -264,6 +259,7 @@ export default function CheckoutPage() {
       <div className="mb-8 surface-card rounded-[32px] px-6 py-8">
         <span className="section-kicker w-fit">CHECKOUT FLOW</span>
         <h1 className="section-title mt-4">{copy.title}</h1>
+        <p className="mt-4 max-w-3xl text-sm leading-7 text-muted-foreground">{copy.guestCheckout}</p>
         <div className="mt-6 grid grid-cols-3 gap-3 md:max-w-xl">
           {copy.steps.map((step, index) => (
             <div key={step} className={`rounded-full px-4 py-3 text-center text-sm font-semibold ${index < 2 ? 'bg-secondary text-secondary-foreground shadow-soft' : 'bg-primary/10 text-primary'}`}>
@@ -290,9 +286,15 @@ export default function CheckoutPage() {
             </div>
           ) : null}
 
-          {user.is_vip ? (
+          {isVipPreview ? (
             <div className="rounded-[24px] border border-brand-gold/40 bg-brand-gold/10 px-4 py-4 text-sm leading-7 text-foreground">
               {copy.vipPerks}
+            </div>
+          ) : null}
+
+          {customerFlags.isBlacklisted ? (
+            <div className="rounded-[24px] border border-destructive/30 bg-destructive/5 px-4 py-4 text-sm leading-7 text-destructive">
+              {locale === 'ar' ? 'هذا الرقم محظور من الطلب حالياً. تواصل مع المتجر للمراجعة.' : 'This phone number is currently blocked from ordering. Contact the store for review.'}
             </div>
           ) : null}
 
@@ -304,6 +306,9 @@ export default function CheckoutPage() {
           <div className="flex flex-col gap-2">
             <Label htmlFor="phone">{copy.phone}</Label>
             <Input id="phone" required placeholder="0XXXXXXXXX" pattern="^0[5-7][0-9]{8}$" value={formData.customerPhone} onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })} className="min-h-[48px] rounded-2xl border-white/80 bg-white/80" />
+            <p className="text-xs text-muted-foreground">
+              {locale === 'ar' ? 'إذا كان هذا الرقم مصنفاً كعميل VIP فسيتم تطبيق الامتيازات تلقائياً بعد إنشاء الطلب.' : 'If this phone number is marked as VIP, benefits are applied automatically when the order is created.'}
+            </p>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -382,7 +387,7 @@ export default function CheckoutPage() {
             ) : null}
           </div>
 
-          <Button type="submit" className="min-h-[52px] w-full rounded-full bg-gradient-to-r from-primary to-brand-gold text-base font-bold text-primary-foreground shadow-glow" disabled={loading || isMixedCart}>
+          <Button type="submit" className="min-h-[52px] w-full rounded-full bg-gradient-to-r from-primary to-brand-gold text-base font-bold text-primary-foreground shadow-glow" disabled={loading || isMixedCart || customerFlags.isBlacklisted}>
             {loading ? copy.submitting : copy.submit}
           </Button>
         </form>
@@ -414,7 +419,7 @@ export default function CheckoutPage() {
               <div className="space-y-2 border-t pt-4">
                 <div className="flex justify-between text-sm">
                   <span>{copy.subtotal}</span>
-                  <span><bdi>{formatPrice(subtotal(), 'DZD', locale)}</bdi></span>
+                  <span><bdi>{formatPrice(effectiveSubtotal, 'DZD', locale)}</bdi></span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>{isDigitalOnly ? copy.serviceFee : copy.delivery}</span>

@@ -78,28 +78,20 @@ export function useAuth() {
     return data
   }
 
-  const signup = async (fullName: string, email: string, password: string, confirmPassword: string) => {
-    const res = await fetch('/api/auth/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fullName, email, password, confirmPassword }),
-    })
-
-    const data = await res.json()
-    if (data.success) {
-      const nextUser = normalizeUser(data.data.user)
-      cachedUser = nextUser
-      setUser(nextUser)
-    }
-    return data
-  }
-
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
     cachedUser = null
     setUser(null)
     window.location.href = '/login'
   }
+
+  const signup = async () => ({
+    success: false,
+    error: {
+      code: 'DISABLED',
+      message: 'Customer accounts are disabled. Only the store admin can sign in.',
+    },
+  })
 
   return { user, loading, login, signup, logout, isAdmin: user?.role === 'admin' }
 }

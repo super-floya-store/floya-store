@@ -1,5 +1,5 @@
-import { AuthPanel } from '@/components/auth/AuthPanel'
+import { redirect } from 'next/navigation'
 
 export default function SignupPage() {
-  return <AuthPanel initialMode="signup" />
+  redirect('/login')
 }
