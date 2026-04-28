@@ -39,7 +39,7 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
-    await requireAdmin(request)
+    const { user } = await requireAdmin(request)
     const body = await request.json()
     const entries = Object.entries(body).map(([key, value]) => ({ key, value }))
 
@@ -47,15 +47,55 @@ export async function PUT(request: NextRequest) {
       return jsonWithNoStore({ success: false, error: { code: 'VALIDATION_ERROR', message: 'No settings provided' } }, { status: 400 })
     }
 
-    const { error } = await supabaseServer
+    const { data: existingRows, error: existingError } = await supabaseServer
       .from('settings')
-      .upsert(entries, { onConflict: 'key' })
+      .select('key')
+      .in('key', entries.map((entry) => entry.key))
 
-    if (error) {
+    if (existingError) {
       return jsonWithNoStore(
-        { success: false, error: { code: 'DATABASE_ERROR', message: error.message } },
+        { success: false, error: { code: 'DATABASE_ERROR', message: existingError.message } },
         { status: 500 }
       )
+    }
+
+    const existingKeys = new Set((existingRows || []).map((row) => row.key))
+    const timestamp = new Date().toISOString()
+
+    for (const entry of entries) {
+      if (existingKeys.has(entry.key)) {
+        const { error } = await supabaseServer
+          .from('settings')
+          .update({
+            value: entry.value,
+            updated_by: user.id,
+            updated_at: timestamp,
+          })
+          .eq('key', entry.key)
+
+        if (error) {
+          return jsonWithNoStore(
+            { success: false, error: { code: 'DATABASE_ERROR', message: error.message } },
+            { status: 500 }
+          )
+        }
+      } else {
+        const { error } = await supabaseServer
+          .from('settings')
+          .insert({
+            key: entry.key,
+            value: entry.value,
+            updated_by: user.id,
+            updated_at: timestamp,
+          })
+
+        if (error) {
+          return jsonWithNoStore(
+            { success: false, error: { code: 'DATABASE_ERROR', message: error.message } },
+            { status: 500 }
+          )
+        }
+      }
     }
 
     const { data, error: readError } = await supabaseServer.from('settings').select('*')
