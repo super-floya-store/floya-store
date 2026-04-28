@@ -23,9 +23,7 @@ export function StoreHeader() {
 
   const copy = locale === 'ar'
     ? {
-        home: 'الرئيسية',
         products: 'المنتجات',
-        arrivals: 'وصل حديثاً',
         contact: 'تواصل معنا',
         search: 'بحث',
         cart: 'سلة التسوق',
@@ -39,9 +37,7 @@ export function StoreHeader() {
         ready: 'جاهز للتسوق',
       }
     : {
-        home: 'Home',
         products: 'Products',
-        arrivals: 'New Arrivals',
         contact: 'Contact',
         search: 'Search',
         cart: 'Cart',
@@ -77,37 +73,36 @@ export function StoreHeader() {
         }`}
       >
         <div className="container mx-auto px-4 md:px-6">
-          <div className="flex h-[72px] items-center justify-between gap-3">
+          <div className="flex h-[68px] items-center justify-between gap-3">
             <Link
               href="/"
-              className="surface-card premium-outline relative inline-flex min-h-[48px] items-center rounded-full px-4 py-2 text-secondary transition duration-300 hover:-translate-y-0.5 hover:shadow-medium"
+              className="surface-card premium-outline relative inline-flex min-h-[46px] items-center rounded-full px-3.5 py-2 text-secondary transition duration-300 hover:-translate-y-0.5 hover:shadow-medium"
             >
               <span className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/10 via-transparent to-secondary/10" />
               <span className="relative flex items-center gap-3">
                 <span className="flex size-10 items-center justify-center rounded-full bg-secondary text-sm font-bold text-secondary-foreground shadow-soft">
                   {branding.logoUrl ? (
-                    <Image src={branding.logoUrl} alt={brandTitle} width={40} height={40} className="size-10 rounded-full object-cover" />
+                    <Image src={branding.logoUrl} alt={brandTitle} width={38} height={38} className="size-[38px] rounded-full object-cover" />
                   ) : (
                     brandTitle.charAt(0).toUpperCase()
                   )}
                 </span>
                 <span className="flex flex-col leading-none">
-                  <span className="text-sm font-semibold tracking-[0.24em] text-primary">{brandTitle.toUpperCase()}</span>
-                  <span className="mt-1 text-base font-bold">{brandTitle}</span>
+                  <span className="text-[11px] font-semibold tracking-[0.24em] text-primary">{brandTitle.toUpperCase()}</span>
+                  <span className="mt-1 text-[15px] font-bold">{brandTitle}</span>
                 </span>
               </span>
             </Link>
 
-            <nav className="hidden items-center gap-2 lg:flex">
+            <nav className="surface-card premium-outline hidden items-center gap-1 rounded-full px-2 py-1.5 lg:flex">
               {[
                 { href: '/products', label: copy.products },
-                { href: '/categories/new-arrivals', label: copy.arrivals },
                 { href: '/contact', label: copy.contact },
               ].map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`group relative inline-flex min-h-[48px] items-center justify-center rounded-full px-5 py-3 text-sm font-medium transition duration-300 ${
+                  className={`group relative inline-flex min-h-[42px] items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition duration-300 ${
                     pathname === item.href
                       ? 'bg-white/85 text-primary shadow-soft'
                       : 'text-secondary hover:bg-white/60 hover:text-primary'
@@ -121,10 +116,10 @@ export function StoreHeader() {
               ))}
             </nav>
 
-            <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center gap-2">
               <Link
                 href="/search"
-                className="surface-card premium-outline hidden min-h-[48px] min-w-[48px] items-center justify-center rounded-full text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft md:inline-flex"
+                className="surface-card premium-outline hidden min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft md:inline-flex"
                 aria-label={copy.search}
               >
                 <Search className="h-5 w-5" />
@@ -132,7 +127,7 @@ export function StoreHeader() {
 
               <button
                 onClick={toggleCart}
-                className="surface-card premium-outline relative inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-full text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft"
+                className="surface-card premium-outline relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft"
                 aria-label={copy.cart}
               >
                 <ShoppingCart className="h-5 w-5" />
@@ -144,7 +139,7 @@ export function StoreHeader() {
               </button>
 
               <button
-                className="surface-card premium-outline inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-full text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft lg:hidden"
+                className="surface-card premium-outline inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft lg:hidden"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 aria-label={copy.menu}
               >
@@ -153,7 +148,7 @@ export function StoreHeader() {
               <button
                 type="button"
                 onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
-                className="surface-card premium-outline inline-flex min-h-[48px] items-center justify-center rounded-full px-4 text-xs font-bold tracking-[0.2em] text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft"
+                className="surface-card premium-outline inline-flex min-h-[44px] items-center justify-center rounded-full px-3.5 text-[11px] font-bold tracking-[0.18em] text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft"
                 aria-label={copy.switchTitle}
               >
                 <span className="whitespace-nowrap">{copy.switchLabel}</span>
@@ -194,7 +189,6 @@ export function StoreHeader() {
         <nav className="mt-6 flex flex-col gap-3">
           {[
             { href: '/products', label: copy.products },
-            { href: '/categories/new-arrivals', label: copy.arrivals },
             { href: '/search', label: copy.search },
             { href: '/contact', label: copy.contact },
           ].map((item) => (

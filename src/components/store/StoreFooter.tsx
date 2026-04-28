@@ -32,15 +32,14 @@ export function StoreFooter() {
   const address = typeof settings.store_address === 'string' ? JSON.parse(settings.store_address) : (settings.store_address || { ar: 'تيزي وزو' })
   const copy = locale === 'ar'
     ? {
-        kicker: 'واجهة متجر راقية',
-        body: 'تسوق واضح يركز على سهولة التصفح، سرعة الوصول إلى المنتج، وتجربة تبدو احترافية على الهاتف وسطح المكتب.',
+        kicker: 'متجر فلويا',
+        body: 'تسوق واضح وسريع بتجربة أنيقة على الهاتف وسطح المكتب.',
         fastTitle: 'خدمة سريعة',
-        fastBody: 'استفسارات سريعة، ردود أوضح، وتجربة تبدو احترافية.',
+        fastBody: 'استفسارات أسرع وردود أوضح.',
         whatsapp: 'تواصل عبر واتساب',
         quickLinks: 'روابط سريعة',
         links: [
           { href: '/products', label: 'جميع المنتجات' },
-          { href: '/categories/new-arrivals', label: 'وصل حديثاً' },
           { href: '/search', label: 'البحث' },
           { href: '/contact', label: 'تواصل معنا' },
         ],
@@ -49,15 +48,14 @@ export function StoreFooter() {
         rights: `© 2026 ${branding.nameAr}. جميع الحقوق محفوظة.`,
       }
     : {
-        kicker: 'PREMIUM STOREFRONT',
-        body: 'A cleaner shopping experience focused on easy browsing, faster product discovery, and a polished feel on mobile and desktop.',
+        kicker: 'FLOYA STORE',
+        body: 'Clean shopping, faster browsing, and a more polished storefront.',
         fastTitle: 'Fast support',
-        fastBody: 'Quick questions, clearer answers, and a more professional experience.',
+        fastBody: 'Quick questions and clearer answers.',
         whatsapp: 'Chat on WhatsApp',
         quickLinks: 'Quick links',
         links: [
           { href: '/products', label: 'All products' },
-          { href: '/categories/new-arrivals', label: 'New arrivals' },
           { href: '/search', label: 'Search' },
           { href: '/contact', label: 'Contact us' },
         ],
@@ -72,41 +70,41 @@ export function StoreFooter() {
       <div className="absolute left-[-7rem] top-12 size-56 rounded-full bg-primary/10 blur-3xl" />
       <div className="absolute bottom-0 right-[-5rem] size-52 rounded-full bg-white/10 blur-3xl" />
 
-      <div className="container relative mx-auto px-4 py-14 md:px-6 lg:py-20">
-        <div className="grid gap-8 lg:grid-cols-[1.4fr_0.8fr_1fr]">
-          <div className="flex flex-col gap-5">
+      <div className="container relative mx-auto px-4 py-10 md:px-6 lg:py-12">
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr_1fr]">
+          <div className="flex flex-col gap-4">
             <span className="section-kicker w-fit border-white/10 bg-white/10 text-primary-foreground">{copy.kicker}</span>
             <div>
-              <h3 className="text-3xl font-bold md:text-4xl">{locale === 'ar' ? branding.nameAr : branding.nameEn}</h3>
-              <p className="mt-4 max-w-xl text-sm leading-8 text-secondary-foreground/78 md:text-base">
+              <h3 className="text-2xl font-bold md:text-3xl">{locale === 'ar' ? branding.nameAr : branding.nameEn}</h3>
+              <p className="mt-3 max-w-lg text-sm leading-7 text-secondary-foreground/82">
                 {copy.body}
               </p>
             </div>
-            <div className="surface-card flex max-w-xl flex-col gap-3 rounded-[28px] border-white/10 bg-white/10 p-5 text-sm text-secondary md:flex-row md:items-center md:justify-between">
+            <div className="surface-card flex max-w-lg flex-col gap-3 rounded-[24px] border-white/10 bg-white/10 p-4 text-sm text-secondary md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-xs font-semibold tracking-[0.2em] text-primary">{copy.fastTitle}</p>
-                <p className="mt-2 text-base font-semibold text-white">{copy.fastBody}</p>
+                <p className="mt-2 text-sm font-semibold text-white">{copy.fastBody}</p>
               </div>
               <a
                 href={`https://wa.me/${settings.store_whatsapp || '213555123456'}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition duration-300 hover:-translate-y-0.5 hover:shadow-glow"
+                className="inline-flex min-h-[42px] items-center justify-center rounded-full bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition duration-300 hover:-translate-y-0.5 hover:shadow-glow"
               >
                 {copy.whatsapp}
               </a>
             </div>
           </div>
 
-          <div className="flex flex-col gap-5">
-            <h3 className="text-lg font-bold">{copy.quickLinks}</h3>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-base font-bold">{copy.quickLinks}</h3>
             <div className="h-px w-16 bg-gradient-to-r from-primary to-transparent" />
             <div className="flex flex-col gap-3 text-sm">
               {copy.links.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="group inline-flex min-h-[44px] items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition duration-300 hover:border-primary/40 hover:bg-white/10"
+                  className="group inline-flex min-h-[40px] items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 transition duration-300 hover:border-primary/40 hover:bg-white/10"
                 >
                   <span>{item.label}</span>
                   <span className="text-primary transition duration-300 group-hover:-translate-x-1">{locale === 'ar' ? '←' : '→'}</span>
@@ -115,24 +113,24 @@ export function StoreFooter() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-5">
-            <h3 className="text-lg font-bold">{copy.contact}</h3>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-base font-bold">{copy.contact}</h3>
             <div className="h-px w-16 bg-gradient-to-r from-primary to-transparent" />
             <div className="grid gap-4 text-sm sm:grid-cols-3 lg:grid-cols-1">
-              <div className="surface-card flex min-h-[112px] flex-col items-center justify-center gap-3 rounded-[24px] border-white/10 bg-white/10 px-4 py-5 text-center">
+              <div className="surface-card flex min-h-[88px] flex-col items-center justify-center gap-2 rounded-[20px] border-white/10 bg-white/10 px-4 py-4 text-center">
                 <Phone className="h-5 w-5 text-primary" />
                 <span className="text-xs font-semibold tracking-[0.2em] text-primary">{locale === 'ar' ? 'الهاتف' : 'Phone'}</span>
-                <span className="text-base font-semibold text-white">{settings.store_phone || '0555123456'}</span>
+                <span className="text-sm font-semibold text-white">{settings.store_phone || '0555123456'}</span>
               </div>
-              <div className="surface-card flex min-h-[112px] flex-col items-center justify-center gap-3 rounded-[24px] border-white/10 bg-white/10 px-4 py-5 text-center">
+              <div className="surface-card flex min-h-[88px] flex-col items-center justify-center gap-2 rounded-[20px] border-white/10 bg-white/10 px-4 py-4 text-center">
                 <Mail className="h-5 w-5 text-primary" />
                 <span className="text-xs font-semibold tracking-[0.2em] text-primary">{locale === 'ar' ? 'البريد' : 'Email'}</span>
-                <span className="text-base font-semibold text-white">{settings.store_email || 'contact@floya.dz'}</span>
+                <span className="text-sm font-semibold text-white">{settings.store_email || 'contact@floya.dz'}</span>
               </div>
-              <div className="surface-card flex min-h-[112px] flex-col items-center justify-center gap-3 rounded-[24px] border-white/10 bg-white/10 px-4 py-5 text-center">
+              <div className="surface-card flex min-h-[88px] flex-col items-center justify-center gap-2 rounded-[20px] border-white/10 bg-white/10 px-4 py-4 text-center">
                 <MapPin className="h-5 w-5 text-primary" />
                 <span className="text-xs font-semibold tracking-[0.2em] text-primary">{locale === 'ar' ? 'الموقع' : 'Location'}</span>
-                <span className="text-base font-semibold text-white">{locale === 'ar' ? (address?.ar || 'تيزي وزو') : (address?.en || 'Algeria')}</span>
+                <span className="text-sm font-semibold text-white">{locale === 'ar' ? (address?.ar || 'تيزي وزو') : (address?.en || 'Algeria')}</span>
               </div>
             </div>
 
@@ -178,7 +176,7 @@ export function StoreFooter() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-3 border-t border-white/10 pt-6 text-center text-xs text-secondary-foreground/65 md:flex-row md:items-center md:justify-between md:text-sm">
+        <div className="mt-8 flex flex-col gap-2 border-t border-white/10 pt-4 text-center text-xs text-secondary-foreground/72 md:flex-row md:items-center md:justify-between">
           <p>{copy.rights}</p>
           <p>{locale === 'ar' ? (address?.ar || 'الجزائر') : (address?.en || 'Algeria')} • {settings.store_email || 'contact@floya.dz'}</p>
         </div>

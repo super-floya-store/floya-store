@@ -20,7 +20,7 @@ export function HeroSection() {
         kicker: 'تجربة تسوق راقية',
         subtitle: 'منتجات مختارة بعناية، عرض أوضح، وصور أفضل لتجربة شراء أسهل وأسرع على الهاتف وسطح المكتب.',
         primaryCta: 'تسوق الآن',
-        secondaryCta: 'وصل حديثاً',
+        secondaryCta: 'تواصل معنا',
         stats: [
           { value: '24/7', label: 'دعم سريع' },
           { value: '58', label: 'ولاية توصيل' },
@@ -31,7 +31,7 @@ export function HeroSection() {
         kicker: 'Premium shopping experience',
         subtitle: 'Carefully selected products, clearer presentation, and stronger imagery for a faster buying experience across mobile and desktop.',
         primaryCta: 'Shop now',
-        secondaryCta: 'New arrivals',
+        secondaryCta: 'Contact us',
         stats: [
           { value: '24/7', label: 'Fast support' },
           { value: '58', label: 'Delivery regions' },
@@ -73,7 +73,7 @@ export function HeroSection() {
                 <Link href="/products">{copy.primaryCta}</Link>
               </Button>
               <Button size="lg" variant="outline" className="min-h-[52px] rounded-full border-white/20 bg-white/10 px-8 text-base font-semibold text-white hover:bg-white/15" asChild>
-                <Link href="/categories/new-arrivals">{copy.secondaryCta}</Link>
+                <Link href="/contact">{copy.secondaryCta}</Link>
               </Button>
             </div>
 

@@ -17,6 +17,7 @@ type AdminSettingsForm = {
   store_whatsapp: string
   store_email: string
   store_address_ar: string
+  store_address_en: string
   delivery_fees: string
   logo_url: string
   favicon_url: string
@@ -41,6 +42,7 @@ const defaultSettings: AdminSettingsForm = {
   store_whatsapp: '213555123456',
   store_email: 'contact@floya.dz',
   store_address_ar: '',
+  store_address_en: '',
   delivery_fees: '',
   logo_url: '',
   favicon_url: '',
@@ -77,6 +79,7 @@ export default function AdminSettingsPage() {
         storeWhatsapp: 'واتساب',
         storeEmail: 'البريد الإلكتروني',
         storeAddressAr: 'العنوان',
+        storeAddressEn: 'العنوان (إنجليزي)',
         deliveryFees: 'رسوم التوصيل حسب الولاية',
         branding: 'الهوية البصرية',
         logoUrl: 'رابط الشعار',
@@ -113,6 +116,7 @@ export default function AdminSettingsPage() {
         storeWhatsapp: 'WhatsApp',
         storeEmail: 'Email',
         storeAddressAr: 'Address',
+        storeAddressEn: 'Address (English)',
         deliveryFees: 'Delivery fees by wilaya',
         branding: 'Branding',
         logoUrl: 'Logo URL',
@@ -177,6 +181,7 @@ export default function AdminSettingsPage() {
           store_whatsapp: data.data?.store_whatsapp || defaultSettings.store_whatsapp,
           store_email: data.data?.store_email || defaultSettings.store_email,
           store_address_ar: data.data?.store_address?.ar || defaultSettings.store_address_ar,
+          store_address_en: data.data?.store_address?.en || defaultSettings.store_address_en,
           delivery_fees: data.data?.delivery_fees ? JSON.stringify(data.data.delivery_fees, null, 2) : defaultSettings.delivery_fees,
           logo_url: data.data?.logo_url || defaultSettings.logo_url,
           favicon_url: data.data?.favicon_url || defaultSettings.favicon_url,
@@ -212,7 +217,7 @@ export default function AdminSettingsPage() {
         store_phone: settings.store_phone,
         store_whatsapp: settings.store_whatsapp,
         store_email: settings.store_email,
-        store_address: { ar: settings.store_address_ar, en: '' },
+        store_address: { ar: settings.store_address_ar, en: settings.store_address_en },
         delivery_fees: parsedDeliveryFees,
         logo_url: settings.logo_url,
         favicon_url: settings.favicon_url,
@@ -302,6 +307,10 @@ export default function AdminSettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="store-address-ar">{copy.storeAddressAr}</Label>
               <Input id="store-address-ar" value={settings.store_address_ar} onChange={(e) => setSettings({ ...settings, store_address_ar: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="store-address-en">{copy.storeAddressEn}</Label>
+              <Input id="store-address-en" value={settings.store_address_en} onChange={(e) => setSettings({ ...settings, store_address_en: e.target.value })} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="delivery-fees">{copy.deliveryFees}</Label>
