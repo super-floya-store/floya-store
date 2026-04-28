@@ -15,7 +15,7 @@
     --secondary: 211 54% 20%;
     --secondary-foreground: 34 42% 97%;
     --muted: 30 23% 92%;
-    --muted-foreground: 214 26% 19%;
+    --muted-foreground: 214 32% 14%;
     --accent: 34 51% 83%;
     --accent-foreground: 214 47% 16%;
     --destructive: 0 70% 55%;
@@ -65,6 +65,13 @@
       radial-gradient(circle at bottom left, rgba(27, 48, 79, 0.08), transparent 24%),
       linear-gradient(180deg, rgba(255,255,255,0.92), rgba(249,243,237,0.96));
     text-rendering: optimizeLegibility;
+  }
+
+  p,
+  span,
+  label,
+  small {
+    color: inherit;
   }
 
   ::selection {
@@ -135,6 +142,12 @@
     backdrop-filter: blur(18px);
     border: 1px solid rgba(23, 48, 79, 0.08);
     box-shadow: 0 18px 50px -28px rgba(13, 27, 42, 0.18);
+    color: hsl(var(--foreground));
+  }
+  .surface-card p,
+  .surface-card span,
+  .surface-card label,
+  .surface-card small {
     color: hsl(var(--foreground));
   }
   .premium-outline {
