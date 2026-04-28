@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/session'
+import { env } from '@/config/env'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,7 +29,16 @@ export async function GET() {
       return acc
     }, {})
 
-    return jsonWithNoStore({ success: true, data: settings })
+    return jsonWithNoStore({
+      success: true,
+      data: settings,
+      debug: process.env.NODE_ENV !== 'production'
+        ? undefined
+        : {
+            supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
+            keys: Array.isArray(data) ? data.map((item) => ({ key: item.key, updated_at: item.updated_at })) : [],
+          },
+    })
   } catch {
     return jsonWithNoStore(
       { success: false, error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
