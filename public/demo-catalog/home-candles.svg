@@ -1,0 +1,20 @@
+<svg width="1200" height="1600" viewBox="0 0 1200 1600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="1600" fill="#F2EEE8"/>
+  <rect x="72" y="72" width="1056" height="1456" rx="48" fill="url(#bg)"/>
+  <circle cx="902" cy="270" r="180" fill="#E2C8AD" fill-opacity="0.72"/>
+  <circle cx="282" cy="1274" r="230" fill="#1B304F" fill-opacity="0.08"/>
+  <rect x="344" y="640" width="226" height="356" rx="40" fill="#FFFCF8"/>
+  <rect x="630" y="560" width="226" height="436" rx="40" fill="#FFF8F1"/>
+  <path d="M462 460C462 420 492 390 522 368C518 408 558 438 558 480C558 526 526 556 510 556C490 556 462 518 462 460Z" fill="#D59A63"/>
+  <path d="M754 374C754 334 784 304 814 282C810 322 850 352 850 394C850 440 818 470 802 470C782 470 754 432 754 374Z" fill="#1B304F"/>
+  <rect x="388" y="760" width="140" height="26" rx="13" fill="#D6B18A"/>
+  <rect x="674" y="700" width="138" height="26" rx="13" fill="#D6B18A"/>
+  <text x="120" y="1260" fill="#1B304F" font-family="Georgia, serif" font-size="74" font-weight="700">Floya Home Scent</text>
+  <text x="120" y="1340" fill="#334B68" font-family="Arial, sans-serif" font-size="34">Candles and diffusers for premium mood testing</text>
+  <defs>
+    <linearGradient id="bg" x1="129" y1="130" x2="1090" y2="1518" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FCFAF6"/>
+      <stop offset="1" stop-color="#EAE2D8"/>
+    </linearGradient>
+  </defs>
+</svg>

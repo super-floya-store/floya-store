@@ -1,0 +1,22 @@
+<svg width="1200" height="1600" viewBox="0 0 1200 1600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="1600" fill="#F7F0E8"/>
+  <rect x="72" y="72" width="1056" height="1456" rx="48" fill="url(#bg)"/>
+  <circle cx="930" cy="290" r="190" fill="#F0C89E" fill-opacity="0.68"/>
+  <circle cx="260" cy="1260" r="220" fill="#1B304F" fill-opacity="0.08"/>
+  <rect x="318" y="378" width="228" height="650" rx="54" fill="#FFFDF9"/>
+  <rect x="650" y="470" width="230" height="558" rx="54" fill="#FFF8F1"/>
+  <rect x="370" y="292" width="124" height="118" rx="28" fill="#1B304F"/>
+  <rect x="702" y="394" width="126" height="108" rx="28" fill="#D59A63"/>
+  <rect x="374" y="590" width="116" height="24" rx="12" fill="#C5A07B"/>
+  <rect x="374" y="642" width="142" height="24" rx="12" fill="#C5A07B"/>
+  <rect x="706" y="654" width="118" height="24" rx="12" fill="#C5A07B"/>
+  <rect x="706" y="706" width="146" height="24" rx="12" fill="#C5A07B"/>
+  <text x="120" y="1260" fill="#1B304F" font-family="Georgia, serif" font-size="74" font-weight="700">Floya Haircare</text>
+  <text x="120" y="1340" fill="#334B68" font-family="Arial, sans-serif" font-size="34">Masks, shampoos, oils, and shine treatments</text>
+  <defs>
+    <linearGradient id="bg" x1="129" y1="130" x2="1090" y2="1518" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF9F4"/>
+      <stop offset="1" stop-color="#F1E0D1"/>
+    </linearGradient>
+  </defs>
+</svg>

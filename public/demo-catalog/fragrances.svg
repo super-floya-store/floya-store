@@ -1,0 +1,20 @@
+<svg width="1200" height="1600" viewBox="0 0 1200 1600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="1600" fill="#F5E7DB"/>
+  <rect x="72" y="72" width="1056" height="1456" rx="48" fill="url(#bg)"/>
+  <circle cx="923" cy="282" r="186" fill="#F7D8B3" fill-opacity="0.7"/>
+  <circle cx="285" cy="1265" r="230" fill="#193250" fill-opacity="0.1"/>
+  <rect x="404" y="428" width="392" height="612" rx="64" fill="#FFF7F0"/>
+  <rect x="506" y="315" width="188" height="142" rx="34" fill="#1B304F"/>
+  <rect x="546" y="222" width="108" height="120" rx="28" fill="#D59A63"/>
+  <rect x="472" y="552" width="256" height="56" rx="20" fill="#EBC8A6"/>
+  <rect x="472" y="632" width="198" height="28" rx="14" fill="#D3A778"/>
+  <rect x="472" y="706" width="230" height="28" rx="14" fill="#D3A778"/>
+  <text x="120" y="1260" fill="#1B304F" font-family="Georgia, serif" font-size="74" font-weight="700">Floya Fragrance</text>
+  <text x="120" y="1340" fill="#334B68" font-family="Arial, sans-serif" font-size="34">Demo catalog image for perfumes and mists</text>
+  <defs>
+    <linearGradient id="bg" x1="129" y1="130" x2="1090" y2="1518" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF9F5"/>
+      <stop offset="1" stop-color="#F3DFCF"/>
+    </linearGradient>
+  </defs>
+</svg>

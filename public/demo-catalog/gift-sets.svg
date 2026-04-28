@@ -1,0 +1,20 @@
+<svg width="1200" height="1600" viewBox="0 0 1200 1600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="1600" fill="#F7EDE8"/>
+  <rect x="72" y="72" width="1056" height="1456" rx="48" fill="url(#bg)"/>
+  <circle cx="906" cy="274" r="176" fill="#F1C89D" fill-opacity="0.7"/>
+  <circle cx="280" cy="1260" r="230" fill="#1B304F" fill-opacity="0.08"/>
+  <rect x="296" y="544" width="612" height="464" rx="44" fill="#FFFDF9"/>
+  <rect x="560" y="544" width="84" height="464" fill="#D59A63"/>
+  <rect x="296" y="742" width="612" height="84" fill="#D59A63"/>
+  <path d="M554 480C486 430 470 350 552 350C600 350 620 394 602 432C646 404 700 410 700 468C700 540 612 532 600 500C588 532 566 518 554 480Z" fill="#1B304F"/>
+  <rect x="392" y="628" width="72" height="176" rx="20" fill="#F5E7DB"/>
+  <rect x="734" y="628" width="84" height="196" rx="20" fill="#F5E7DB"/>
+  <text x="120" y="1260" fill="#1B304F" font-family="Georgia, serif" font-size="74" font-weight="700">Floya Gift Sets</text>
+  <text x="120" y="1340" fill="#334B68" font-family="Arial, sans-serif" font-size="34">Luxury bundles for seasonal testing and demos</text>
+  <defs>
+    <linearGradient id="bg" x1="129" y1="130" x2="1090" y2="1518" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF9F5"/>
+      <stop offset="1" stop-color="#F0DDD1"/>
+    </linearGradient>
+  </defs>
+</svg>
