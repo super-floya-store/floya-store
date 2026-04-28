@@ -14,6 +14,7 @@ import { useUIStore } from '@/stores/ui-store'
 import { useAuth } from '@/hooks/useAuth'
 import { getVipDiscountedPrice } from '@/lib/pricing/vip'
 import { getProductType, getProductVariantChoices } from '@/components/store/product-metadata'
+import { formatPrice } from '@/lib/utils/format'
 
 interface ProductCardProps {
   product: Product
@@ -39,7 +40,6 @@ export function ProductCard({ product }: ProductCardProps) {
   const productType = getProductType(product)
   const variantChoices = getProductVariantChoices(product)
   const hasVariants = variantChoices.length > 0
-  const currency = 'DZD'
   const copy = locale === 'ar'
     ? {
         new: 'جديد',
@@ -160,16 +160,16 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="flex items-end gap-2">
           {hasVipPrice ? (
             <>
-              <span className="text-lg font-bold text-primary md:text-xl">{vipPrice.toLocaleString()} {currency}</span>
-              <span className="text-muted-foreground text-sm line-through">{basePrice.toLocaleString()} {currency}</span>
+              <span className="text-lg font-bold text-primary md:text-xl"><bdi>{formatPrice(vipPrice, 'DZD', locale)}</bdi></span>
+              <span className="text-muted-foreground text-sm line-through"><bdi>{formatPrice(basePrice, 'DZD', locale)}</bdi></span>
             </>
           ) : hasPromo ? (
             <>
-              <span className="text-lg font-bold text-primary md:text-xl">{product.promo_price!.toLocaleString()} {currency}</span>
-              <span className="text-muted-foreground text-sm line-through">{product.price.toLocaleString()} {currency}</span>
+              <span className="text-lg font-bold text-primary md:text-xl"><bdi>{formatPrice(product.promo_price!, 'DZD', locale)}</bdi></span>
+              <span className="text-muted-foreground text-sm line-through"><bdi>{formatPrice(product.price, 'DZD', locale)}</bdi></span>
             </>
           ) : (
-            <span className="text-lg font-bold text-foreground md:text-xl">{product.price.toLocaleString()} {currency}</span>
+            <span className="text-lg font-bold text-foreground md:text-xl"><bdi>{formatPrice(product.price, 'DZD', locale)}</bdi></span>
           )}
         </div>
 

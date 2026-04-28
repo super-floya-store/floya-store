@@ -6,6 +6,7 @@ import { useUIStore } from '@/stores/ui-store'
 import type { OrderWithItems } from '@/types/order'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { formatPrice } from '@/lib/utils/format'
 
 export default function ReceiptPage({ params }: { params: { orderNumber: string } }) {
   const locale = useUIStore((state) => state.locale)
@@ -86,7 +87,7 @@ export default function ReceiptPage({ params }: { params: { orderNumber: string 
             </div>
             <div className="rounded-2xl border bg-background/70 p-4">
               <p className="text-xs text-muted-foreground">{copy.total}</p>
-              <p className="mt-2 text-xl font-bold">{Number(order.total).toLocaleString()} {locale === 'ar' ? 'د.ج' : 'DZD'}</p>
+              <p className="mt-2 text-xl font-bold"><bdi>{formatPrice(Number(order.total), 'DZD', locale)}</bdi></p>
             </div>
           </div>
 
@@ -104,7 +105,7 @@ export default function ReceiptPage({ params }: { params: { orderNumber: string 
                   <tr key={item.id} className="border-t">
                     <td className="px-4 py-3">{locale === 'ar' ? item.product_name_ar : item.product_name_en}</td>
                     <td className="px-4 py-3">{item.quantity}</td>
-                    <td className="px-4 py-3">{Number(item.total_price).toLocaleString()} {locale === 'ar' ? 'د.ج' : 'DZD'}</td>
+                    <td className="px-4 py-3"><bdi>{formatPrice(Number(item.total_price), 'DZD', locale)}</bdi></td>
                   </tr>
                 ))}
               </tbody>

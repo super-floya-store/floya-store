@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { Phone, Mail, MapPin, Facebook, Instagram, ArrowUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useUIStore } from '@/stores/ui-store'
-import { useAuth } from '@/hooks/useAuth'
 import { useStoreBranding } from '@/hooks/useStoreBranding'
 
 interface Settings {
@@ -17,7 +16,6 @@ interface Settings {
 
 export function StoreFooter() {
   const locale = useUIStore((state) => state.locale)
-  const { user } = useAuth()
   const branding = useStoreBranding()
   const [settings, setSettings] = useState<Settings>({})
 
@@ -42,6 +40,7 @@ export function StoreFooter() {
         quickLinks: 'روابط سريعة',
         links: [
           { href: '/products', label: 'جميع المنتجات' },
+          { href: '/categories/new-arrivals', label: 'وصل حديثاً' },
           { href: '/search', label: 'البحث' },
           { href: '/contact', label: 'تواصل معنا' },
         ],
@@ -58,6 +57,7 @@ export function StoreFooter() {
         quickLinks: 'Quick links',
         links: [
           { href: '/products', label: 'All products' },
+          { href: '/categories/new-arrivals', label: 'New arrivals' },
           { href: '/search', label: 'Search' },
           { href: '/contact', label: 'Contact us' },
         ],
@@ -102,10 +102,7 @@ export function StoreFooter() {
             <h3 className="text-lg font-bold">{copy.quickLinks}</h3>
             <div className="h-px w-16 bg-gradient-to-r from-primary to-transparent" />
             <div className="flex flex-col gap-3 text-sm">
-              {[...copy.links, ...(user ? [{ href: '/account', label: locale === 'ar' ? 'الحساب' : 'Account' }] : [
-                { href: '/login', label: locale === 'ar' ? 'دخول الحساب' : 'Sign in' },
-                { href: '/signup', label: locale === 'ar' ? 'إنشاء حساب' : 'Create account' },
-              ])].map((item) => (
+              {copy.links.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -121,18 +118,21 @@ export function StoreFooter() {
           <div className="flex flex-col gap-5">
             <h3 className="text-lg font-bold">{copy.contact}</h3>
             <div className="h-px w-16 bg-gradient-to-r from-primary to-transparent" />
-            <div className="flex flex-col gap-4 text-sm">
-              <div className="surface-card flex items-center gap-3 rounded-2xl border-white/10 bg-white/8 px-4 py-3">
-                <Phone className="h-4 w-4 text-primary" />
-                <span>{settings.store_phone || '0555123456'}</span>
+            <div className="grid gap-4 text-sm sm:grid-cols-3 lg:grid-cols-1">
+              <div className="surface-card flex min-h-[112px] flex-col items-center justify-center gap-3 rounded-[24px] border-white/10 bg-white/10 px-4 py-5 text-center">
+                <Phone className="h-5 w-5 text-primary" />
+                <span className="text-xs font-semibold tracking-[0.2em] text-primary">{locale === 'ar' ? 'الهاتف' : 'Phone'}</span>
+                <span className="text-base font-semibold text-white">{settings.store_phone || '0555123456'}</span>
               </div>
-              <div className="surface-card flex items-center gap-3 rounded-2xl border-white/10 bg-white/8 px-4 py-3">
-                <Mail className="h-4 w-4 text-primary" />
-                <span>{settings.store_email || 'contact@floya.dz'}</span>
+              <div className="surface-card flex min-h-[112px] flex-col items-center justify-center gap-3 rounded-[24px] border-white/10 bg-white/10 px-4 py-5 text-center">
+                <Mail className="h-5 w-5 text-primary" />
+                <span className="text-xs font-semibold tracking-[0.2em] text-primary">{locale === 'ar' ? 'البريد' : 'Email'}</span>
+                <span className="text-base font-semibold text-white">{settings.store_email || 'contact@floya.dz'}</span>
               </div>
-              <div className="surface-card flex items-center gap-3 rounded-2xl border-white/10 bg-white/8 px-4 py-3">
-                <MapPin className="h-4 w-4 text-primary" />
-                <span>{locale === 'ar' ? (address?.ar || 'تيزي وزو') : (address?.en || 'Algeria')}</span>
+              <div className="surface-card flex min-h-[112px] flex-col items-center justify-center gap-3 rounded-[24px] border-white/10 bg-white/10 px-4 py-5 text-center">
+                <MapPin className="h-5 w-5 text-primary" />
+                <span className="text-xs font-semibold tracking-[0.2em] text-primary">{locale === 'ar' ? 'الموقع' : 'Location'}</span>
+                <span className="text-base font-semibold text-white">{locale === 'ar' ? (address?.ar || 'تيزي وزو') : (address?.en || 'Algeria')}</span>
               </div>
             </div>
 

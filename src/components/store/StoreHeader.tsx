@@ -1,24 +1,22 @@
 'use client'
 
 import Link from 'next/link'
-import { ShoppingCart, Search, Menu, X, Heart } from 'lucide-react'
+import { ShoppingCart, Search, Menu, X } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
 import { useUIStore } from '@/stores/ui-store'
 import { useEffect, useState } from 'react'
-import { useWishlistStore } from '@/stores/wishlist-store'
-import { useAuth } from '@/hooks/useAuth'
 import { useStoreBranding } from '@/hooks/useStoreBranding'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 
 export function StoreHeader() {
   const hasHydrated = useCartStore((s) => s.hasHydrated)
   const totalItems = useCartStore((s) => s.totalItems())
-  const wishlistCount = useWishlistStore((s) => s.items.length)
   const toggleCart = useUIStore((s) => s.toggleCartDrawer)
   const locale = useUIStore((s) => s.locale)
   const setLocale = useUIStore((s) => s.setLocale)
-  const { user } = useAuth()
   const branding = useStoreBranding()
+  const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const brandTitle = locale === 'ar' ? branding.nameAr : branding.nameEn
@@ -30,12 +28,8 @@ export function StoreHeader() {
         arrivals: 'وصل حديثاً',
         contact: 'تواصل معنا',
         search: 'بحث',
-        wishlist: 'المفضلة',
         cart: 'سلة التسوق',
         menu: 'القائمة',
-        signIn: 'دخول الحساب',
-        signUp: 'إنشاء حساب',
-        profile: 'الحساب',
         switchLabel: 'AR / EN',
         switchTitle: 'English',
         mobileTitle: 'تسوق أوضح وأسرع',
@@ -50,12 +44,8 @@ export function StoreHeader() {
         arrivals: 'New Arrivals',
         contact: 'Contact',
         search: 'Search',
-        wishlist: 'Wishlist',
         cart: 'Cart',
         menu: 'Menu',
-        signIn: 'Sign in',
-        signUp: 'Create account',
-        profile: 'Account',
         switchLabel: 'AR / EN',
         switchTitle: 'العربية',
         mobileTitle: 'Clean, premium shopping',
@@ -87,7 +77,7 @@ export function StoreHeader() {
         }`}
       >
         <div className="container mx-auto px-4 md:px-6">
-          <div className="flex h-[78px] items-center justify-between gap-3">
+          <div className="flex h-[72px] items-center justify-between gap-3">
             <Link
               href="/"
               className="surface-card premium-outline relative inline-flex min-h-[48px] items-center rounded-full px-4 py-2 text-secondary transition duration-300 hover:-translate-y-0.5 hover:shadow-medium"
@@ -117,52 +107,27 @@ export function StoreHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="group relative inline-flex min-h-[48px] items-center justify-center rounded-full px-5 py-3 text-sm font-medium text-secondary transition duration-300 hover:bg-white/60 hover:text-primary"
+                  className={`group relative inline-flex min-h-[48px] items-center justify-center rounded-full px-5 py-3 text-sm font-medium transition duration-300 ${
+                    pathname === item.href
+                      ? 'bg-white/85 text-primary shadow-soft'
+                      : 'text-secondary hover:bg-white/60 hover:text-primary'
+                  }`}
                 >
                   {item.label}
-                  <span className="absolute bottom-2 right-5 h-[2px] w-0 rounded-full bg-primary transition-all duration-300 group-hover:w-[calc(100%-2.5rem)]" />
+                  <span className={`absolute bottom-2 right-5 h-[2px] rounded-full bg-primary transition-all duration-300 ${
+                    pathname === item.href ? 'w-[calc(100%-2.5rem)]' : 'w-0 group-hover:w-[calc(100%-2.5rem)]'
+                  }`} />
                 </Link>
               ))}
             </nav>
 
             <div className="flex items-center gap-2 md:gap-3">
-              {user ? (
-                <Link
-                  href="/account"
-                  className="surface-card premium-outline hidden min-h-[48px] items-center justify-center rounded-full px-4 text-xs font-semibold text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft md:inline-flex"
-                >
-                  {copy.profile}
-                </Link>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="surface-card premium-outline hidden min-h-[48px] items-center justify-center rounded-full px-4 text-xs font-semibold text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft md:inline-flex"
-                  >
-                    {copy.signIn}
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="surface-card premium-outline hidden min-h-[48px] items-center justify-center rounded-full px-4 text-xs font-semibold text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft md:inline-flex"
-                  >
-                    {copy.signUp}
-                  </Link>
-                </>
-              )}
               <Link
                 href="/search"
                 className="surface-card premium-outline hidden min-h-[48px] min-w-[48px] items-center justify-center rounded-full text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft md:inline-flex"
                 aria-label={copy.search}
               >
                 <Search className="h-5 w-5" />
-              </Link>
-              <Link
-                href="/products"
-                className="surface-card premium-outline relative hidden min-h-[48px] min-w-[48px] items-center justify-center rounded-full text-secondary transition duration-300 hover:-translate-y-0.5 hover:text-primary hover:shadow-soft md:inline-flex"
-                aria-label={copy.wishlist}
-              >
-                <Heart className="h-5 w-5" />
-                {wishlistCount > 0 && <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">{wishlistCount}</span>}
               </Link>
 
               <button
@@ -228,17 +193,10 @@ export function StoreHeader() {
 
         <nav className="mt-6 flex flex-col gap-3">
           {[
-            { href: '/', label: copy.home },
             { href: '/products', label: copy.products },
             { href: '/categories/new-arrivals', label: copy.arrivals },
             { href: '/search', label: copy.search },
             { href: '/contact', label: copy.contact },
-            ...(user
-              ? [{ href: '/account', label: copy.profile }]
-              : [
-                  { href: '/login', label: copy.signIn },
-                  { href: '/signup', label: copy.signUp },
-                ]),
           ].map((item) => (
             <Link
               key={item.href}

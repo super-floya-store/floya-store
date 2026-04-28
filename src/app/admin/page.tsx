@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useUIStore } from '@/stores/ui-store'
+import { formatPrice } from '@/lib/utils/format'
 
 export default function AdminDashboardPage() {
   const locale = useUIStore((state) => state.locale)
@@ -61,34 +62,36 @@ export default function AdminDashboardPage() {
       <h1 className="text-3xl font-bold">{copy.title}</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card className="surface-card border-white/70 shadow-soft">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">{copy.revenue}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.revenue?.thisPeriod?.toLocaleString() || 0} د.ج</div>
+            <div className="text-2xl font-bold text-secondary">
+              <bdi>{formatPrice(stats?.revenue?.thisPeriod || 0, 'DZD', locale)}</bdi>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="surface-card border-white/70 shadow-soft">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">{copy.orders}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.orders?.thisPeriod || 0}</div>
+            <div className="text-2xl font-bold text-secondary">{stats?.orders?.thisPeriod || 0}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="surface-card border-white/70 shadow-soft">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">{copy.products}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.products?.published || 0}</div>
+            <div className="text-2xl font-bold text-secondary">{stats?.products?.published || 0}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="surface-card border-white/70 shadow-soft">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">{copy.outOfStock}</CardTitle>
           </CardHeader>

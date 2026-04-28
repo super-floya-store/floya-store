@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getCartFulfillment } from '@/types/cart'
+import { formatPrice } from '@/lib/utils/format'
 
 export function CartDrawer() {
   const { items, removeItem, updateQuantity, subtotal, clearCart, hasHydrated } = useCartStore()
@@ -36,7 +37,6 @@ export function CartDrawer() {
         physical: 'مادي',
         service: 'رسوم المعالجة',
         mixed: 'افصل المنتجات الرقمية عن المادية قبل إتمام الطلب.',
-        currency: 'د.ج',
       }
     : {
         title: 'Shopping cart',
@@ -58,7 +58,6 @@ export function CartDrawer() {
         physical: 'Physical',
         service: 'Handling',
         mixed: 'Separate digital and physical items before checkout.',
-        currency: 'DZD',
       }
 
   if (!hasHydrated) return null
@@ -122,7 +121,7 @@ export function CartDrawer() {
                         </Badge>
                       ) : null}
                     </div>
-                    <p className="mt-1 text-sm font-bold text-primary">{item.price.toLocaleString()} {copy.currency}</p>
+                    <p className="mt-1 text-sm font-bold text-primary"><bdi>{formatPrice(item.price, 'DZD', locale)}</bdi></p>
                     <div className="mt-3 flex items-center gap-2">
                       <button
                         onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
@@ -159,15 +158,15 @@ export function CartDrawer() {
             <div className="surface-card flex flex-col gap-4 rounded-[28px] p-4">
               <div className="flex justify-between text-sm">
                 <span>{copy.subtotal}</span>
-                <span className="font-bold">{total.toLocaleString()} {copy.currency}</span>
+                <span className="font-bold"><bdi>{formatPrice(total, 'DZD', locale)}</bdi></span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>{fulfillment.isDigitalOnly ? copy.service : copy.delivery}</span>
-                <span className="font-bold">{fee.toLocaleString()} {copy.currency}</span>
+                <span className="font-bold"><bdi>{formatPrice(fee, 'DZD', locale)}</bdi></span>
               </div>
               <div className="flex justify-between border-t pt-2 text-lg font-bold">
                 <span>{copy.total}</span>
-                <span>{(total + fee).toLocaleString()} {copy.currency}</span>
+                <span><bdi>{formatPrice(total + fee, 'DZD', locale)}</bdi></span>
               </div>
               {fulfillment.isMixed ? (
                 <Button className="min-h-[48px] w-full rounded-full bg-gradient-to-r from-primary to-brand-gold text-primary-foreground shadow-glow" disabled>

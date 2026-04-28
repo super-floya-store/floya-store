@@ -14,12 +14,10 @@ export function FeaturedProducts() {
     ? {
         kicker: 'اختيارات مميزة',
         title: 'منتجات مميزة',
-        body: 'منتجات محبوبة بتقديم أوضح وصور أفضل، لتسهيل المقارنة ورفع ثقة العميل أثناء التصفح.',
       }
     : {
         kicker: 'Featured picks',
         title: 'Featured products',
-        body: 'Popular products with clearer presentation and stronger imagery for easier comparison while browsing.',
       }
 
   useEffect(() => {
@@ -66,15 +64,12 @@ export function FeaturedProducts() {
   return (
     <section className="px-4 md:px-6">
       <div className="container mx-auto">
-        <div className="mb-8 flex flex-col gap-3 md:mb-10 md:flex-row md:items-end md:justify-between">
+        <div className="mb-8 flex flex-col gap-3 md:mb-10">
           <div>
             <span className="section-kicker w-fit">{copy.kicker}</span>
             <h2 className="section-title mt-4">{copy.title}</h2>
             <div className="section-divider" />
           </div>
-          <p className="max-w-xl text-sm leading-7 text-muted-foreground md:text-base">
-            {copy.body}
-          </p>
         </div>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {products.map((product) => (

@@ -1,5 +1,5 @@
-export function formatPrice(price: number, currency: string = 'DZD'): string {
-  return new Intl.NumberFormat('ar-DZ', {
+export function formatPrice(price: number, currency: string = 'DZD', locale: string = 'ar'): string {
+  return new Intl.NumberFormat(locale === 'ar' ? 'ar-DZ' : 'en-DZ', {
     style: 'currency',
     currency,
     minimumFractionDigits: 0,

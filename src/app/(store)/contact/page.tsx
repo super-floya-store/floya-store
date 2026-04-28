@@ -1,6 +1,6 @@
- 'use client'
+'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Phone, Mail, MapPin, Clock } from 'lucide-react'
 import { useUIStore } from '@/stores/ui-store'
@@ -8,6 +8,7 @@ import { useUIStore } from '@/stores/ui-store'
 export default function ContactPage() {
   const locale = useUIStore((state) => state.locale)
   const [form, setForm] = useState({ customerName: '', customerEmail: '', customerPhone: '', subject: '', message: '' })
+  const [settings, setSettings] = useState<any>(null)
   const [sending, setSending] = useState(false)
   const [message, setMessage] = useState('')
   const copy = locale === 'ar'
@@ -44,9 +45,41 @@ export default function ContactPage() {
         content: 'Write your message here',
         sending: 'Sending...',
         submit: 'Send message',
-        city: 'Algiers',
         hours: 'Saturday - Thursday: 9:00 - 18:00',
       }
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setSettings(data.data)
+      })
+      .catch(() => {})
+  }, [])
+
+  const address = typeof settings?.store_address === 'string' ? JSON.parse(settings.store_address) : (settings?.store_address || {})
+  const infoCards = [
+    {
+      icon: Phone,
+      label: locale === 'ar' ? 'الهاتف' : 'Phone',
+      value: settings?.store_phone || '0555123456',
+    },
+    {
+      icon: Mail,
+      label: locale === 'ar' ? 'البريد الإلكتروني' : 'Email',
+      value: settings?.store_email || 'contact@floya.dz',
+    },
+    {
+      icon: MapPin,
+      label: locale === 'ar' ? 'الموقع' : 'Location',
+      value: locale === 'ar' ? (address?.ar || 'الجزائر') : (address?.en || 'Algeria'),
+    },
+    {
+      icon: Clock,
+      label: locale === 'ar' ? 'أوقات العمل' : 'Working hours',
+      value: copy.hours,
+    },
+  ]
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -87,23 +120,17 @@ export default function ContactPage() {
           <CardHeader>
             <CardTitle>{copy.info}</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex items-center gap-3 rounded-[22px] bg-white/70 px-4 py-4">
-              <Phone className="h-5 w-5 text-primary" />
-              <span>0555123456</span>
-            </div>
-            <div className="flex items-center gap-3 rounded-[22px] bg-white/70 px-4 py-4">
-              <Mail className="h-5 w-5 text-primary" />
-              <span>contact@floya.dz</span>
-            </div>
-            <div className="flex items-center gap-3 rounded-[22px] bg-white/70 px-4 py-4">
-              <MapPin className="h-5 w-5 text-primary" />
-              <span>{copy.city}</span>
-            </div>
-            <div className="flex items-center gap-3 rounded-[22px] bg-white/70 px-4 py-4">
-              <Clock className="h-5 w-5 text-primary" />
-              <span>{copy.hours}</span>
-            </div>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            {infoCards.map((item) => {
+              const Icon = item.icon
+              return (
+                <div key={item.label} className="flex min-h-[132px] flex-col items-center justify-center rounded-[24px] border border-border bg-white px-5 py-5 text-center shadow-soft">
+                  <Icon className="h-6 w-6 text-primary" />
+                  <p className="mt-3 text-xs font-semibold tracking-[0.2em] text-primary">{item.label}</p>
+                  <p className="mt-2 text-base font-semibold text-secondary">{item.value}</p>
+                </div>
+              )
+            })}
           </CardContent>
         </Card>
 

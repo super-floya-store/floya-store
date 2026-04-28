@@ -15,7 +15,7 @@
     --secondary: 211 54% 20%;
     --secondary-foreground: 34 42% 97%;
     --muted: 30 23% 92%;
-    --muted-foreground: 213 18% 41%;
+    --muted-foreground: 214 28% 24%;
     --accent: 34 51% 83%;
     --accent-foreground: 214 47% 16%;
     --destructive: 0 70% 55%;
@@ -131,10 +131,10 @@
     animation: fade-up 0.8s ease-out both;
   }
   .surface-card {
-    background: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(255,255,255,0.72));
+    background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(255,255,255,0.9));
     backdrop-filter: blur(18px);
-    border: 1px solid rgba(255,255,255,0.56);
-    box-shadow: 0 18px 50px -28px rgba(13, 27, 42, 0.24);
+    border: 1px solid rgba(23, 48, 79, 0.08);
+    box-shadow: 0 18px 50px -28px rgba(13, 27, 42, 0.18);
     color: hsl(var(--foreground));
   }
   .premium-outline {

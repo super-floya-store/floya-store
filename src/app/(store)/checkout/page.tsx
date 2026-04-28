@@ -15,6 +15,7 @@ import { getVipDeliveryFee } from '@/lib/pricing/vip'
 import type { PaymentMethod } from '@/types/order'
 import { Badge } from '@/components/ui/badge'
 import { getCartFulfillment } from '@/types/cart'
+import { formatPrice } from '@/lib/utils/format'
 
 const defaultPaymentMethods = { baridimob: true, cod: true, binance: false }
 
@@ -94,7 +95,6 @@ export default function CheckoutPage() {
         deliveryDetails: 'بيانات التسليم الرقمي *',
         deliveryDetailsHint: 'مثال: البريد الإلكتروني المستلم أو اسم الحساب أو المعرّف المطلوب للتسليم.',
         contactDetails: 'يتم استخدام هذه البيانات لتسليم المنتج الرقمي أو التواصل معك بشأنه.',
-        currency: 'د.ج',
         type: 'النوع',
         variant: 'النسخة',
         digital: 'رقمي',
@@ -145,7 +145,6 @@ export default function CheckoutPage() {
         deliveryDetails: 'Digital delivery details *',
         deliveryDetailsHint: 'Example: recipient email, account name, or the ID needed for delivery.',
         contactDetails: 'These details are used to deliver the digital item or contact you about it.',
-        currency: 'DZD',
         type: 'Type',
         variant: 'Variant',
         digital: 'Digital',
@@ -398,7 +397,7 @@ export default function CheckoutPage() {
                 <div key={item.cartItemId} className="space-y-2 text-sm">
                   <div className="flex justify-between gap-4">
                     <span>{item.name} × {item.quantity}</span>
-                    <span>{(item.price * item.quantity).toLocaleString()} {copy.currency}</span>
+                    <span><bdi>{formatPrice(item.price * item.quantity, 'DZD', locale)}</bdi></span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="secondary" className="rounded-full">
@@ -415,21 +414,21 @@ export default function CheckoutPage() {
               <div className="space-y-2 border-t pt-4">
                 <div className="flex justify-between text-sm">
                   <span>{copy.subtotal}</span>
-                  <span>{subtotal().toLocaleString()} {copy.currency}</span>
+                  <span><bdi>{formatPrice(subtotal(), 'DZD', locale)}</bdi></span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>{isDigitalOnly ? copy.serviceFee : copy.delivery}</span>
-                  <span>{deliveryFee.toLocaleString()} {copy.currency}</span>
+                  <span><bdi>{formatPrice(deliveryFee, 'DZD', locale)}</bdi></span>
                 </div>
                 {vipDiscount > 0 ? (
                   <div className="flex justify-between text-sm text-primary">
                     <span>VIP</span>
-                    <span>-{vipDiscount.toLocaleString()} {copy.currency}</span>
+                    <span>-<bdi>{formatPrice(vipDiscount, 'DZD', locale)}</bdi></span>
                   </div>
                 ) : null}
                 <div className="flex justify-between text-lg font-bold">
                   <span>{copy.total}</span>
-                  <span>{total.toLocaleString()} {copy.currency}</span>
+                  <span><bdi>{formatPrice(total, 'DZD', locale)}</bdi></span>
                 </div>
               </div>
             </CardContent>

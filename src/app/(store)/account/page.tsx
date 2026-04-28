@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useUIStore } from '@/stores/ui-store'
 import type { OrderWithItems } from '@/types/order'
 import { normalizeProductType } from '@/types/cart'
+import { formatPrice } from '@/lib/utils/format'
 
 export default function AccountPage() {
   const { user, loading, logout, isAdmin } = useAuth()
@@ -223,7 +224,7 @@ export default function AccountPage() {
                           ) : null}
                         </div>
                         <div className="flex flex-col items-start gap-3 md:items-end">
-                          <p className="text-lg font-bold">{copy.total}: {Number(order.total).toLocaleString()} {locale === 'ar' ? 'د.ج' : 'DZD'}</p>
+                          <p className="text-lg font-bold">{copy.total}: <bdi>{formatPrice(Number(order.total), 'DZD', locale)}</bdi></p>
                           {canOpenReceipt ? (
                             <Button asChild className="rounded-full">
                               <Link href={`/account/receipts/${order.order_number}`}>{copy.confirmedReceipt}</Link>

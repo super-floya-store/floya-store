@@ -9,6 +9,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ShoppingCart, Minus, Plus, X } from 'lucide-react'
 import { getCartFulfillment } from '@/types/cart'
+import { formatPrice } from '@/lib/utils/format'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, subtotal, clearCart, hasHydrated } = useCartStore()
@@ -38,7 +39,6 @@ export default function CartPage() {
         mixedTitle: 'لا يمكن إتمام سلة مختلطة حالياً',
         mixedBody: 'افصل المنتجات الرقمية عن المنتجات المادية في طلبين منفصلين حتى يطابق مسار الإتمام نوع التسليم.',
         digitalBody: 'هذه السلة تحتوي على منتجات رقمية فقط. ستظهر في صفحة الدفع حقول مهيأة للتسليم الرقمي بدلاً من الشحن التقليدي.',
-        currency: 'د.ج',
       }
     : {
         kicker: 'Shopping bag',
@@ -61,7 +61,6 @@ export default function CartPage() {
         mixedTitle: 'Mixed carts are not supported in checkout yet',
         mixedBody: 'Split digital and physical items into separate orders so the checkout flow matches the fulfillment type.',
         digitalBody: 'This cart contains digital-only products. Checkout will switch its fields and copy for digital fulfillment.',
-        currency: 'DZD',
       }
 
   if (!hasHydrated) {
@@ -129,7 +128,7 @@ export default function CartPage() {
                       </Badge>
                     ) : null}
                   </div>
-                  <p className="mt-1 text-lg font-bold text-primary">{item.price.toLocaleString()} {copy.currency}</p>
+                  <p className="mt-1 text-lg font-bold text-primary"><bdi>{formatPrice(item.price, 'DZD', locale)}</bdi></p>
                   <div className="mt-4 flex items-center gap-2">
                     <button onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)} className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-secondary/5 transition hover:bg-secondary hover:text-secondary-foreground">
                       <Minus className="h-4 w-4" />
@@ -154,15 +153,15 @@ export default function CartPage() {
             <CardContent className="flex flex-col gap-4">
               <div className="flex justify-between text-sm">
                 <span>{copy.subtotal}</span>
-                <span className="font-bold">{total.toLocaleString()} {copy.currency}</span>
+                <span className="font-bold"><bdi>{formatPrice(total, 'DZD', locale)}</bdi></span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>{fulfillment.isDigitalOnly ? copy.service : copy.delivery}</span>
-                <span className="font-bold">{fee.toLocaleString()} {copy.currency}</span>
+                <span className="font-bold"><bdi>{formatPrice(fee, 'DZD', locale)}</bdi></span>
               </div>
               <div className="flex justify-between text-lg font-bold border-t pt-2">
                 <span>{copy.total}</span>
-                <span>{(total + fee).toLocaleString()} {copy.currency}</span>
+                <span><bdi>{formatPrice(total + fee, 'DZD', locale)}</bdi></span>
               </div>
               {fulfillment.isMixed ? (
                 <Button className="min-h-[48px] w-full rounded-full bg-gradient-to-r from-primary to-brand-gold text-primary-foreground shadow-glow" disabled>
