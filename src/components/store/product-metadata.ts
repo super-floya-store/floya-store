@@ -4,6 +4,8 @@ import { normalizeProductType, type ProductType } from '@/types/cart'
 export interface ProductVariantChoice {
   id: string
   label: string
+  size: string | null
+  color: string | null
   stockQuantity: number | null
   isDefault: boolean
 }
@@ -75,6 +77,8 @@ export function getProductVariantChoices(product: Product) {
         return {
           id: variant,
           label: variant,
+          size: null,
+          color: null,
           stockQuantity: null,
           isDefault: index === 0,
         }
@@ -94,6 +98,8 @@ export function getProductVariantChoices(product: Product) {
       return {
         id: readString(variant, ['id', 'code', 'sku']) || `${index}-${label}`,
         label,
+        size,
+        color,
         stockQuantity: readNumber(variant, ['stock_quantity', 'stockQuantity', 'quantity']),
         isDefault: readBoolean(variant, ['is_default', 'isDefault']) || index === 0,
       }

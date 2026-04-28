@@ -121,6 +121,30 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
       return NextResponse.json({ success: true, message: 'Product unpublished (has existing orders)' })
     }
 
+    const { error: digitalUnitsError } = await supabaseServer
+      .from('digital_inventory_units')
+      .delete()
+      .eq('product_id', params.id)
+
+    if (digitalUnitsError) {
+      return NextResponse.json(
+        { success: false, error: { code: 'DATABASE_ERROR', message: digitalUnitsError.message } },
+        { status: 500 }
+      )
+    }
+
+    const { error: variantsError } = await supabaseServer
+      .from('product_variants')
+      .delete()
+      .eq('product_id', params.id)
+
+    if (variantsError) {
+      return NextResponse.json(
+        { success: false, error: { code: 'DATABASE_ERROR', message: variantsError.message } },
+        { status: 500 }
+      )
+    }
+
     const { error } = await supabaseServer.from('products').delete().eq('id', params.id)
 
     if (error) {

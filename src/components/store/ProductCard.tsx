@@ -40,6 +40,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const productType = getProductType(product)
   const variantChoices = getProductVariantChoices(product)
   const hasVariants = variantChoices.length > 0
+  const sizeCount = new Set(variantChoices.map((variant) => variant.size).filter(Boolean)).size
+  const colorCount = new Set(variantChoices.map((variant) => variant.color).filter(Boolean)).size
   const copy = locale === 'ar'
     ? {
         new: 'جديد',
@@ -51,6 +53,8 @@ export function ProductCard({ product }: ProductCardProps) {
         buyNow: 'شراء الآن',
         chooseVariant: 'اختر النسخة',
         optionsCount: 'خيارات',
+        sizes: 'مقاسات',
+        colors: 'ألوان',
         digital: 'رقمي',
       }
     : {
@@ -63,6 +67,8 @@ export function ProductCard({ product }: ProductCardProps) {
         buyNow: 'Buy now',
         chooseVariant: 'Choose variant',
         optionsCount: 'options',
+        sizes: 'sizes',
+        colors: 'colors',
         digital: 'Digital',
       }
 
@@ -152,9 +158,11 @@ export function ProductCard({ product }: ProductCardProps) {
           </h3>
         </Link>
         {hasVariants ? (
-          <p className="text-xs font-medium text-muted-foreground">
-            {variantChoices.length} {copy.optionsCount}
-          </p>
+          <div className="flex flex-wrap gap-2 text-xs font-medium text-muted-foreground">
+            <span>{variantChoices.length} {copy.optionsCount}</span>
+            {sizeCount > 0 ? <span>{sizeCount} {copy.sizes}</span> : null}
+            {colorCount > 0 ? <span>{colorCount} {copy.colors}</span> : null}
+          </div>
         ) : null}
 
         <div className="flex items-end gap-2">

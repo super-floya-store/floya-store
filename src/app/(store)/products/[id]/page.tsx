@@ -46,6 +46,7 @@ export default function ProductDetailPage() {
         sizeGuide: 'دليل المقاس',
         sizeGuideBody: 'اختر مقاسك المعتاد، وإذا كنت بين مقاسين فاختر الأكبر.',
         colors: 'الألوان',
+        sizes: 'المقاسات',
         delivery: 'التوصيل',
         deliveryBody: 'يشحن عادة خلال 24-72 ساعة حسب الولاية.',
         digitalDelivery: 'التسليم الرقمي',
@@ -59,6 +60,7 @@ export default function ProductDetailPage() {
         selectedVariant: 'النسخة المحددة',
         selectVariantCta: 'حدد نسخة أولاً',
         digital: 'منتج رقمي',
+        allColors: 'كل الألوان',
       }
     : {
         notFound: 'Product not found',
@@ -71,6 +73,7 @@ export default function ProductDetailPage() {
         sizeGuide: 'Size guide',
         sizeGuideBody: 'Choose your usual size. If you are between sizes, pick the larger one.',
         colors: 'Colors',
+        sizes: 'Sizes',
         delivery: 'Delivery',
         deliveryBody: 'Usually ships within 24-72 hours depending on the wilaya.',
         digitalDelivery: 'Digital delivery',
@@ -84,6 +87,7 @@ export default function ProductDetailPage() {
         selectedVariant: 'Selected variant',
         selectVariantCta: 'Select a variant first',
         digital: 'Digital product',
+        allColors: 'All colors',
       }
 
   useEffect(() => {
@@ -162,6 +166,10 @@ export default function ProductDetailPage() {
   const categoryName = product.category ? (locale === 'ar' ? product.category.name_ar : product.category.name_en) : null
   const selectedVariant = variantChoices.find((variant) => variant.id === selectedVariantId) || null
   const hasVariants = variantChoices.length > 0
+  const sizeOptions = Array.from(new Set(variantChoices.map((variant) => variant.size).filter(Boolean))) as string[]
+  const colorOptions = Array.from(new Set(variantChoices.map((variant) => variant.color).filter(Boolean))) as string[]
+  const selectedSize = selectedVariant?.size || null
+  const selectedColor = selectedVariant?.color || null
   const availableStock = selectedVariant?.stockQuantity ?? product.stock_quantity
   const isOutOfStock = availableStock === 0
   const canPurchase = !isOutOfStock && (!hasVariants || Boolean(selectedVariant))
@@ -183,6 +191,22 @@ export default function ProductDetailPage() {
   const handleBuyNow = () => {
     handleAddToCart()
     window.location.href = '/checkout'
+  }
+
+  const selectVariantByChoice = (choice: { size?: string | null; color?: string | null }) => {
+    const nextVariant = variantChoices.find((variant) => {
+      const sameSize = choice.size ? variant.size === choice.size : true
+      const sameColor = choice.color ? variant.color === choice.color : true
+      return sameSize && sameColor
+    }) || variantChoices.find((variant) => {
+      if (choice.size) return variant.size === choice.size
+      if (choice.color) return variant.color === choice.color
+      return false
+    })
+
+    if (nextVariant) {
+      setSelectedVariantId(nextVariant.id)
+    }
   }
 
   return (
@@ -278,6 +302,62 @@ export default function ProductDetailPage() {
                   </Badge>
                 ) : null}
               </div>
+              {sizeOptions.length > 0 ? (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground">{copy.sizes}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {sizeOptions.map((size) => {
+                      const active = selectedSize === size
+                      const inStockForSize = variantChoices.some((variant) => variant.size === size && (variant.stockQuantity ?? 1) > 0)
+                      return (
+                        <button
+                          type="button"
+                          key={size}
+                          onClick={() => selectVariantByChoice({ size, color: selectedColor })}
+                          disabled={!inStockForSize}
+                          className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                            active
+                              ? 'border-primary bg-primary text-primary-foreground shadow-soft'
+                              : !inStockForSize
+                                ? 'cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60'
+                                : 'border-border bg-white/80 text-foreground hover:border-primary/40'
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : null}
+              {colorOptions.length > 0 ? (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground">{copy.colors}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {colorOptions.map((color) => {
+                      const active = selectedColor === color
+                      const inStockForColor = variantChoices.some((variant) => variant.color === color && (variant.stockQuantity ?? 1) > 0)
+                      return (
+                        <button
+                          type="button"
+                          key={color}
+                          onClick={() => selectVariantByChoice({ size: selectedSize, color })}
+                          disabled={!inStockForColor}
+                          className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                            active
+                              ? 'border-primary bg-primary text-primary-foreground shadow-soft'
+                              : !inStockForColor
+                                ? 'cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60'
+                                : 'border-border bg-white/80 text-foreground hover:border-primary/40'
+                          }`}
+                        >
+                          {color}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : null}
               <div className="mt-4 flex flex-wrap gap-3">
                 {variantChoices.map((variant) => {
                   const unavailable = variant.stockQuantity === 0
@@ -316,9 +396,9 @@ export default function ProductDetailPage() {
                 </div>
                 <div className="rounded-2xl bg-white/75 p-4">
                   <p className="text-xs text-muted-foreground">{copy.colors}</p>
-                  <div className="mt-3 flex gap-2">
-                    {['#111827', '#d6a37c', '#f2e9e4'].map((color) => <span key={color} className="size-6 rounded-full border" style={{ backgroundColor: color }} />)}
-                  </div>
+                  <p className="mt-2 font-bold text-foreground">
+                    {colorOptions.length > 0 ? colorOptions.join(' • ') : copy.allColors}
+                  </p>
                 </div>
                 <div className="rounded-2xl bg-white/75 p-4">
                   <p className="text-xs text-muted-foreground">{productType === 'digital' ? copy.digitalDelivery : copy.delivery}</p>
