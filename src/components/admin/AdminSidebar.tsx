@@ -14,6 +14,7 @@ import {
   Receipt,
   BarChart3,
   Settings,
+  BadgeInfo,
   User,
   LogOut,
   ExternalLink,
@@ -37,6 +38,7 @@ const navItems = [
   { href: '/admin/inbox', labelAr: 'الرسائل', labelEn: 'Inbox', icon: Mail },
   { href: '/admin/customers', labelAr: 'العملاء', labelEn: 'Customers', icon: PackageSearch },
   { href: '/admin/suppliers', labelAr: 'الموردون', labelEn: 'Suppliers', icon: Truck },
+  { href: '/admin/site-info', labelAr: 'معلومات المتجر', labelEn: 'Store Info', icon: BadgeInfo },
   { href: '/admin/settings', labelAr: 'الإعدادات', labelEn: 'Settings', icon: Settings },
 ]
 

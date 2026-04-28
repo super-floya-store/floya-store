@@ -14,6 +14,7 @@ export const adminNavigation = [
   { label: 'التعليقات', href: '/admin/comments' },
   { label: 'العملاء', href: '/admin/customers' },
   { label: 'الموردون', href: '/admin/suppliers' },
+  { label: 'معلومات المتجر', href: '/admin/site-info' },
   { label: 'الإعدادات', href: '/admin/settings' },
   { label: 'الملف الشخصي', href: '/admin/profile' },
 ]
