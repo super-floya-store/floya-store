@@ -20,12 +20,35 @@ export function StoreFooter() {
   const [settings, setSettings] = useState<Settings>({})
 
   useEffect(() => {
-    fetch('/api/settings')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setSettings(data.data)
-      })
-      .catch(() => {})
+    let isMounted = true
+
+    const loadSettings = async () => {
+      try {
+        const res = await fetch('/api/settings', { cache: 'no-store' })
+        const data = await res.json()
+        if (isMounted && data.success) {
+          setSettings(data.data)
+        }
+      } catch {}
+    }
+
+    const handleSettingsUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent<Settings>
+      if (customEvent.detail) {
+        setSettings(customEvent.detail)
+        return
+      }
+
+      void loadSettings()
+    }
+
+    void loadSettings()
+    window.addEventListener('store-settings-updated', handleSettingsUpdate as EventListener)
+
+    return () => {
+      isMounted = false
+      window.removeEventListener('store-settings-updated', handleSettingsUpdate as EventListener)
+    }
   }, [])
 
   const socialLinks = typeof settings.social_links === 'string' ? JSON.parse(settings.social_links) : (settings.social_links || {})

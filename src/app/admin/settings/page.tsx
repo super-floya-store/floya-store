@@ -175,7 +175,7 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const res = await fetch('/api/settings')
+        const res = await fetch('/api/settings', { cache: 'no-store' })
         const data = await res.json()
 
         if (!data.success) {
@@ -263,6 +263,7 @@ export default function AdminSettingsPage() {
         favicon_url: data.data?.favicon_url || current.favicon_url,
       }))
       window.dispatchEvent(new CustomEvent('store-branding-updated', { detail: data.data }))
+      window.dispatchEvent(new CustomEvent('store-settings-updated', { detail: data.data }))
       setMessage(copy.saved)
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Failed to save settings')

@@ -40,10 +40,12 @@ export function BrandingSync() {
 
     loadFavicon()
     window.addEventListener('store-branding-updated', handleUpdate as EventListener)
+    window.addEventListener('store-settings-updated', handleUpdate as EventListener)
 
     return () => {
       isMounted = false
       window.removeEventListener('store-branding-updated', handleUpdate as EventListener)
+      window.removeEventListener('store-settings-updated', handleUpdate as EventListener)
     }
   }, [])
 
