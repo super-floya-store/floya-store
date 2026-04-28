@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth/session'
-import { supabaseServer } from '@/lib/supabase/server'
+import { getStoreSettings, upsertStoreSettingsEntries } from '@/lib/settings/store-settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,22 +23,11 @@ const STORE_INFO_KEYS = [
 export async function GET(request: NextRequest) {
   try {
     await requireAdmin(request)
-
-    const { data, error } = await supabaseServer
-      .from('settings')
-      .select('key,value,updated_at')
-      .in('key', STORE_INFO_KEYS)
-
-    if (error) {
-      return json({ success: false, error: { code: 'DATABASE_ERROR', message: error.message } }, { status: 500 })
-    }
-
-    const settings = (data || []).reduce((acc: Record<string, any>, item) => {
-      acc[item.key] = item.value
-      return acc
-    }, {})
-
-    return json({ success: true, data: settings })
+    const settings = await getStoreSettings()
+    return json({
+      success: true,
+      data: Object.fromEntries(STORE_INFO_KEYS.map((key) => [key, settings[key as keyof typeof settings]])),
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Internal server error'
     const status = message === 'Unauthorized' ? 401 : message === 'Forbidden' ? 403 : 500
@@ -62,63 +51,19 @@ export async function PUT(request: NextRequest) {
       admin_notification_email: body.admin_notification_email || body.store_email || '',
     }
 
-    const timestamp = new Date().toISOString()
+    const { data, error } = await upsertStoreSettingsEntries(
+      Object.entries(payload).map(([key, value]) => ({ key, value })),
+      user.id
+    )
 
-    for (const [key, value] of Object.entries(payload)) {
-      const { data: existing, error: readError } = await supabaseServer
-        .from('settings')
-        .select('id')
-        .eq('key', key)
-        .maybeSingle()
-
-      if (readError) {
-        return json({ success: false, error: { code: 'DATABASE_ERROR', message: readError.message } }, { status: 500 })
-      }
-
-      if (existing) {
-        const { error } = await supabaseServer
-          .from('settings')
-          .update({
-            value,
-            updated_by: user.id,
-            updated_at: timestamp,
-          })
-          .eq('key', key)
-
-        if (error) {
-          return json({ success: false, error: { code: 'DATABASE_ERROR', message: error.message } }, { status: 500 })
-        }
-      } else {
-        const { error } = await supabaseServer
-          .from('settings')
-          .insert({
-            key,
-            value,
-            updated_by: user.id,
-            updated_at: timestamp,
-          })
-
-        if (error) {
-          return json({ success: false, error: { code: 'DATABASE_ERROR', message: error.message } }, { status: 500 })
-        }
-      }
+    if (error || !data) {
+      return json({ success: false, error: { code: 'DATABASE_ERROR', message: error || 'Failed to save store info' } }, { status: 500 })
     }
 
-    const { data, error } = await supabaseServer
-      .from('settings')
-      .select('key,value')
-      .in('key', STORE_INFO_KEYS)
-
-    if (error) {
-      return json({ success: false, error: { code: 'DATABASE_ERROR', message: error.message } }, { status: 500 })
-    }
-
-    const settings = (data || []).reduce((acc: Record<string, any>, item) => {
-      acc[item.key] = item.value
-      return acc
-    }, {})
-
-    return json({ success: true, data: settings })
+    return json({
+      success: true,
+      data: Object.fromEntries(STORE_INFO_KEYS.map((key) => [key, data[key as keyof typeof data]])),
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Internal server error'
     const status = message === 'Unauthorized' ? 401 : message === 'Forbidden' ? 403 : 500

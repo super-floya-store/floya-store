@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseServer } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/session'
-import { env } from '@/config/env'
-import { applyStoreInfoOverrides } from '@/lib/settings/store-info-overrides'
+import { getStoreSettings, upsertStoreSettingsEntries } from '@/lib/settings/store-settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,31 +14,10 @@ function jsonWithNoStore(body: unknown, init?: ResponseInit) {
 
 export async function GET() {
   try {
-    const { data, error } = await supabaseServer.from('settings').select('*')
-
-    if (error) {
-      return jsonWithNoStore(
-        { success: false, error: { code: 'DATABASE_ERROR', message: error.message } },
-        { status: 500 }
-      )
-    }
-
-    const settings = data.reduce((acc: any, item) => {
-      acc[item.key] = item.value
-      return acc
-    }, {})
-
-    const normalizedSettings = applyStoreInfoOverrides(settings)
-
+    const normalizedSettings = await getStoreSettings()
     return jsonWithNoStore({
       success: true,
       data: normalizedSettings,
-      debug: process.env.NODE_ENV !== 'production'
-        ? undefined
-        : {
-            supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
-            keys: Array.isArray(data) ? data.map((item) => ({ key: item.key, updated_at: item.updated_at })) : [],
-          },
     })
   } catch {
     return jsonWithNoStore(
@@ -60,69 +37,16 @@ export async function PUT(request: NextRequest) {
       return jsonWithNoStore({ success: false, error: { code: 'VALIDATION_ERROR', message: 'No settings provided' } }, { status: 400 })
     }
 
-    const { data: existingRows, error: existingError } = await supabaseServer
-      .from('settings')
-      .select('key')
-      .in('key', entries.map((entry) => entry.key))
+    const { data, error } = await upsertStoreSettingsEntries(entries, user.id)
 
-    if (existingError) {
+    if (error || !data) {
       return jsonWithNoStore(
-        { success: false, error: { code: 'DATABASE_ERROR', message: existingError.message } },
+        { success: false, error: { code: 'DATABASE_ERROR', message: error || 'Failed to save settings' } },
         { status: 500 }
       )
     }
 
-    const existingKeys = new Set((existingRows || []).map((row) => row.key))
-    const timestamp = new Date().toISOString()
-
-    for (const entry of entries) {
-      if (existingKeys.has(entry.key)) {
-        const { error } = await supabaseServer
-          .from('settings')
-          .update({
-            value: entry.value,
-            updated_by: user.id,
-            updated_at: timestamp,
-          })
-          .eq('key', entry.key)
-
-        if (error) {
-          return jsonWithNoStore(
-            { success: false, error: { code: 'DATABASE_ERROR', message: error.message } },
-            { status: 500 }
-          )
-        }
-      } else {
-        const { error } = await supabaseServer
-          .from('settings')
-          .insert({
-            key: entry.key,
-            value: entry.value,
-            updated_by: user.id,
-            updated_at: timestamp,
-          })
-
-        if (error) {
-          return jsonWithNoStore(
-            { success: false, error: { code: 'DATABASE_ERROR', message: error.message } },
-            { status: 500 }
-          )
-        }
-      }
-    }
-
-    const { data, error: readError } = await supabaseServer.from('settings').select('*')
-
-    if (readError) {
-      return jsonWithNoStore({ success: true, data: body, warning: readError.message })
-    }
-
-    const settings = data.reduce((acc: any, item) => {
-      acc[item.key] = item.value
-      return acc
-    }, {})
-
-    return jsonWithNoStore({ success: true, data: settings })
+    return jsonWithNoStore({ success: true, data })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Internal server error'
     const status = message === 'Unauthorized' ? 401 : message === 'Forbidden' ? 403 : 500
