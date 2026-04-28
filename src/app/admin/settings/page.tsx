@@ -172,6 +172,20 @@ export default function AdminSettingsPage() {
     return tokenEntry ? decodeURIComponent(tokenEntry.split('=').slice(1).join('=')) : ''
   }
 
+  const saveSettingsRequest = async (payload: Record<string, unknown>) => {
+    const token = getAccessToken()
+
+    return fetch('/api/settings', {
+      method: 'PUT',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    })
+  }
+
   useEffect(() => {
     async function fetchSettings() {
       try {
@@ -240,15 +254,18 @@ export default function AdminSettingsPage() {
         order_email_enabled: false,
       }
 
-      const res = await fetch('/api/settings', {
-        method: 'PUT',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      })
+      let res = await saveSettingsRequest(payload)
+
+      if (res.status === 401) {
+        const refreshRes = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'include',
+        })
+
+        if (refreshRes.ok) {
+          res = await saveSettingsRequest(payload)
+        }
+      }
 
       const data = await parseApiResponse(res)
       if (!res.ok || !data?.success) {
