@@ -1,4 +1,5 @@
 import { supabaseServer } from '@/lib/supabase/server'
+import { applyStoreInfoOverrides } from './store-info-overrides'
 
 export interface StoreSettingsMap {
   store_name?: { ar?: string; en?: string }
@@ -47,5 +48,5 @@ export async function getStoreSettings(): Promise<StoreSettingsMap> {
     settings.hero_images = defaultHeroImages
   }
 
-  return settings
+  return applyStoreInfoOverrides(settings)
 }

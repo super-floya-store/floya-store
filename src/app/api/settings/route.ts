@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/session'
 import { env } from '@/config/env'
+import { applyStoreInfoOverrides } from '@/lib/settings/store-info-overrides'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,9 +30,11 @@ export async function GET() {
       return acc
     }, {})
 
+    const normalizedSettings = applyStoreInfoOverrides(settings)
+
     return jsonWithNoStore({
       success: true,
-      data: settings,
+      data: normalizedSettings,
       debug: process.env.NODE_ENV !== 'production'
         ? undefined
         : {
