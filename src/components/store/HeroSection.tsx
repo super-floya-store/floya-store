@@ -77,11 +77,11 @@ export function HeroSection() {
               </Button>
             </div>
 
-            <div className="mt-10 grid w-full gap-4 sm:grid-cols-3">
+            <div className="mt-8 grid w-full max-w-3xl gap-3 sm:grid-cols-3">
               {copy.stats.map((item) => (
-                <div key={item.label} className="surface-card rounded-[24px] border-white/10 bg-white/10 px-4 py-4 text-center">
-                  <div className="text-xl font-bold text-white md:text-2xl">{item.value}</div>
-                  <div className="mt-1 text-xs text-secondary-foreground/70 md:text-sm">{item.label}</div>
+                <div key={item.label} className="surface-card rounded-[20px] border-white/10 bg-white/10 px-3 py-3 text-center">
+                  <div className="text-lg font-bold text-secondary md:text-xl">{item.value}</div>
+                  <div className="mt-1 text-xs font-medium text-foreground/85 md:text-sm">{item.label}</div>
                 </div>
               ))}
             </div>
