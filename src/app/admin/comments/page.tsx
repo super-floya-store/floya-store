@@ -6,11 +6,38 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Comment } from '@/types/comment'
 import { cn } from '@/lib/utils/cn'
+import { useUIStore } from '@/stores/ui-store'
 
 export default function AdminCommentsPage() {
+  const locale = useUIStore((state) => state.locale)
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
   const [savingId, setSavingId] = useState<string | null>(null)
+  const copy = locale === 'ar'
+    ? {
+        title: 'التعليقات',
+        subtitle: 'مراجعة تعليقات العملاء وقبولها أو رفضها قبل النشر.',
+        product: 'منتج',
+        category: 'فئة',
+        rejected: 'مرفوض',
+        noEmail: 'بدون بريد إلكتروني',
+        approve: 'قبول',
+        reject: 'رفض',
+        backToPending: 'إعادة للمراجعة',
+        empty: 'لا توجد تعليقات حالياً.',
+      }
+    : {
+        title: 'Comments',
+        subtitle: 'Review customer comments and approve or reject them before publishing.',
+        product: 'Product',
+        category: 'Category',
+        rejected: 'Rejected',
+        noEmail: 'No email provided',
+        approve: 'Approve',
+        reject: 'Reject',
+        backToPending: 'Return to pending',
+        empty: 'There are no comments right now.',
+      }
 
   useEffect(() => {
     async function fetchComments() {
@@ -58,8 +85,8 @@ export default function AdminCommentsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">التعليقات</h1>
-        <p className="mt-1 text-sm text-muted-foreground">مراجعة تعليقات العملاء وقبولها أو رفضها قبل النشر.</p>
+        <h1 className="text-3xl font-bold">{copy.title}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{copy.subtitle}</p>
       </div>
 
       <div className="grid gap-4">
@@ -71,32 +98,26 @@ export default function AdminCommentsPage() {
                   {comment.customer_name}
                 </span>
                 <span className={cn('text-sm font-medium', comment.status === 'rejected' ? 'text-destructive' : 'text-muted-foreground')}>
-                  {comment.entity_type === 'product' ? 'منتج' : 'فئة'} • {comment.status === 'rejected' ? 'مرفوض' : comment.status}
+                  {comment.entity_type === 'product' ? copy.product : copy.category} • {comment.status === 'rejected' ? copy.rejected : comment.status}
                 </span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">{comment.customer_email || 'بدون بريد إلكتروني'} • {comment.rating}/5</p>
+              <p className="text-sm text-muted-foreground">{comment.customer_email || copy.noEmail} • {comment.rating}/5</p>
               <p className={cn('leading-8', comment.status === 'rejected' && 'line-through decoration-destructive decoration-2 opacity-70')}>
                 {comment.comment}
               </p>
               <div className="flex gap-3">
-                <Button size="sm" disabled={savingId === comment.id} onClick={() => updateComment(comment.id, 'approved')}>
-                  قبول
-                </Button>
-                <Button size="sm" variant="outline" disabled={savingId === comment.id} onClick={() => updateComment(comment.id, 'rejected')}>
-                  رفض
-                </Button>
-                <Button size="sm" variant="ghost" disabled={savingId === comment.id} onClick={() => updateComment(comment.id, 'pending')}>
-                  إعادة للمراجعة
-                </Button>
+                <Button size="sm" disabled={savingId === comment.id} onClick={() => updateComment(comment.id, 'approved')}>{copy.approve}</Button>
+                <Button size="sm" variant="outline" disabled={savingId === comment.id} onClick={() => updateComment(comment.id, 'rejected')}>{copy.reject}</Button>
+                <Button size="sm" variant="ghost" disabled={savingId === comment.id} onClick={() => updateComment(comment.id, 'pending')}>{copy.backToPending}</Button>
               </div>
             </CardContent>
           </Card>
         ))}
         {comments.length === 0 && (
           <div className="rounded-lg border bg-card px-6 py-10 text-center text-muted-foreground">
-            لا توجد تعليقات حالياً.
+            {copy.empty}
           </div>
         )}
       </div>

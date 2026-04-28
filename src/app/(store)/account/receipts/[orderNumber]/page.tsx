@@ -6,7 +6,7 @@ import { useUIStore } from '@/stores/ui-store'
 import type { OrderWithItems } from '@/types/order'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { formatPrice } from '@/lib/utils/format'
+import { formatDate, formatPrice } from '@/lib/utils/format'
 
 export default function ReceiptPage({ params }: { params: { orderNumber: string } }) {
   const locale = useUIStore((state) => state.locale)
@@ -44,10 +44,11 @@ export default function ReceiptPage({ params }: { params: { orderNumber: string 
         quantity: 'Qty',
         item: 'Item',
         amount: 'Amount',
+        loading: 'Loading...',
       }
 
   if (!order) {
-    return <div className="container mx-auto px-4 py-10 text-sm text-muted-foreground">Loading...</div>
+    return <div className="container mx-auto px-4 py-10 text-sm text-muted-foreground">{copy.loading}</div>
   }
 
   return (
@@ -70,7 +71,7 @@ export default function ReceiptPage({ params }: { params: { orderNumber: string 
             </div>
             <div className="text-sm text-muted-foreground">
               <p>#{order.order_number}</p>
-              <p>{new Date(order.created_at).toLocaleDateString(locale === 'ar' ? 'ar-DZ' : 'en-US')}</p>
+              <p>{formatDate(order.created_at, locale)}</p>
             </div>
           </div>
 
