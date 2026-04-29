@@ -5,9 +5,9 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useUIStore } from '@/stores/ui-store'
+import { AdminPageHeader, AdminPanel } from '@/components/admin/AdminShell'
 
 type AdminSettingsForm = {
   store_name_ar: string
@@ -291,8 +291,12 @@ export default function AdminSettingsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6 max-w-2xl">
-        <h1 className="text-3xl font-bold">{copy.title}</h1>
+      <div className="max-w-4xl space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-5 w-full max-w-2xl" />
+        </div>
         <Skeleton className="h-80 w-full" />
       </div>
     )
@@ -300,17 +304,11 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{copy.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{copy.subtitle}</p>
-      </div>
+      <AdminPageHeader eyebrow={locale === 'ar' ? 'إعدادات وتشغيل' : 'Configuration and operations'} title={copy.title} description={copy.subtitle} />
 
-      <form onSubmit={handleSave} className="max-w-2xl space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{copy.storeInfo}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      <form onSubmit={handleSave} className="max-w-4xl space-y-6">
+        <AdminPanel title={copy.storeInfo}>
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="store-name-ar">{copy.storeNameAr}</Label>
               <Input id="store-name-ar" value={settings.store_name_ar} onChange={(e) => setSettings({ ...settings, store_name_ar: e.target.value })} />
@@ -347,14 +345,11 @@ export default function AdminSettingsPage() {
               <Label htmlFor="delivery-fees">{copy.deliveryFees}</Label>
               <textarea id="delivery-fees" value={settings.delivery_fees} onChange={(e) => setSettings({ ...settings, delivery_fees: e.target.value })} className="min-h-[160px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder='{"الجزائر": 500, "وهران": 700}' />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </AdminPanel>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{copy.branding}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <AdminPanel title={copy.branding}>
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="logo-url">{copy.logoUrl}</Label>
               <Input id="logo-url" value={settings.logo_url} onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })} />
@@ -366,7 +361,7 @@ export default function AdminSettingsPage() {
               <p className="text-xs text-muted-foreground">{copy.faviconHelp}</p>
             </div>
             {settings.logo_url || settings.favicon_url ? (
-              <div className="flex flex-wrap items-center gap-6 rounded-md border border-input p-3">
+              <div className="flex flex-wrap items-center gap-6 rounded-md border border-input p-3 md:col-span-2">
                 {settings.logo_url ? (
                   <div className="flex items-center gap-3">
                     <Image src={settings.logo_url} alt="Logo preview" width={48} height={48} className="rounded-md object-cover" />
@@ -383,16 +378,13 @@ export default function AdminSettingsPage() {
             ) : null}
             <div className="space-y-2">
               <Label htmlFor="hero-images">{copy.heroImages}</Label>
-              <textarea id="hero-images" value={settings.hero_images} onChange={(e) => setSettings({ ...settings, hero_images: e.target.value })} className="min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder={copy.heroHelp} />
+              <textarea id="hero-images" value={settings.hero_images} onChange={(e) => setSettings({ ...settings, hero_images: e.target.value })} className="min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm md:col-span-2" placeholder={copy.heroHelp} />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </AdminPanel>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{copy.payments}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <AdminPanel title={copy.payments}>
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="baridimob-rip">{copy.baridimobRip}</Label>
               <Input id="baridimob-rip" value={settings.baridimob_rip} onChange={(e) => setSettings({ ...settings, baridimob_rip: e.target.value })} />
@@ -403,7 +395,7 @@ export default function AdminSettingsPage() {
             </div>
             <div className="space-y-3">
               <Label>{copy.paymentMethods}</Label>
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-3 md:col-span-2">
                 {[
                   { key: 'baridimob', label: 'BaridiMob' },
                   { key: 'cod', label: copy.cashOnDelivery },
@@ -426,14 +418,11 @@ export default function AdminSettingsPage() {
                 ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </AdminPanel>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{copy.notifications}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <AdminPanel title={copy.notifications}>
+          <div className="space-y-4">
             <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-7 text-amber-900">
               {copy.resetOnlyNotice}
             </p>
@@ -449,8 +438,8 @@ export default function AdminSettingsPage() {
               <Label htmlFor="email-sender-address">{copy.emailSenderAddress}</Label>
               <Input id="email-sender-address" value={settings.email_sender_address} onChange={(e) => setSettings({ ...settings, email_sender_address: e.target.value })} />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </AdminPanel>
 
         <div className="flex items-center gap-4">
           <Button type="submit" disabled={saving}>{saving ? copy.saving : copy.save}</Button>

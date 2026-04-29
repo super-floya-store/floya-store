@@ -1,11 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Search, Shapes } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Category } from '@/types/category'
 import { useUIStore } from '@/stores/ui-store'
+import { formatNumber } from '@/lib/utils/format'
+import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminStatCard, AdminToolbar } from '@/components/admin/AdminShell'
 
 function slugify(value: string) {
   return value
@@ -50,6 +53,7 @@ export default function AdminCategoriesPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
   const isRTL = locale === 'ar'
   const copy = isRTL
     ? {
@@ -62,8 +66,9 @@ export default function AdminCategoriesPage() {
         confirmDelete: 'هل تريد حذف الفئة؟',
         hideSuccess: 'تم إخفاء الفئة لأنها تحتوي على منتجات',
         deleteError: 'تعذر حذف الفئة',
+        eyebrow: 'تنظيم الكتالوج',
         title: 'الفئات',
-        subtitle: 'إدارة فئات المتجر وإضافة فئات جديدة بشكل مباشر.',
+        subtitle: 'إدارة فئات المتجر وإضافة فئات جديدة وصور مرتبطة بها من شاشة واحدة.',
         nameAr: 'الاسم العربي',
         nameEn: 'الاسم الإنجليزي',
         slug: 'الرابط',
@@ -86,6 +91,9 @@ export default function AdminCategoriesPage() {
         show: 'إظهار',
         delete: 'حذف',
         empty: 'لا توجد فئات حالياً',
+        emptyDescription: 'أضف فئة جديدة لتبدأ في تنظيم الكتالوج.',
+        search: 'ابحث باسم الفئة أو الرابط',
+        count: 'الفئات',
       }
     : {
         fetchError: 'Unable to load categories',
@@ -97,8 +105,9 @@ export default function AdminCategoriesPage() {
         confirmDelete: 'Do you want to delete this category?',
         hideSuccess: 'The category was hidden because it still contains products',
         deleteError: 'Unable to delete the category',
+        eyebrow: 'Catalog structure',
         title: 'Categories',
-        subtitle: 'Manage store categories and add new categories directly.',
+        subtitle: 'Manage store categories and their related imagery from one screen.',
         nameAr: 'Arabic name',
         nameEn: 'English name',
         slug: 'Slug',
@@ -121,6 +130,9 @@ export default function AdminCategoriesPage() {
         show: 'Show',
         delete: 'Delete',
         empty: 'No categories yet',
+        emptyDescription: 'Add a new category to start organizing the catalog.',
+        search: 'Search by category name or slug',
+        count: 'Categories',
       }
 
   const appendGalleryUrls = (urls: string[]) => {
@@ -299,110 +311,128 @@ export default function AdminCategoriesPage() {
     }
   }
 
+  const filteredCategories = useMemo(() => {
+    const normalized = query.toLowerCase().trim()
+    if (!normalized) return categories
+    return categories.filter((category) =>
+      [category.name_ar, category.name_en, category.slug].some((value) => value.toLowerCase().includes(normalized))
+    )
+  }, [categories, query])
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">{copy.title}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{copy.subtitle}</p>
+      <AdminPageHeader eyebrow={copy.eyebrow} title={copy.title} description={copy.subtitle} />
+
+      <AdminStatCard label={copy.count} value={formatNumber(categories.length, locale)} icon={Shapes} />
+
+      <div className="grid gap-6 xl:grid-cols-[1.05fr_1.2fr]">
+        <AdminPanel title={copy.add}>
+          <form onSubmit={handleAdd} className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <label htmlFor="category-name-ar" className="text-sm font-medium">{copy.nameAr}</label>
+              <Input id="category-name-ar" value={newCategory.name_ar} onChange={(e) => setNewCategory({ ...newCategory, name_ar: e.target.value })} required />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="category-name-en" className="text-sm font-medium">{copy.nameEn}</label>
+              <Input id="category-name-en" value={newCategory.name_en} onChange={(e) => setNewCategory({ ...newCategory, name_en: e.target.value, slug: newCategory.slug || slugify(e.target.value) })} required />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label htmlFor="category-slug" className="text-sm font-medium">{copy.slug}</label>
+              <Input id="category-slug" value={newCategory.slug} onChange={(e) => setNewCategory({ ...newCategory, slug: slugify(e.target.value) })} placeholder={copy.slugPlaceholder} />
+              <p className="text-xs text-muted-foreground">{copy.slugHelp}</p>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label htmlFor="category-image-url" className="text-sm font-medium">{copy.cover}</label>
+              <Input id="category-image-url" value={newCategory.image_url} onChange={(e) => setNewCategory({ ...newCategory, image_url: e.target.value })} placeholder="https://..." />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label htmlFor="category-image-upload" className="text-sm font-medium">{copy.uploadCover}</label>
+              <Input id="category-image-upload" type="file" accept="image/*" disabled={uploading} onChange={(e) => { const file = e.target.files?.[0]; if (file) handleUpload(file) }} />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label htmlFor="category-description-ar" className="text-sm font-medium">{copy.description}</label>
+              <textarea id="category-description-ar" value={newCategory.description_ar} onChange={(e) => setNewCategory({ ...newCategory, description_ar: e.target.value })} className="min-h-[100px] w-full rounded-[20px] border border-input bg-background px-4 py-3 text-sm" />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label htmlFor="category-gallery-images" className="text-sm font-medium">{copy.gallery}</label>
+              <textarea id="category-gallery-images" value={newCategory.gallery_images} onChange={(e) => setNewCategory({ ...newCategory, gallery_images: e.target.value })} placeholder={copy.galleryPlaceholder} className="min-h-[110px] w-full rounded-[20px] border border-input bg-background px-4 py-3 text-sm" />
+              <Input id="category-gallery-upload" type="file" accept="image/*" multiple disabled={uploading} onChange={(e) => { if (e.target.files?.length) handleGalleryUpload(e.target.files) }} />
+            </div>
+            <div className="md:col-span-2 flex items-center gap-4">
+              <Button type="submit" disabled={submitting}>{submitting ? copy.adding : copy.add}</Button>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              {success && <p className="text-sm text-green-600">{success}</p>}
+            </div>
+          </form>
+        </AdminPanel>
+
+        <div className="space-y-4">
+          <AdminToolbar>
+            <label className="relative min-w-[260px] flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={copy.search}
+                className="h-11 w-full rounded-full border border-border bg-white pl-10 pr-4 text-sm text-foreground shadow-soft outline-none"
+              />
+            </label>
+            <div className="text-sm text-muted-foreground">
+              {formatNumber(filteredCategories.length, locale)} / {formatNumber(categories.length, locale)}
+            </div>
+          </AdminToolbar>
+
+          {loading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-[24px]" />)}
+            </div>
+          ) : filteredCategories.length ? (
+            <AdminPanel className="overflow-hidden" contentClassName="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] text-sm">
+                  <thead className="bg-muted/60">
+                    <tr>
+                      <th className={`px-4 py-4 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>{copy.nameAr}</th>
+                      <th className={`px-4 py-4 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>{copy.nameEn}</th>
+                      <th className={`px-4 py-4 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>{copy.slug}</th>
+                      <th className={`px-4 py-4 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>{copy.image}</th>
+                      <th className={`px-4 py-4 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>{copy.status}</th>
+                      <th className={`px-4 py-4 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>{copy.actions}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCategories.map((cat) => (
+                      <tr key={cat.id} className="border-t border-border/70 hover:bg-muted/30">
+                        <td className="px-4 py-4">{cat.name_ar}</td>
+                        <td className="px-4 py-4">{cat.name_en}</td>
+                        <td className="px-4 py-4 text-muted-foreground">{cat.slug}</td>
+                        <td className="px-4 py-4 text-muted-foreground">{cat.image_url ? copy.added : '-'}</td>
+                        <td className="px-4 py-4">
+                          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${cat.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                            {cat.is_active ? copy.active : copy.inactive}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-wrap gap-2">
+                            <Button size="sm" variant="outline" disabled={savingId === cat.id} onClick={() => toggleCategory(cat)}>
+                              {cat.is_active ? copy.hide : copy.show}
+                            </Button>
+                            <Button size="sm" variant="destructive" disabled={savingId === cat.id} onClick={() => deleteCategory(cat.id)}>
+                              {copy.delete}
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </AdminPanel>
+          ) : (
+            <AdminEmptyState title={copy.empty} description={copy.emptyDescription} />
+          )}
         </div>
       </div>
-
-      <form onSubmit={handleAdd} className="grid gap-4 md:grid-cols-3 items-end">
-        <div className="space-y-2">
-          <label htmlFor="category-name-ar" className="text-sm font-medium">{copy.nameAr}</label>
-          <Input id="category-name-ar" value={newCategory.name_ar} onChange={(e) => setNewCategory({ ...newCategory, name_ar: e.target.value })} required />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="category-name-en" className="text-sm font-medium">{copy.nameEn}</label>
-          <Input id="category-name-en" value={newCategory.name_en} onChange={(e) => setNewCategory({ ...newCategory, name_en: e.target.value, slug: newCategory.slug || slugify(e.target.value) })} required />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="category-slug" className="text-sm font-medium">{copy.slug}</label>
-          <Input
-            id="category-slug"
-            value={newCategory.slug}
-            onChange={(e) => setNewCategory({ ...newCategory, slug: slugify(e.target.value) })}
-            placeholder={copy.slugPlaceholder}
-          />
-          <p className="text-xs text-muted-foreground">{copy.slugHelp}</p>
-        </div>
-        <div className="space-y-2 md:col-span-3">
-          <label htmlFor="category-image-url" className="text-sm font-medium">{copy.cover}</label>
-          <Input id="category-image-url" value={newCategory.image_url} onChange={(e) => setNewCategory({ ...newCategory, image_url: e.target.value })} placeholder="https://..." />
-        </div>
-        <div className="space-y-2 md:col-span-3">
-          <label htmlFor="category-image-upload" className="text-sm font-medium">{copy.uploadCover}</label>
-          <Input id="category-image-upload" type="file" accept="image/*" disabled={uploading} onChange={(e) => { const file = e.target.files?.[0]; if (file) handleUpload(file) }} />
-        </div>
-        <div className="space-y-2 md:col-span-3">
-          <label htmlFor="category-description-ar" className="text-sm font-medium">{copy.description}</label>
-          <textarea id="category-description-ar" value={newCategory.description_ar} onChange={(e) => setNewCategory({ ...newCategory, description_ar: e.target.value })} className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
-        </div>
-        <div className="space-y-2 md:col-span-3">
-          <label htmlFor="category-gallery-images" className="text-sm font-medium">{copy.gallery}</label>
-          <textarea id="category-gallery-images" value={newCategory.gallery_images} onChange={(e) => setNewCategory({ ...newCategory, gallery_images: e.target.value })} placeholder={copy.galleryPlaceholder} className="min-h-[110px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
-          <Input id="category-gallery-upload" type="file" accept="image/*" multiple disabled={uploading} onChange={(e) => { if (e.target.files?.length) handleGalleryUpload(e.target.files) }} />
-        </div>
-        <div className="md:col-span-3 flex items-center gap-4">
-          <Button type="submit" disabled={submitting}>{submitting ? copy.adding : copy.add}</Button>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          {success && <p className="text-sm text-green-600">{success}</p>}
-        </div>
-      </form>
-
-      {loading ? (
-        <div className="space-y-4">
-          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12" />)}
-        </div>
-      ) : (
-        <div className="bg-card rounded-lg border overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-muted">
-              <tr>
-                <th className={`px-4 py-3 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>{copy.nameAr}</th>
-                <th className={`px-4 py-3 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>{copy.nameEn}</th>
-                <th className={`px-4 py-3 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>{copy.slug}</th>
-                <th className={`px-4 py-3 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>{copy.image}</th>
-                <th className={`px-4 py-3 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>{copy.status}</th>
-                <th className={`px-4 py-3 font-medium ${isRTL ? 'text-right' : 'text-left'}`}>{copy.actions}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categories.map((cat) => (
-                <tr key={cat.id} className="border-t hover:bg-muted/50">
-                  <td className="px-4 py-3">{cat.name_ar}</td>
-                  <td className="px-4 py-3">{cat.name_en}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{cat.slug}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{cat.image_url ? copy.added : '-'}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${cat.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {cat.is_active ? copy.active : copy.inactive}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="outline" disabled={savingId === cat.id} onClick={() => toggleCategory(cat)}>
-                        {cat.is_active ? copy.hide : copy.show}
-                      </Button>
-                      <Button size="sm" variant="destructive" disabled={savingId === cat.id} onClick={() => deleteCategory(cat.id)}>
-                        {copy.delete}
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {categories.length === 0 && (
-                <tr className="border-t">
-                  <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
-                    {copy.empty}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   )
 }

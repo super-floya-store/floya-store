@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Building2, Mail, Phone, Save, MessageCircle } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useCallback, useEffect, useState } from 'react'
+import { Building2, Mail, MessageCircle, Phone, Save } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useUIStore } from '@/stores/ui-store'
+import { AdminPageHeader, AdminPanel } from '@/components/admin/AdminShell'
 
 type SiteInfoForm = {
   store_name_ar: string
@@ -36,12 +37,15 @@ export default function AdminSiteInfoPage() {
 
   const copy = locale === 'ar'
     ? {
+        eyebrow: 'هوية المتجر',
         title: 'معلومات المتجر',
         subtitle: 'غيّر اسم المتجر وبيانات التواصل الأساسية من مكان واحد.',
         save: 'حفظ المعلومات',
         saving: 'جاري الحفظ...',
         saved: 'تم حفظ معلومات المتجر بنجاح',
         invalid: 'استجابة غير صالحة من الخادم',
+        loadFailed: 'تعذر تحميل معلومات المتجر',
+        saveFailed: 'تعذر حفظ معلومات المتجر',
         storeNameAr: 'اسم المتجر (عربي)',
         storeNameEn: 'اسم المتجر (إنجليزي)',
         phone: 'رقم الهاتف',
@@ -50,12 +54,15 @@ export default function AdminSiteInfoPage() {
         contactEmail: 'بريد تواصل الإدارة',
       }
     : {
+        eyebrow: 'Store identity',
         title: 'Store Info',
         subtitle: 'Change the store name and core contact details from one focused page.',
         save: 'Save info',
         saving: 'Saving...',
         saved: 'Store info saved successfully',
         invalid: 'Invalid server response',
+        loadFailed: 'Failed to load store info',
+        saveFailed: 'Failed to save store info',
         storeNameAr: 'Store name (Arabic)',
         storeNameEn: 'Store name (English)',
         phone: 'Phone number',
@@ -64,7 +71,7 @@ export default function AdminSiteInfoPage() {
         contactEmail: 'Admin contact email',
       }
 
-  const parseResponse = async (res: Response) => {
+  const parseResponse = useCallback(async (res: Response) => {
     const text = await res.text()
     if (!text.trim()) return null
     try {
@@ -72,19 +79,14 @@ export default function AdminSiteInfoPage() {
     } catch {
       throw new Error(copy.invalid)
     }
-  }
+  }, [copy.invalid])
 
-  const getAccessToken = () => {
-    if (typeof document === 'undefined') return ''
-    const tokenEntry = document.cookie
-      .split('; ')
-      .find((item) => item.startsWith('access_token='))
+  const request = useCallback(async (method: 'GET' | 'PUT', body?: Record<string, unknown>) => {
+    const tokenEntry = typeof document === 'undefined'
+      ? ''
+      : document.cookie.split('; ').find((item) => item.startsWith('access_token='))
+    const token = tokenEntry ? decodeURIComponent(tokenEntry.split('=').slice(1).join('=')) : ''
 
-    return tokenEntry ? decodeURIComponent(tokenEntry.split('=').slice(1).join('=')) : ''
-  }
-
-  const request = async (method: 'GET' | 'PUT', body?: Record<string, unknown>) => {
-    const token = getAccessToken()
     return fetch('/api/admin/store-info', {
       method,
       credentials: 'include',
@@ -95,7 +97,7 @@ export default function AdminSiteInfoPage() {
       },
       ...(body ? { body: JSON.stringify(body) } : {}),
     })
-  }
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -110,7 +112,7 @@ export default function AdminSiteInfoPage() {
 
         const data = await parseResponse(res)
         if (!res.ok || !data?.success) {
-          throw new Error(data?.error?.message || `Failed to load store info (${res.status})`)
+          throw new Error(data?.error?.message || `${copy.loadFailed} (${res.status})`)
         }
 
         setForm({
@@ -122,14 +124,14 @@ export default function AdminSiteInfoPage() {
           admin_notification_email: data.data?.admin_notification_email || data.data?.store_email || defaultForm.admin_notification_email,
         })
       } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : 'Failed to load store info')
+        setError(loadError instanceof Error ? loadError.message : copy.loadFailed)
       } finally {
         setLoading(false)
       }
     }
 
     void load()
-  }, [])
+  }, [copy.loadFailed, parseResponse, request])
 
   const handleSave = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -159,7 +161,7 @@ export default function AdminSiteInfoPage() {
 
       const data = await parseResponse(res)
       if (!res.ok || !data?.success) {
-        throw new Error(data?.error?.message || `Failed to save store info (${res.status})`)
+        throw new Error(data?.error?.message || `${copy.saveFailed} (${res.status})`)
       }
 
       const nextDetail = {
@@ -175,32 +177,32 @@ export default function AdminSiteInfoPage() {
       window.dispatchEvent(new CustomEvent('store-settings-updated', { detail: nextDetail }))
       setMessage(copy.saved)
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Failed to save store info')
+      setError(saveError instanceof Error ? saveError.message : copy.saveFailed)
     } finally {
       setSaving(false)
     }
   }
 
   if (loading) {
-    return <div className="text-sm text-muted-foreground">{locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}</div>
+    return (
+      <div className="max-w-4xl space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-10 w-72" />
+          <Skeleton className="h-5 w-full max-w-2xl" />
+        </div>
+        <Skeleton className="h-80 w-full rounded-[28px]" />
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{copy.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{copy.subtitle}</p>
-      </div>
+    <div className="max-w-4xl space-y-6">
+      <AdminPageHeader eyebrow={copy.eyebrow} title={copy.title} description={copy.subtitle} />
 
-      <form onSubmit={handleSave}>
-        <Card className="surface-card border-white/70 shadow-soft">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-primary" />
-              <span>{copy.title}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
+      <form onSubmit={handleSave} className="space-y-5">
+        <AdminPanel title={copy.title}>
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="store-name-ar">{copy.storeNameAr}</Label>
               <Input id="store-name-ar" value={form.store_name_ar} onChange={(e) => setForm({ ...form, store_name_ar: e.target.value })} />
@@ -237,10 +239,10 @@ export default function AdminSiteInfoPage() {
                 <Input id="contact-email" type="email" className="pl-9" value={form.admin_notification_email} onChange={(e) => setForm({ ...form, admin_notification_email: e.target.value })} />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </AdminPanel>
 
-        <div className="mt-5 flex items-center gap-4">
+        <div className="flex items-center gap-4">
           <Button type="submit" disabled={saving} className="min-h-[46px] rounded-full px-5">
             <Save className="mr-2 h-4 w-4" />
             {saving ? copy.saving : copy.save}
