@@ -7,40 +7,14 @@ import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils/cn'
 import { useUIStore } from '@/stores/ui-store'
 import { useStoreBranding } from '@/hooks/useStoreBranding'
+import { adminNavigationSections } from '@/config/admin-navigation'
 import {
-  LayoutDashboard,
-  ShoppingBag,
-  Shapes,
-  Receipt,
-  BarChart3,
-  Settings,
-  BadgeInfo,
   User,
   LogOut,
   ExternalLink,
   ChevronRight,
-  MessageSquare,
   Store,
-  Mail,
-  Truck,
-  ShieldAlert,
-  PackageSearch,
 } from 'lucide-react'
-
-const navItems = [
-  { href: '/admin', labelAr: 'لوحة التحكم', labelEn: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/products', labelAr: 'المنتجات', labelEn: 'Products', icon: ShoppingBag },
-  { href: '/admin/categories', labelAr: 'الفئات', labelEn: 'Categories', icon: Shapes },
-  { href: '/admin/orders', labelAr: 'الطلبات', labelEn: 'Orders', icon: Receipt },
-  { href: '/admin/payments', labelAr: 'المدفوعات', labelEn: 'Payments', icon: ShieldAlert },
-  { href: '/admin/analytics', labelAr: 'التحليلات', labelEn: 'Analytics', icon: BarChart3 },
-  { href: '/admin/comments', labelAr: 'التعليقات', labelEn: 'Comments', icon: MessageSquare },
-  { href: '/admin/inbox', labelAr: 'الرسائل', labelEn: 'Inbox', icon: Mail },
-  { href: '/admin/customers', labelAr: 'العملاء', labelEn: 'Customers', icon: PackageSearch },
-  { href: '/admin/suppliers', labelAr: 'الموردون', labelEn: 'Suppliers', icon: Truck },
-  { href: '/admin/site-info', labelAr: 'معلومات المتجر', labelEn: 'Store Info', icon: BadgeInfo },
-  { href: '/admin/settings', labelAr: 'الإعدادات', labelEn: 'Settings', icon: Settings },
-]
 
 interface AdminSidebarProps {
   open: boolean
@@ -59,6 +33,13 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         visitStore: 'زيارة المتجر',
         profile: 'الملف الشخصي',
         logout: 'تسجيل الخروج',
+        sections: {
+          overview: 'نظرة عامة',
+          catalog: 'الكتالوج',
+          operations: 'العمليات',
+          communication: 'التواصل',
+          configuration: 'إعدادات المتجر',
+        },
       }
     : {
         storefront: 'Storefront',
@@ -66,8 +47,62 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         visitStore: 'Visit store',
         profile: 'Profile',
         logout: 'Log out',
+        sections: {
+          overview: 'Overview',
+          catalog: 'Catalog',
+          operations: 'Operations',
+          communication: 'Communication',
+          configuration: 'Store setup',
+        },
       }
   const brandName = locale === 'ar' ? branding.nameAr : branding.nameEn
+
+  const sectionLabel = (sectionId: string, labelAr: string, labelEn: string) => {
+    if (locale === 'ar') return labelAr
+    return copy.sections?.[sectionId as keyof typeof copy.sections] || labelEn
+  }
+
+  const renderNavigation = () => (
+    <>
+      {adminNavigationSections.map((section) => (
+        <div key={section.id} className="space-y-2">
+          <p className="px-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/40">
+            {sectionLabel(section.id, section.labelAr, section.labelEn)}
+          </p>
+          <div className="space-y-1">
+            {section.items.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+              const Icon = item.icon
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'group flex items-start gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-white/10 text-white'
+                      : 'text-white/72 hover:bg-white/5 hover:text-white'
+                  )}
+                >
+                  <Icon className="mt-0.5 h-5 w-5 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span>{locale === 'ar' ? item.labelAr : item.labelEn}</span>
+                      {isActive ? <ChevronRight className={cn('h-4 w-4 shrink-0', locale === 'ar' ? 'mr-auto' : 'ml-auto rotate-180')} /> : null}
+                    </div>
+                    <p className="mt-1 text-xs text-white/45 group-hover:text-white/55">
+                      {locale === 'ar' ? item.descriptionAr : item.descriptionEn}
+                    </p>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      ))}
+    </>
+  )
 
   return (
     <>
@@ -119,28 +154,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
             </div>
           </div>
 
-          <nav className="premium-scrollbar flex-1 space-y-1 overflow-y-auto p-4">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
-              const Icon = item.icon
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-white/10 text-white'
-                      : 'text-white/70 hover:bg-white/5 hover:text-white'
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span>{locale === 'ar' ? item.labelAr : item.labelEn}</span>
-                  {isActive && <ChevronRight className={cn('h-4 w-4', locale === 'ar' ? 'mr-auto' : 'ml-auto rotate-180')} />}
-                </Link>
-              )
-            })}
-          </nav>
+          <nav className="premium-scrollbar flex-1 space-y-6 overflow-y-auto p-4">{renderNavigation()}</nav>
 
           <div className="border-t border-white/10 p-4 space-y-1">
             <Link
@@ -208,28 +222,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
             </div>
           </div>
 
-          <nav className="premium-scrollbar flex-1 space-y-1 overflow-y-auto p-4">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
-              const Icon = item.icon
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-white/10 text-white'
-                      : 'text-white/70 hover:bg-white/5 hover:text-white'
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span>{locale === 'ar' ? item.labelAr : item.labelEn}</span>
-                  {isActive && <ChevronRight className={cn('h-4 w-4', locale === 'ar' ? 'mr-auto' : 'ml-auto rotate-180')} />}
-                </Link>
-              )
-            })}
-          </nav>
+          <nav className="premium-scrollbar flex-1 space-y-6 overflow-y-auto p-4">{renderNavigation()}</nav>
 
           <div className="border-t border-white/10 p-4 space-y-1">
             <Link

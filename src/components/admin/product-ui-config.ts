@@ -92,16 +92,16 @@ export function getDerivedStockQuantity(productType: AdminProductType, manualSto
   return Math.max(0, parseInt(String(manualStockQuantity || '0'), 10) || 0)
 }
 
-export function getProductTypeLabel(productType: AdminProductType) {
+export function getProductTypeLabel(productType: AdminProductType, locale: 'ar' | 'en' = 'ar') {
   switch (productType) {
     case 'physical_variant':
-      return 'ملابس بمقاسات وألوان'
+      return locale === 'ar' ? 'ملابس بمقاسات وألوان' : 'Clothing sizes and colors'
     case 'digital_account':
-      return 'تسليم رقمي'
+      return locale === 'ar' ? 'تسليم رقمي' : 'Digital account delivery'
     case 'digital_text':
-      return 'نصوص / أكواد متعددة الأسطر'
+      return locale === 'ar' ? 'نصوص / أكواد متعددة الأسطر' : 'Multiline text / codes'
     default:
-      return 'منتج عادي'
+      return locale === 'ar' ? 'منتج عادي' : 'Standard product'
   }
 }
 

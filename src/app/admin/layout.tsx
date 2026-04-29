@@ -36,11 +36,15 @@ export default function AdminLayout({
   if (!user) return null
 
   return (
-    <div dir={locale === 'ar' ? 'rtl' : 'ltr'} className={`min-h-screen bg-muted/30 lg:flex ${locale === 'ar' ? 'lg:flex-row' : 'lg:flex-row'}`}>
+    <div dir={locale === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(184,134,59,0.12),_transparent_28%),linear-gradient(180deg,_rgba(248,246,241,0.96),_rgba(243,239,232,0.88))] lg:flex">
       {sidebarOpen ? <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} /> : null}
       <div className="flex min-w-0 flex-1 flex-col">
         <AdminHeader sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((value) => !value)} />
-        <main className="min-w-0 flex-1 p-4 md:p-6">{children}</main>
+        <main className="min-w-0 flex-1 p-4 md:p-6 xl:p-8">
+          <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   )

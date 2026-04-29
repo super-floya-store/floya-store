@@ -4,7 +4,7 @@ import { requireAdmin } from '@/lib/auth/session'
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin()
+    await requireAdmin(request)
     const { searchParams } = new URL(request.url)
     const period = searchParams.get('period') || 'month'
 
@@ -53,10 +53,39 @@ export async function GET(request: NextRequest) {
     const { count: vipCustomers } = await supabaseServer.from('customer_profiles').select('*', { count: 'exact', head: true }).eq('is_vip', true)
 
     const { count: totalProducts } = await supabaseServer.from('products').select('*', { count: 'exact', head: true })
+    const { data: recentOrders } = await supabaseServer
+      .from('orders')
+      .select('id, order_number, customer_name, total, status, payment_status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(6)
+    const { data: lowStockProducts } = await supabaseServer
+      .from('products')
+      .select('id, name_ar, name_en, slug, stock_quantity, low_stock_threshold, is_published')
+      .gt('stock_quantity', 0)
+      .lt('stock_quantity', 5)
+      .order('stock_quantity', { ascending: true })
+      .limit(6)
+    const { data: topProducts } = await supabaseServer
+      .from('order_items')
+      .select('product_id, product_name_ar, product_name_en, quantity, total_price')
 
     const payableOrders = (orderPeriodData || []).filter((order) => order.payment_status === 'paid' && order.refund_status !== 'refunded')
     const revenue = payableOrders.reduce((sum, order) => sum + (order.total || 0), 0)
     const totalOrders = orderPeriodData?.length || 0
+    const topProductsMap = new Map<string, { product_id: string; product_name_ar: string; product_name_en: string; quantity: number; revenue: number }>()
+
+    for (const item of topProducts || []) {
+      const current = topProductsMap.get(item.product_id) || {
+        product_id: item.product_id,
+        product_name_ar: item.product_name_ar,
+        product_name_en: item.product_name_en,
+        quantity: 0,
+        revenue: 0,
+      }
+      current.quantity += item.quantity || 0
+      current.revenue += item.total_price || 0
+      topProductsMap.set(item.product_id, current)
+    }
 
     const byStatus = {
       pending: orderPeriodData?.filter((o) => o.status === 'pending').length || 0,
@@ -76,7 +105,11 @@ export async function GET(request: NextRequest) {
         customers: { total: totalOrders, thisPeriod: totalOrders, returning: 0 },
         moderation: { commentsPending: commentsPending || 0, contactNew: contactNew || 0, paymentsSubmitted: paymentsSubmitted || 0 },
         customerFlags: { blacklisted: blacklistedCustomers || 0, vip: vipCustomers || 0 },
-        topProducts: [],
+        topProducts: Array.from(topProductsMap.values())
+          .sort((a, b) => b.quantity - a.quantity)
+          .slice(0, 5),
+        recentOrders: recentOrders || [],
+        lowStockProducts: lowStockProducts || [],
         revenueByDay: [],
         ordersByWilaya: [],
       },
