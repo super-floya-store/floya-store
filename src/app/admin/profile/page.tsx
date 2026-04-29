@@ -1,21 +1,26 @@
 'use client'
 
 import { useState } from 'react'
+import { Lock, Shield, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/hooks/useAuth'
 import { useUIStore } from '@/stores/ui-store'
+import { AdminPageHeader, AdminPanel, AdminStatCard } from '@/components/admin/AdminShell'
 
 export default function AdminProfilePage() {
   const { user } = useAuth()
   const locale = useUIStore((state) => state.locale)
   const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
   const copy = locale === 'ar'
     ? {
+        eyebrow: 'الحساب الإداري',
         title: 'الملف الشخصي',
+        description: 'مراجعة بيانات حساب الإدارة وتحديث كلمة المرور من صفحة واحدة.',
         userInfo: 'معلومات المستخدم',
         email: 'البريد',
         fullName: 'الاسم الكامل',
@@ -35,7 +40,9 @@ export default function AdminProfilePage() {
         unexpected: 'حدث خطأ',
       }
     : {
+        eyebrow: 'Admin account',
         title: 'Profile',
+        description: 'Review the active admin account and update the password from one page.',
         userInfo: 'User information',
         email: 'Email',
         fullName: 'Full name',
@@ -57,8 +64,10 @@ export default function AdminProfilePage() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
+    setMessage('')
     if (passwords.new !== passwords.confirm) {
-      alert(copy.mismatch)
+      setError(copy.mismatch)
       return
     }
     setLoading(true)
@@ -74,40 +83,41 @@ export default function AdminProfilePage() {
       })
       const data = await res.json()
       if (data.success) {
-        alert(copy.success)
+        setMessage(copy.success)
         setPasswords({ current: '', new: '', confirm: '' })
       } else {
-        alert(data.error?.message || copy.failed)
+        setError(data.error?.message || copy.failed)
       }
     } catch {
-      alert(copy.unexpected)
+      setError(copy.unexpected)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <h1 className="text-3xl font-bold">{copy.title}</h1>
+    <div className="max-w-4xl space-y-6">
+      <AdminPageHeader eyebrow={copy.eyebrow} title={copy.title} description={copy.description} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{copy.userInfo}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label={copy.email} value={user?.email || '-'} icon={UserRound} />
+        <AdminStatCard label={copy.fullName} value={user?.full_name || '-'} icon={UserRound} />
+        <AdminStatCard label={copy.role} value={user?.role || '-'} icon={Shield} />
+        <AdminStatCard label={copy.vip} value={user?.is_vip ? copy.yes : copy.no} icon={Shield} />
+      </div>
+
+      <AdminPanel title={copy.userInfo}>
+        <div className="grid gap-3 text-sm md:grid-cols-2">
           <p><span className="font-medium">{copy.email}:</span> {user?.email}</p>
           <p><span className="font-medium">{copy.fullName}:</span> {user?.full_name || '-'}</p>
           <p><span className="font-medium">{copy.vip}:</span> {user?.is_vip ? copy.yes : copy.no}</p>
           <p><span className="font-medium">{copy.role}:</span> {user?.role}</p>
-        </CardContent>
-      </Card>
+        </div>
+      </AdminPanel>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{copy.changePassword}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleChangePassword} className="space-y-4">
+      <AdminPanel title={copy.changePassword}>
+        <form onSubmit={handleChangePassword} className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label>{copy.currentPassword}</Label>
               <Input type="password" value={passwords.current} onChange={(e) => setPasswords({ ...passwords, current: e.target.value })} required />
@@ -120,10 +130,17 @@ export default function AdminProfilePage() {
               <Label>{copy.confirmPassword}</Label>
               <Input type="password" value={passwords.confirm} onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })} required />
             </div>
-            <Button type="submit" disabled={loading}>{loading ? copy.saving : copy.submit}</Button>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <Button type="submit" disabled={loading}>
+              <Lock className="h-4 w-4" />
+              {loading ? copy.saving : copy.submit}
+            </Button>
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            {message ? <p className="text-sm text-green-600">{message}</p> : null}
+          </div>
+        </form>
+      </AdminPanel>
     </div>
   )
 }

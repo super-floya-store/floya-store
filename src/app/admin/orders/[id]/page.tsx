@@ -1,17 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import { ArrowLeft } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import type { OrderWithItems } from '@/types/order'
+import { useParams } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
 import Image from 'next/image'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { AdminEmptyState, AdminPageHeader, AdminPanel } from '@/components/admin/AdminShell'
 import { useUIStore } from '@/stores/ui-store'
 import { formatPrice } from '@/lib/utils/format'
+import type { OrderWithItems } from '@/types/order'
 
 export default function AdminOrderDetailPage() {
   const params = useParams()
@@ -19,6 +19,8 @@ export default function AdminOrderDetailPage() {
   const [order, setOrder] = useState<OrderWithItems | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
   const [followUp, setFollowUp] = useState({
     estimatedDeliveryDays: '',
     estimatedDeliveryDate: '',
@@ -32,7 +34,10 @@ export default function AdminOrderDetailPage() {
     : { pending: 'Pending payment', submitted: 'Proof uploaded and under review', paid: 'Payment accepted', rejected: 'Payment rejected', failed: 'Failed', refunded: 'Refunded' }
   const copy = locale === 'ar'
     ? {
-        back: 'رجوع',
+        eyebrow: 'مراجعة الطلبات',
+        title: 'تفاصيل الطلب',
+        description: 'عرض موحد لمعلومات العميل والدفع والمتابعة التشغيلية والعناصر المشتراة.',
+        back: 'العودة للطلبات',
         notFound: 'الطلب غير موجود',
         customerInfo: 'معلومات العميل',
         name: 'الاسم',
@@ -65,9 +70,16 @@ export default function AdminOrderDetailPage() {
         subtotal: 'المجموع الفرعي',
         delivery: 'التوصيل',
         grandTotal: 'الإجمالي',
+        approvedMessage: 'تم قبول الدفع وتحديث الطلب.',
+        rejectedMessage: 'تم رفض الدفع وتحديث الطلب.',
+        followupSaved: 'تم حفظ متابعة الطلب.',
+        failed: 'تعذر تحديث بيانات الطلب',
       }
     : {
-        back: 'Back',
+        eyebrow: 'Order review',
+        title: 'Order detail',
+        description: 'Unified view of customer information, payment state, operational follow-up, and purchased items.',
+        back: 'Back to orders',
         notFound: 'Order not found',
         customerInfo: 'Customer information',
         name: 'Name',
@@ -100,6 +112,10 @@ export default function AdminOrderDetailPage() {
         subtotal: 'Subtotal',
         delivery: 'Delivery',
         grandTotal: 'Grand total',
+        approvedMessage: 'Payment accepted and order updated.',
+        rejectedMessage: 'Payment rejected and order updated.',
+        followupSaved: 'Order follow-up saved.',
+        failed: 'Unable to update the order',
       }
 
   useEffect(() => {
@@ -115,26 +131,20 @@ export default function AdminOrderDetailPage() {
             followUpMessage: data.data.follow_up_message || '',
           })
         }
-      } catch { /* ignore */ } finally { setLoading(false) }
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false)
+      }
     }
     if (params.id) fetchOrder()
   }, [params.id])
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-96" />
-      </div>
-    )
-  }
-
-  if (!order) {
-    return <div className="text-center py-12">{copy.notFound}</div>
-  }
-
   const reviewPayment = async (paymentStatus: 'paid' | 'rejected') => {
+    if (!order) return
     setSaving(true)
+    setError('')
+    setMessage('')
     try {
       const res = await fetch(`/api/orders/${params.id}`, {
         method: 'PATCH',
@@ -148,7 +158,12 @@ export default function AdminOrderDetailPage() {
         }),
       })
       const data = await res.json()
-      if (data.success) setOrder((current) => current ? { ...current, ...data.data } : current)
+      if (data.success) {
+        setOrder((current) => current ? { ...current, ...data.data } : current)
+        setMessage(paymentStatus === 'paid' ? copy.approvedMessage : copy.rejectedMessage)
+      } else {
+        setError(data.error?.message || copy.failed)
+      }
     } finally {
       setSaving(false)
     }
@@ -157,6 +172,8 @@ export default function AdminOrderDetailPage() {
   const saveFollowUp = async () => {
     if (!order) return
     setSaving(true)
+    setError('')
+    setMessage('')
     try {
       const res = await fetch(`/api/orders/${params.id}`, {
         method: 'PATCH',
@@ -171,36 +188,61 @@ export default function AdminOrderDetailPage() {
       const data = await res.json()
       if (data.success) {
         setOrder((current) => current ? { ...current, ...data.data } : current)
+        setMessage(copy.followupSaved)
+      } else {
+        setError(data.error?.message || copy.failed)
       }
     } finally {
       setSaving(false)
     }
   }
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-10 w-72" />
+          <Skeleton className="h-5 w-full max-w-2xl" />
+        </div>
+        <Skeleton className="h-96 rounded-[28px]" />
+      </div>
+    )
+  }
+
+  if (!order) {
+    return <AdminEmptyState title={copy.notFound} />
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/admin/orders"><ArrowLeft className="h-4 w-4 ml-1" /> {copy.back}</Link>
-        </Button>
-        <h1 className="text-3xl font-bold">{order.order_number}</h1>
-      </div>
+      <AdminPageHeader
+        eyebrow={copy.eyebrow}
+        title={`${copy.title} • ${order.order_number}`}
+        description={copy.description}
+        actions={(
+          <Button variant="outline" asChild className="rounded-full">
+            <Link href="/admin/orders">
+              <ArrowLeft className="h-4 w-4" />
+              {copy.back}
+            </Link>
+          </Button>
+        )}
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader><CardTitle>{copy.customerInfo}</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <AdminPanel title={copy.customerInfo}>
+          <div className="grid gap-3 text-sm md:grid-cols-2">
             <p><span className="font-medium">{copy.name}:</span> {order.customer_name}</p>
             <p><span className="font-medium">{copy.phone}:</span> {order.customer_phone}</p>
             <p><span className="font-medium">{copy.wilaya}:</span> {order.wilaya}</p>
             <p><span className="font-medium">{copy.commune}:</span> {order.commune}</p>
-            <p><span className="font-medium">{copy.address}:</span> {order.delivery_address}</p>
-          </CardContent>
-        </Card>
+            <p className="md:col-span-2"><span className="font-medium">{copy.address}:</span> {order.delivery_address}</p>
+          </div>
+        </AdminPanel>
 
-        <Card>
-          <CardHeader><CardTitle>{copy.orderStatus}</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
+        <AdminPanel title={copy.orderStatus}>
+          <div className="space-y-3 text-sm">
             <p><span className="font-medium">{copy.status}:</span> <Badge>{statusLabels[order.status]}</Badge></p>
             <p><span className="font-medium">{copy.paymentMethod}:</span> {order.payment_method}</p>
             <p><span className="font-medium">{copy.paymentStatus}:</span> {paymentLabels[order.payment_status] || order.payment_status}</p>
@@ -213,21 +255,18 @@ export default function AdminOrderDetailPage() {
                 <div className="relative h-64 overflow-hidden rounded-lg border">
                   <Image src={order.payment_receipt_url} alt={copy.paymentProof} fill className="object-contain bg-white" />
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                   <Button disabled={saving || order.payment_status === 'paid'} onClick={() => reviewPayment('paid')}>{copy.approvePayment}</Button>
                   <Button variant="outline" disabled={saving || order.payment_status === 'rejected'} onClick={() => reviewPayment('rejected')}>{copy.rejectPayment}</Button>
                 </div>
               </div>
             ) : null}
-          </CardContent>
-        </Card>
+          </div>
+        </AdminPanel>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{copy.followUp}</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
+      <AdminPanel title={copy.followUp}>
+        <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">{copy.deliveryDays}</label>
             <input
@@ -259,42 +298,45 @@ export default function AdminOrderDetailPage() {
               placeholder={copy.followUpPlaceholder}
             />
           </div>
-          <div className="md:col-span-3">
+          <div className="md:col-span-3 flex flex-wrap items-center gap-4">
             <Button onClick={saveFollowUp} disabled={saving}>{saving ? copy.saving : copy.save}</Button>
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            {message ? <p className="text-sm text-green-600">{message}</p> : null}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </AdminPanel>
 
-      <Card>
-        <CardHeader><CardTitle>{copy.items}</CardTitle></CardHeader>
-        <CardContent>
-          <table className="w-full text-sm">
-            <thead className="bg-muted">
+      <AdminPanel title={copy.items} className="overflow-hidden" contentClassName="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-sm">
+            <thead className="bg-muted/60">
               <tr>
-                <th className="px-4 py-3 text-right font-medium">{copy.product}</th>
-                <th className="px-4 py-3 text-right font-medium">{copy.quantity}</th>
-                <th className="px-4 py-3 text-right font-medium">{copy.price}</th>
-                <th className="px-4 py-3 text-right font-medium">{copy.total}</th>
+                <th className="px-4 py-4 text-right font-medium">{copy.product}</th>
+                <th className="px-4 py-4 text-right font-medium">{copy.quantity}</th>
+                <th className="px-4 py-4 text-right font-medium">{copy.price}</th>
+                <th className="px-4 py-4 text-right font-medium">{copy.total}</th>
               </tr>
             </thead>
             <tbody>
               {order.items?.map((item) => (
-                <tr key={item.id} className="border-t">
-                  <td className="px-4 py-3">{item.product_name_ar}</td>
-                  <td className="px-4 py-3">{item.quantity}</td>
-                  <td className="px-4 py-3"><bdi>{formatPrice(item.unit_price, 'DZD', locale)}</bdi></td>
-                  <td className="px-4 py-3"><bdi>{formatPrice(item.total_price, 'DZD', locale)}</bdi></td>
+                <tr key={item.id} className="border-t border-border/70">
+                  <td className="px-4 py-4">{locale === 'ar' ? item.product_name_ar : item.product_name_en}</td>
+                  <td className="px-4 py-4">{item.quantity}</td>
+                  <td className="px-4 py-4"><bdi>{formatPrice(item.unit_price, 'DZD', locale)}</bdi></td>
+                  <td className="px-4 py-4"><bdi>{formatPrice(item.total_price, 'DZD', locale)}</bdi></td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <div className="border-t mt-4 pt-4 space-y-2">
+        </div>
+        <div className="border-t border-border/70 p-4">
+          <div className="space-y-2">
             <div className="flex justify-between"><span>{copy.subtotal}</span><span><bdi>{formatPrice(order.subtotal, 'DZD', locale)}</bdi></span></div>
             <div className="flex justify-between"><span>{copy.delivery}</span><span><bdi>{formatPrice(order.delivery_fee, 'DZD', locale)}</bdi></span></div>
-            <div className="flex justify-between font-bold text-lg"><span>{copy.grandTotal}</span><span><bdi>{formatPrice(order.total, 'DZD', locale)}</bdi></span></div>
+            <div className="flex justify-between text-lg font-bold"><span>{copy.grandTotal}</span><span><bdi>{formatPrice(order.total, 'DZD', locale)}</bdi></span></div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </AdminPanel>
     </div>
   )
 }

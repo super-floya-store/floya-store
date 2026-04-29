@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { ArrowLeft, Save } from 'lucide-react'
 import { ProductInventoryFields } from '@/components/admin/ProductInventoryFields'
 import {
   type AdminProductUiConfig,
@@ -9,10 +11,12 @@ import {
   getDerivedStockQuantity,
   parseDigitalInventoryText,
 } from '@/components/admin/product-ui-config'
+import { AdminPageHeader, AdminPanel } from '@/components/admin/AdminShell'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useUIStore } from '@/stores/ui-store'
 
 interface Category {
   id: string
@@ -28,10 +32,14 @@ interface SupplierOption {
 
 export default function NewProductPage() {
   const router = useRouter()
+  const locale = useUIStore((state) => state.locale)
   const [loading, setLoading] = useState(false)
+  const [bootLoading, setBootLoading] = useState(true)
   const [categories, setCategories] = useState<Category[]>([])
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([])
   const [productUiConfig, setProductUiConfig] = useState<AdminProductUiConfig>(DEFAULT_PRODUCT_UI_CONFIG)
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     name_ar: '',
     name_en: '',
@@ -49,21 +57,80 @@ export default function NewProductPage() {
     tags: [] as string[],
   })
   const [uploading, setUploading] = useState(false)
+  const copy = locale === 'ar'
+    ? {
+        eyebrow: 'بناء الكتالوج',
+        title: 'إضافة منتج جديد',
+        description: 'أضف منتجاً جديداً مع النوع المناسب والمخزون والصور وبيانات النشر.',
+        back: 'العودة للمنتجات',
+        basic: 'المعلومات الأساسية',
+        pricing: 'السعر والمخزون',
+        nameAr: 'الاسم (عربي) *',
+        nameEn: 'الاسم (إنجليزي) *',
+        category: 'الفئة *',
+        noCategory: 'لا توجد فئات بعد.',
+        addCategoryFirst: 'أضف فئة أولاً',
+        descriptionAr: 'الوصف (عربي)',
+        descriptionEn: 'الوصف (إنجليزي)',
+        price: 'السعر *',
+        promoPrice: 'سعر التخفيض',
+        lowStock: 'حد التنبيه للمخزون',
+        supplier: 'المورد',
+        noSupplier: '-- بدون مورد --',
+        images: 'صور المنتج',
+        imagePlaceholder: 'رابط صورة في كل سطر',
+        upload: 'رفع من الكمبيوتر',
+        uploading: 'جاري رفع الصورة...',
+        published: 'منشور',
+        featured: 'مميز',
+        saving: 'جاري الحفظ...',
+        save: 'حفظ المنتج',
+        cancel: 'إلغاء',
+        chooseCategory: '-- اختر فئة --',
+        failed: 'فشل إنشاء المنتج',
+        unexpected: 'حدث خطأ أثناء إنشاء المنتج',
+      }
+    : {
+        eyebrow: 'Catalog build',
+        title: 'Add new product',
+        description: 'Create a new product with the right type, stock model, images, and publishing details.',
+        back: 'Back to products',
+        basic: 'Basic information',
+        pricing: 'Pricing and inventory',
+        nameAr: 'Name (Arabic) *',
+        nameEn: 'Name (English) *',
+        category: 'Category *',
+        noCategory: 'There are no categories yet.',
+        addCategoryFirst: 'Add a category first',
+        descriptionAr: 'Description (Arabic)',
+        descriptionEn: 'Description (English)',
+        price: 'Price *',
+        promoPrice: 'Promo price',
+        lowStock: 'Low-stock threshold',
+        supplier: 'Supplier',
+        noSupplier: '-- No supplier --',
+        images: 'Product images',
+        imagePlaceholder: 'One image URL per line',
+        upload: 'Upload from device',
+        uploading: 'Uploading image...',
+        published: 'Published',
+        featured: 'Featured',
+        saving: 'Saving...',
+        save: 'Save product',
+        cancel: 'Cancel',
+        chooseCategory: '-- Choose a category --',
+        failed: 'Failed to create product',
+        unexpected: 'An error occurred while creating the product',
+      }
 
   useEffect(() => {
-    fetch('/api/categories')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setCategories(data.data)
-      })
-      .catch(() => {})
-
-    fetch('/api/suppliers')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setSuppliers(data.data)
-      })
-      .catch(() => {})
+    Promise.all([
+      fetch('/api/categories').then((res) => res.json()).catch(() => null),
+      fetch('/api/suppliers').then((res) => res.json()).catch(() => null),
+    ]).then(([categoryData, supplierData]) => {
+      if (categoryData?.success) setCategories(categoryData.data)
+      if (supplierData?.success) setSuppliers(supplierData.data)
+    }).finally(() => setBootLoading(false))
   }, [])
 
   const storageWarning = null
@@ -71,6 +138,8 @@ export default function NewProductPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError('')
+    setMessage('')
 
     try {
       const derivedStockQuantity = getDerivedStockQuantity(productUiConfig.productType, form.stock_quantity, productUiConfig)
@@ -111,12 +180,13 @@ export default function NewProductPage() {
 
       const data = await res.json()
       if (data.success) {
+        setMessage(locale === 'ar' ? 'تم إنشاء المنتج بنجاح' : 'Product created successfully')
         router.push('/admin/products')
       } else {
-        alert(data.error?.message || 'Failed to create product')
+        setError(data.error?.message || copy.failed)
       }
     } catch {
-      alert('Error occurred')
+      setError(copy.unexpected)
     } finally {
       setLoading(false)
     }
@@ -141,72 +211,92 @@ export default function NewProductPage() {
     }
   }
 
+  if (bootLoading) {
+    return (
+      <div className="max-w-4xl space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-10 w-72" />
+          <Skeleton className="h-5 w-full max-w-2xl" />
+        </div>
+        <Skeleton className="h-96 rounded-[28px]" />
+      </div>
+    )
+  }
+
   return (
-    <div className="max-w-2xl space-y-6">
-      <h1 className="text-3xl font-bold">إضافة منتج جديد</h1>
+    <div className="max-w-4xl space-y-6">
+      <AdminPageHeader
+        eyebrow={copy.eyebrow}
+        title={copy.title}
+        description={copy.description}
+        actions={(
+          <Button asChild variant="outline" className="rounded-full">
+            <Link href="/admin/products">
+              <ArrowLeft className="h-4 w-4" />
+              {copy.back}
+            </Link>
+          </Button>
+        )}
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>المعلومات الأساسية</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <AdminPanel title={copy.basic}>
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="product-name-ar">الاسم (عربي) *</Label>
+              <Label htmlFor="product-name-ar">{copy.nameAr}</Label>
               <Input id="product-name-ar" value={form.name_ar} onChange={(e) => setForm({ ...form, name_ar: e.target.value })} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="product-name-en">الاسم (إنجليزي) *</Label>
+              <Label htmlFor="product-name-en">{copy.nameEn}</Label>
               <Input id="product-name-en" value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} required />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="product-category">الفئة *</Label>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="product-category">{copy.category}</Label>
               <select
                 id="product-category"
                 value={form.category_id}
                 onChange={(e) => setForm({ ...form, category_id: e.target.value })}
                 required
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="flex h-11 w-full rounded-full border border-input bg-background px-4 py-2 text-sm"
               >
-                <option value="">-- اختر فئة --</option>
+                <option value="">{copy.chooseCategory}</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
-                    {cat.name_ar} ({cat.name_en})
+                    {locale === 'ar' ? `${cat.name_ar} (${cat.name_en})` : `${cat.name_en} (${cat.name_ar})`}
                   </option>
                 ))}
               </select>
               {categories.length === 0 && (
-                <p className="text-sm text-muted-foreground">لا توجد فئات بعد. <a href="/admin/categories" className="text-primary underline">أضف فئة أولاً</a></p>
+                <p className="text-sm text-muted-foreground">{copy.noCategory} <Link href="/admin/categories" className="text-primary underline">{copy.addCategoryFirst}</Link></p>
               )}
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="product-description-ar">{copy.descriptionAr}</Label>
+              <textarea id="product-description-ar" value={form.description_ar} onChange={(e) => setForm({ ...form, description_ar: e.target.value })} className="min-h-[120px] w-full rounded-[20px] border border-input bg-background px-4 py-3 text-sm" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="product-description-en">{copy.descriptionEn}</Label>
+              <textarea id="product-description-en" value={form.description_en} onChange={(e) => setForm({ ...form, description_en: e.target.value })} className="min-h-[120px] w-full rounded-[20px] border border-input bg-background px-4 py-3 text-sm" />
+            </div>
+          </div>
+        </AdminPanel>
+
+        <AdminPanel title={copy.pricing}>
+          <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="product-description-ar">الوصف (عربي)</Label>
-                <textarea id="product-description-ar" value={form.description_ar} onChange={(e) => setForm({ ...form, description_ar: e.target.value })} className="min-h-[110px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                <Label htmlFor="product-price">{copy.price}</Label>
+                <Input id="product-price" type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="product-description-en">الوصف (إنجليزي)</Label>
-                <textarea id="product-description-en" value={form.description_en} onChange={(e) => setForm({ ...form, description_en: e.target.value })} className="min-h-[110px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                <Label htmlFor="product-promo-price">{copy.promoPrice}</Label>
+                <Input id="product-promo-price" type="number" step="0.01" value={form.promo_price} onChange={(e) => setForm({ ...form, promo_price: e.target.value })} />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>السعر والمخزون</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="product-price">السعر *</Label>
-              <Input id="product-price" type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="product-promo-price">سعر التخفيض</Label>
-              <Input id="product-promo-price" type="number" step="0.01" value={form.promo_price} onChange={(e) => setForm({ ...form, promo_price: e.target.value })} />
             </div>
 
             <ProductInventoryFields
+              locale={locale === 'ar' ? 'ar' : 'en'}
               productType={productUiConfig.productType}
               onProductTypeChange={(value) => setProductUiConfig((current) => ({ ...current, productType: value }))}
               manualStockQuantity={form.stock_quantity}
@@ -219,49 +309,57 @@ export default function NewProductPage() {
               storageWarning={storageWarning}
             />
 
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="product-low-stock-threshold">{copy.lowStock}</Label>
+                <Input id="product-low-stock-threshold" type="number" value={form.low_stock_threshold} onChange={(e) => setForm({ ...form, low_stock_threshold: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="product-supplier">{copy.supplier}</Label>
+                <select
+                  id="product-supplier"
+                  value={form.supplier_id}
+                  onChange={(e) => setForm({ ...form, supplier_id: e.target.value })}
+                  className="flex h-11 w-full rounded-full border border-input bg-background px-4 py-2 text-sm"
+                >
+                  <option value="">{copy.noSupplier}</option>
+                  {suppliers.map((supplier) => (
+                    <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="product-low-stock-threshold">حد التنبيه للمخزون</Label>
-              <Input id="product-low-stock-threshold" type="number" value={form.low_stock_threshold} onChange={(e) => setForm({ ...form, low_stock_threshold: e.target.value })} />
+              <Label htmlFor="product-images">{copy.images}</Label>
+              <textarea id="product-images" value={form.images} onChange={(e) => setForm({ ...form, images: e.target.value })} className="min-h-[120px] w-full rounded-[20px] border border-input bg-background px-4 py-3 text-sm" placeholder={copy.imagePlaceholder} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="product-supplier">المورد</Label>
-              <select
-                id="product-supplier"
-                value={form.supplier_id}
-                onChange={(e) => setForm({ ...form, supplier_id: e.target.value })}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="">-- بدون مورد --</option>
-                {suppliers.map((supplier) => (
-                  <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="product-images">صور المنتج</Label>
-              <textarea id="product-images" value={form.images} onChange={(e) => setForm({ ...form, images: e.target.value })} className="min-h-[110px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="رابط صورة في كل سطر" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="product-image-upload">رفع من الكمبيوتر</Label>
+              <Label htmlFor="product-image-upload">{copy.upload}</Label>
               <Input id="product-image-upload" type="file" accept="image/*" disabled={uploading} onChange={(e) => { const file = e.target.files?.[0]; if (file) handleUpload(file) }} />
-              {uploading && <p className="text-xs text-muted-foreground">جاري رفع الصورة...</p>}
+              {uploading && <p className="text-xs text-muted-foreground">{copy.uploading}</p>}
             </div>
             <div className="flex flex-wrap gap-6">
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={form.is_published} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} />
-                منشور
+                {copy.published}
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={form.is_featured} onChange={(e) => setForm({ ...form, is_featured: e.target.checked })} />
-                مميز
+                {copy.featured}
               </label>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </AdminPanel>
 
-        <div className="flex gap-4">
-          <Button type="submit" disabled={loading}>{loading ? 'جاري الحفظ...' : 'حفظ المنتج'}</Button>
-          <Button type="button" variant="outline" onClick={() => router.push('/admin/products')}>إلغاء</Button>
+        <div className="flex flex-wrap items-center gap-4">
+          <Button type="submit" disabled={loading}>
+            <Save className="h-4 w-4" />
+            {loading ? copy.saving : copy.save}
+          </Button>
+          <Button type="button" variant="outline" onClick={() => router.push('/admin/products')}>{copy.cancel}</Button>
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {message ? <p className="text-sm text-green-600">{message}</p> : null}
         </div>
       </form>
     </div>
